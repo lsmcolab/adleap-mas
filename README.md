@@ -53,9 +53,15 @@ The VcXserver will enable the simulated environment visualisation, creating the 
 
 **NOTE:** once you started your VcXserver (before running the framework), select the following options on the start screen:
 
-![](imgs/vcxserver1.PNG)
-![](imgs/vcxserver2.PNG)
-![](imgs/vcxserver3.PNG)
+<table border="0" cellspacing="0" cellpadding="0" border-collapse="collapse">
+ <tr border="0" cellspacing="0" cellpadding="0" border-collapse="collapse">
+    <td><img src="imgs/vcxserver1.PNG" alt="drawing" width="400px"/></td>
+    <td><img src="imgs/vcxserver2.PNG" alt="drawing" width="400px"/></td>
+ </tr>
+ <tr border="0" cellspacing="0" cellpadding="0" border-collapse="collapse">
+    <td colspan="2" align="center"><img src="imgs/vcxserver3.PNG" alt="drawing" width="400px"/></td>
+ </tr>
+</table>
 
 ------------------------
 <a name="sec-usage"></a>
@@ -88,10 +94,35 @@ That's all folks. At this point, you will have the display popping up and the si
 <a name="sec-levelforaging"></a>
 ### 1. Level-Foraging Environment
 
+Initially introduced to evaluate ad hoc teamwork, the Level-based Foraging domain \[[1](#albrecht2015game), [2](#stone2010adhoc)\] represents a problem in which a team of agents must collaborate to accomplish a certain number of tasks in an environment, optimising the time spent in the activity via active collaboration-coordination.
+The agents have a certain level (strength) that defines if it is able to collect an item (e.g., a box) of a specific weight.
+The boxes are distributed in the environment, and the agents cannot communicate with their teammates.
+The following figure illustrates the idea of the problem.
+
+<img src="imgs/level-based-foraging.PNG" alt="drawing" width="500px"/>
+
+As presented, the AdLeap-MAS can implement this problem, while enabling the simulation of (i) a real-time decision (instead of a turn-based approach) and (ii) an online learning and planning of the problem.
+The environment implementation delivers only the visible information to the agents, deferring to them the responsibility to reason about the missing data and build the corresponding belief state.
+Additionally, in this domain, the agents have four parameters: level, vision radius, vision angle and type; and the tasks have only one parameter: weight.
+The initial position and these parameters are all concealed from the agents.
+
+
 <a name="sec-truco"></a>
 ### 2. Truco Environment
 
-*More information will be documented and presented soon.*
+A popular card game in Brazil, Truco is played by pairs of people, compounding two teams.
+The game starts with dealing three cards for each player and turning up one card on the table.
+Each card has a strength associated with its rank and suit, which will compare the cards, one against the other. 
+The team's goal is to score 12 points over a maximum of 23 rounds, playing over a best-of-three game system.
+The team scores 1 point if they win the best-of-three round.
+The following figure illustrates Truco's table for four players playing the game.
+
+<img src="imgs/truco.PNG" alt="drawing" width="500px"/>
+
+Categorising a completely distinct environment from the Level-based Foraging domain, the implementation of this card game has a principal objective to show the versatility offered by the AdLeap-MAS.
+Furthermore, the implementation enables the simulation of (i) a turn-based approach for the decision-making process and (ii) an online learning of the problem by receiving partial information mainly via the observation of the adversaries' and teammate's play.
+Additionally, the environment delivers to the agents only the visible information, allowing them to reason about the missing data and build their belief state.
+Note that even though all the hands are visible in the interface, it is not related to the actual information.
 
 ------------------------
 <a name="sec-development"></a>
@@ -104,4 +135,6 @@ That's all folks. At this point, you will have the display popping up and the si
 <a name="sec-references"></a>
 ## REFERENCES
 
-*More information will be documented and presented soon.*
+<a name="albrecht2015game">[1]</a> Stefano V Albrecht and Subramanian Ramamoorthy. 2015.  A game-theoretic model and best-response learning method for ad hoc coordination in multi agent systems. *arXiv preprint arXiv:1506.01170* (2015).
+
+<a name="stone2010adhoc">[2]</a> Peter Stone, Gal A. Kaminka, Sarit Kraus, and Jeffrey S. Rosenschein. 2010. AdHoc Autonomous Agent Teams: Collaboration without Pre-Coordination. *In Proceedings of the Twenty-Fourth Conference on Artificial Intelligence (AAAI)*.
