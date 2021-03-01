@@ -1,8 +1,12 @@
-# Easy-AI: a context-free Ad-hoc Teamwork framework forreasoning, planning and decision-making evaluation
+# AdLeap-MAS: An Open-source Multi-Agent Simulator for Ad-hoc Learning and Planning
 
 ## Introduction
 
-This repository presents a generic framework which enables easy implementation and test of reasoning methods into the Ad-hoc Teamwork domain.
+*AdLeap-MAS* represents a novel framework focused on the implementation and simulation of Ad-hoc reasoning domains, which considers the approach of collaborative and adversarial contexts focused on ad-hoc environment learning and planning. 
+The framework aims to facilitate the running of experiments in the domain and also re-use existing codes across different environments.
+In other words, this proposal aims to minimise the implementation cost related to the process that precedes the domain evaluation, which could include the environment design, components settings and, benchmark set definition, while simultaneously improving the robustness of the environment and minimising the errors carried out due to mistakes made in the code adaptation or implementation.
+Through the definition of a component-based architecture, *AdLeap-MAS* implements [*Open-AI Gym*](https://github.com/openai/gym/tree/master/gym) package for *Python 3* as the primary tool to define its base components.
+Designed to be an open-source framework and a specialised version of the Open-AI Gym simulator, we offer the base classes for implementing new contexts and scenarios of the community's interest.
 
 ## Summary
 
