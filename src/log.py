@@ -1,4 +1,5 @@
 import inspect
+import os
 import psutil
 import datetime
 import warnings
@@ -25,6 +26,8 @@ class LogFile:
             self.filename = "./results/"+self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
         else:
             self.filename = file_name
+        if(not os.path.isdir("results")):
+            os.mkdir("results")
         self.write_header()
 
     def write_header(self):
