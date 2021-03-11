@@ -16,11 +16,13 @@ def level_foraging_uniform_estimation(env):
     return env
 
 def truco_uniform_estimation(env):
-    for player in env.components['player']:
-        if player != env.components['player'][env.current_player]:
-            player.hand = []
-            while len(player.hand) < 3:
-                player.hand.append(env.components['cards in game'].pop(0))
-            player.type = rd.sample(['t1','mcts'],1)[0]
-            
+    if env.visibility == 'partial':
+        for player in env.components['player']:
+            if player != env.components['player'][env.current_player]:
+                player.hand = []
+                while len(player.hand) < 3:
+                    player.hand.append(env.components['cards in game'].pop(0))
+                player.type = rd.sample(['t1','t2','t3'],1)[0]
+                
+    env.visibility = 'full'
     return env
