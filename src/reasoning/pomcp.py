@@ -42,7 +42,7 @@ def is_leaf(node, max_depth):
     return False
 
 def is_terminal(node):
-    return False
+    return node.state.state_set.is_final_state(node.state.state)
 
 def simulate(node, agent, max_depth,discount_factor=0.9):
     # 1. Checking the stop condition
