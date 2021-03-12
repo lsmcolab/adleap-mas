@@ -105,4 +105,5 @@ def a_star_planning(sim_map, dim_w, dim_h, action_space, start, goal):
     if len(actions) > 0:
         return actions[0]
     else:
+        print(sim_map,start,goal)
         raise IndexError

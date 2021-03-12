@@ -31,25 +31,29 @@ env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkb
 state = env.reset()
 log_file = LogFile(env)
 
-rounds = 5
-epsilon = 0.99
+rounds = 10
+epsilon = 0.90
 decay = 0.99
 step_size = 0.01
 loss = []
+print(env.copy())
 for i in range(rounds):
     state = env.reset()
-
     done = False
     adhoc_agent = env.get_adhoc_agent()
     while not done and env.episode < 200:
         # Rendering the environment
         #env.render()
-
+        print(env.episode)
         AGA(state, adhoc_agent,epsilon,step_size)
-        print_stats(adhoc_agent)
-        l = AGA_loss(env,adhoc_agent)
-        if (not l is None):
-            loss.append(l)
+
+        # Uncomment for extra information
+
+        #print_stats(adhoc_agent)
+        #l = AGA_loss(env,adhoc_agent)
+        #if (not l is None):
+        #    loss.append(l)
+
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
         method = getattr(module, adhoc_agent.type+'_planning')
@@ -70,11 +74,11 @@ for i in range(rounds):
     step_size = step_size*decay
     env.close()
 
-plt.plot([x['radius'] for x in loss])
-plt.plot([x['angle'] for x in loss])
-plt.plot([x['level'] for x in loss])
-print([x['radius'] for x in loss])
-print([x['angle'] for x in loss])
-print([x['level'] for x in loss])
-plt.legend(["Radius","Angle","Level"])
-plt.savefig("results/AGA_rad.png")
+# plt.plot([x['radius'] for x in loss])
+# plt.plot([x['angle'] for x in loss])
+# plt.plot([x['level'] for x in loss])
+# print([x['radius'] for x in loss])
+# print([x['angle'] for x in loss])
+# print([x['level'] for x in loss])
+# plt.legend(["Radius","Angle","Level"])
+# plt.savefig("results/AGA_rad.png")
