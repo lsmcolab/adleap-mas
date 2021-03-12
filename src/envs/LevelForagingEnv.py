@@ -71,7 +71,8 @@ class DrawText(rendering.Geom):
     Ad-hoc 
 """
 class Agent(AdhocAgent):
-
+    """Agent : Main reasoning Component of the Environment. Derives from AdhocAgent Class
+    """
     def __init__(self, index, atype, position, direction, radius, angle, level):
 
         super(Agent, self).__init__(index,atype)
@@ -99,6 +100,8 @@ class Agent(AdhocAgent):
         return copy_agent
 
 class Task():
+    """Task : These are parts of the 'components' of the environemnt.
+    """
 
     def __init__(self, index, position, level):
         # task parameters
@@ -368,11 +371,11 @@ def levelforaging_transition(action, real_env):
     # retuning the results
     return next_state, info
 
-
+# The reward must keep be calculated keeping the partial observability in mind
 def reward(state, next_state):
     #return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
     return 0
-
+# Changes the actual environment to partial observed environment
 def environment_transformation(copied_env):
     agent = copied_env.get_adhoc_agent()
     if agent.radius is not None:
