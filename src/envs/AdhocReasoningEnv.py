@@ -120,12 +120,14 @@ class AdhocReasoningEnv(gym.Env):
         self.episode = 0    # Number of episodes after env.reset()
 
         # Setting the Markovian components for the environment
+        # State
         if isinstance(state_set,StateSet):
             self.state_set = state_set
         else:
             raise ValueError("argument 1 \"state_set\" must be a "+\
                                             str(StateSet)+" instance.")
 
+        # Step function
         if isfunction(transition_function):
             if transition_function.__code__.co_argcount != 2:
                 raise ValueError("argument 2 \"transition_function\" "+\
@@ -136,18 +138,21 @@ class AdhocReasoningEnv(gym.Env):
             raise ValueError("argument 2 \"transition_function\" "+\
                                                 "must be a function.")
 
+        # Action space
         if issubclass(type(action_space),spaces.Space):
             self.action_space = action_space
         else:
             raise ValueError("argument 3 \"action_space\" must be a "+\
                             str(spaces.Space)+" instance or inherit it.")
 
+        # Reward function
         if isfunction(reward_function):
             self.reward_function = reward_function
         else:
             raise ValueError("argument 4 \"reward_function\" "+\
                                             "must be a function.")
 
+        # Observation space
         if isfunction(observation_space):
             self.observation_space = observation_space
         else:

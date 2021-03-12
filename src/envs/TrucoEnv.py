@@ -67,14 +67,17 @@ def end_condition(state):
         else:
             state['points'][1] += 1
         return True 
+
     elif state['round'][0] == 2:
         if sum(state['wins'][0:2]) == 0:
             state['points'][0] += 1
             return True
+
         elif sum(state['wins'][0:2]) == 2:
             state['points'][1] += 1
             return True
         return False
+        
     else:
         return False
 
@@ -96,14 +99,16 @@ def who_win(card1,card2,current_player,faceup_card):
     else:
         return card1 if card1[0] > card2[0] else [card2[0],card2[1],current_player]
 
+def random_pick(action,hand):
+    tmp_hand = deepcopy(hand)
+    while None in tmp_hand[action]:
+        rd.shuffle(tmp_hand)
+    return hand.index(tmp_hand[action])
+
 def truco_transition(action,real_env):
-    if real_env.state['round'][0] == 3:
-        real_env.deal()
-        return real_env.state, {}
-  
     if None in real_env.components['player'][real_env.current_player].hand[action]:
         info = {'invalid card reward':-1}
-        return real_env.state, info
+        action = real_env.action_space.sample()
 
     # playing the action
     real_env.state['winning card'] = \
@@ -149,20 +154,22 @@ def reward(state,next_state):
             return 0 
 
 def truco_observation(copied_env):
+    # reseting the cards in game
     copied_env.components['cards in game'] = [[x,y] \
         for x in range(len(copied_env.cards)) for y in range(len(copied_env.suits))]
     rd.shuffle(copied_env.components['cards in game'])
     
-    # removing visible cards
+    # removing visible cards (own and faced up cards)
     for card in copied_env.components['player'][copied_env.current_player].hand:
         if card in copied_env.components['cards in game']:
             copied_env.components['cards in game'].remove(card)
     copied_env.components['cards in game'].remove(copied_env.state['face up card'])
 
-    # blinding the others players' hand
-    for player in copied_env.components['player']:
-        if player != copied_env.components['player'][copied_env.current_player]:
-            player.hand = [[None,None],[None,None],[None,None]]
+    # blinding the others players' hand if the game is partial observable
+    if copied_env.visibility == 'partial':
+        for player in copied_env.components['player']:
+            if player != copied_env.components['player'][copied_env.current_player]:
+                player.hand = [[None,None],[None,None],[None,None]]
 
     return copied_env
 
@@ -175,9 +182,10 @@ class TrucoEnv(AdhocReasoningEnv):
 
     total_cards = len(cards)*len(suits)
 
-    def __init__(self,players,reasoning): 
+    def __init__(self,players,reasoning,visibility='full'): 
         self.viewer = None
         self.round_cards = []
+        self.visibility = visibility
 
         # Defining the Ad-hoc Teamwork Env parameters
         state_set = StateSet(
@@ -191,6 +199,8 @@ class TrucoEnv(AdhocReasoningEnv):
             end_condition)
         transition_function = truco_transition
         action_space = spaces.Discrete(3)
+        action_space.sample = self.random_pick
+
         reward_function = reward
         observation_space = truco_observation
         components = {'player':[
@@ -229,7 +239,7 @@ class TrucoEnv(AdhocReasoningEnv):
 
     def copy(self):
         copied_env = TrucoEnv(players = [player.index for player in self.components['player']],
-                reasoning = [player.type for player in self.components['player']])
+                reasoning = [player.type for player in self.components['player']], visibility=self.visibility)
         copied_env.start_player = self.start_player
         copied_env.current_player = self.current_player
         copied_env.state = deepcopy(self.state_set.initial_state)
@@ -252,6 +262,21 @@ class TrucoEnv(AdhocReasoningEnv):
         copied_env.components['cards in game'].remove(tuple(copied_env.state['face up card']))
 
         return copied_env
+
+    def random_pick(self):
+        action, hand = \
+            0, self.components['player'][self.current_player].hand
+
+        tmp_hand = deepcopy(hand)
+
+        if all([list(card) == [None,None] for card in tmp_hand]):
+            hand[0] = self.components['cards in game'].pop()
+            tmp_hand[0] = hand[0]
+
+        while None in tmp_hand[action]:
+            rd.shuffle(tmp_hand)
+
+        return hand.index(tmp_hand[action])
 
     def state_is_equal(self,state):
         if self.state['face up card'][0] == state['face up card'][0] and \
@@ -299,6 +324,7 @@ class TrucoEnv(AdhocReasoningEnv):
         # 1. Defining the base simulation
         u_env = self.copy()
 
+        # 2. Sampling random cards for the players
         for player in u_env.components['player']:
             for i in range(len(player.hand)):
                 player.hand[i] = u_env.components['cards in game'].pop(0)

@@ -90,14 +90,14 @@ class Agent(AdhocAgent):
                            self.direction, self.radius, self.angle, self.level)
 
         # 2. Copying the parameters
-        copy_agent.position = self.position
-        copy_agent.direction = self.direction
-        copy_agent.smart_parameters = self.smart_parameters
-
         copy_agent.next_action =  self.next_action
         copy_agent.target = None if self.target is None else self.target
+        copy_agent.smart_parameters = self.smart_parameters
 
         return copy_agent
+
+    def show(self):
+        print(self.index,self.type,':',self.position,self.direction,self.radius,self.angle,self.level)
 
 class Task():
     """Task : These are parts of the 'components' of the environemnt.
@@ -429,13 +429,14 @@ def environment_transformation(copied_env):
             copied_env.state[pos[0], pos[1]] = np.inf
 
         # b. cleaning agents information
-        for i in range(len(copied_env.components['agents'])):
-            if copied_env.components['agents'][i] != agent:
-                copied_env.components['agents'][i].radius = None
-                copied_env.components['agents'][i].angle = None
-                copied_env.components['agents'][i].level = None
-                copied_env.components['agents'][i].target = None
-                copied_env.components['agents'][i].type = None
+        if copied_env.visibility == 'partial':
+            for i in range(len(copied_env.components['agents'])):
+                if copied_env.components['agents'][i] != agent:
+                    copied_env.components['agents'][i].radius = None
+                    copied_env.components['agents'][i].angle = None
+                    copied_env.components['agents'][i].level = None
+                    copied_env.components['agents'][i].target = None
+                    copied_env.components['agents'][i].type = None
 
         copied_env.episode += 1
         return copied_env
@@ -476,8 +477,10 @@ class LevelForagingEnv(AdhocReasoningEnv):
         4:'Load'
     }
 
-    def __init__(self, shape, components):
+    def __init__(self, shape, components, visibility='full'):
         self.viewer = None
+        self.visibility = visibility
+
         # Defining the Ad-hoc Reasoning Env parameters
         state_set = StateSet(spaces.Box( \
             low=-1, high=np.inf, shape=shape, dtype=np.int64), end_condition)
@@ -513,7 +516,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
     def copy(self):
         components = self.copy_components(self.components)
-        copied_env = LevelForagingEnv(self.state.shape, components)
+        copied_env = LevelForagingEnv(self.state.shape, components, self.visibility)
         copied_env.viewer = self.viewer
         copied_env.state = np.array([ np.array([self.state[x,y] for y in range(self.state.shape[1])]) for x in range(self.state.shape[0]) ])
         copied_env.episode = self.episode

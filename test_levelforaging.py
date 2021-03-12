@@ -16,7 +16,7 @@ components = {
     'agents':[
         Agent(index='A',atype='pomcp',position=(0,0),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
         Agent(index='B',atype='l1',position=(0,9),direction=np.pi/2,radius=0.7,angle=0.5,level=1.0),
-        Agent(index='C',atype='l2',position=(9,9),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+       Agent(index='C',atype='l2',position=(9,9),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
         Agent(index='D',atype='l3',position=(9,0),direction=np.pi/2,radius=0.6,angle=0.7,level=1.0),
     ],
     'adhoc_agent_index': 'A',
@@ -25,7 +25,7 @@ components = {
             Task('3',(5,5),1.0),
             Task('4',(8,8),1.0)]}
 
-env = LevelForagingEnv((10,10),components)
+env = LevelForagingEnv((10,10),components,visibility='full')
 env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkblue',\
                         'entropy':'blue','mcts':'yellow','pomcp':'red'}
 state = env.reset()
