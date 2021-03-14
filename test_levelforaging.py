@@ -14,7 +14,7 @@ from src.reasoning.AGA import *
 ###
 components = {
     'agents':[
-        Agent(index='A',atype='pomcp',position=(0,0),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+        Agent(index='A',atype='l2',position=(0,0),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
         Agent(index='B',atype='l1',position=(0,9),direction=np.pi/2,radius=0.7,angle=0.5,level=1.0),
        Agent(index='C',atype='l2',position=(9,9),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
         Agent(index='D',atype='l3',position=(9,0),direction=np.pi/2,radius=0.6,angle=0.7,level=1.0),
@@ -31,12 +31,12 @@ env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkb
 state = env.reset()
 log_file = LogFile(env)
 
-rounds = 10
-epsilon = 0.90
+rounds = 100
+epsilon = 0.80
 decay = 0.99
 step_size = 0.01
 loss = []
-print(env.copy())
+time_step = 0
 for i in range(rounds):
     state = env.reset()
     done = False
@@ -44,16 +44,16 @@ for i in range(rounds):
     while not done and env.episode < 200:
         # Rendering the environment
         #env.render()
-        print(env.episode)
         AGA(state, adhoc_agent,epsilon,step_size)
 
         # Uncomment for extra information
 
         #print_stats(adhoc_agent)
-        #l = AGA_loss(env,adhoc_agent)
-        #if (not l is None):
-        #    loss.append(l)
+        l = AGA_loss(env,adhoc_agent)
+        if (not l is None and time_step%100==0):
+            loss.append(l)
 
+        time_step+=1
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
         method = getattr(module, adhoc_agent.type+'_planning')
@@ -74,11 +74,17 @@ for i in range(rounds):
     step_size = step_size*decay
     env.close()
 
-# plt.plot([x['radius'] for x in loss])
-# plt.plot([x['angle'] for x in loss])
-# plt.plot([x['level'] for x in loss])
-# print([x['radius'] for x in loss])
-# print([x['angle'] for x in loss])
-# print([x['level'] for x in loss])
-# plt.legend(["Radius","Angle","Level"])
-# plt.savefig("results/AGA_rad.png")
+plt.plot([x['radius'] for x in loss],'o-')
+plt.plot([x['angle'] for x in loss],'>-')
+plt.plot([x['level'] for x in loss],'s-')
+print([x['radius'] for x in loss])
+print([x['angle'] for x in loss])
+print([x['level'] for x in loss])
+plt.xticks(fontsize=20,rotation=45)
+plt.yticks(fontsize=20)
+plt.xlabel("time step",fontsize=20)
+plt.ylabel("MSE loss",fontsize=20)
+plt.grid()
+plt.legend(["Radius","Angle","Level"],fontsize=13)
+
+plt.savefig("./" + "AGA_results" + '.pdf', bbox_inches='tight', pad_inches=0)

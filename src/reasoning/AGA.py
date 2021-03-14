@@ -109,7 +109,7 @@ def AGA(env,agent,epsilon=0.1,step=0.01):
     return
 
 def print_stats(adhoc_agent):
-    if("agent_aga" not in adhoc_agent.smart_parameters.keys()):
+    if("agents_aga" not in adhoc_agent.smart_parameters.keys()):
         return
     stats = {}
     for i in adhoc_agent.smart_parameters["agents_aga"].keys():
@@ -124,7 +124,7 @@ def print_stats(adhoc_agent):
 
 # To calculate performance of AGA
 def AGA_loss(env,adhoc_agent):
-    if ("agent_aga" not in adhoc_agent.smart_parameters.keys()):
+    if ("agents_aga" not in adhoc_agent.smart_parameters.keys()):
         return -1
 
     loss = {'radius':0,'angle':0,'level':0,'type':0}
@@ -148,5 +148,4 @@ def AGA_loss(env,adhoc_agent):
         loss[key] = np.sqrt(loss[key]/total_agent)
     loss["type"] = loss["type"]/total_agent
 
-    print(loss)
     return loss
