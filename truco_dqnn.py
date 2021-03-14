@@ -158,7 +158,7 @@ def play_game(env, TrainNet, TargetNet, epsilon, copy_step,main_player="None"):
 def main():
     env = TrucoEnv(players=['MATHEUS', 'LEANDRO', 'AMOKH', 'YEHIA'],
                    reasoning=['mcts', 'pomcp', 't2', 't1'])
-    main_player = "MATHEUS"
+    main_player = "A"
     gamma = 0.99
     copy_step = 25
     state_shape = 18
