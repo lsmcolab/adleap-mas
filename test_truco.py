@@ -11,7 +11,7 @@ import time
 ###
 # Main
 ###
-env = TrucoEnv(players   = ['MATHEUS','LEANDRO','AMOKH','YEHIA'],
+env = TrucoEnv(players   = ['A','B','C','D'],
                 reasoning = ['pomcp','pomcp','t2','t1'],visibility='partial')
 state = env.reset()
 
