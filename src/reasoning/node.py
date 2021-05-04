@@ -64,6 +64,9 @@ class QNode(Node):
         if len(tieCases) > 0:
             best_action = random.sample(tieCases,1)[0]
         # 4. Returning the best action
+        if(best_action==None):
+            print("SAD")
+            best_action = random.sample(self.actions,1)[0]
         return best_action
 
     def show_qtable(self):
