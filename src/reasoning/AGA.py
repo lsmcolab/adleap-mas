@@ -28,15 +28,17 @@ def AGA(env,agent,epsilon=0.1,step=0.01):
     at each call . Each agent is identified by it's index.
     """
     # Storing a copy of the observation for next step
-    agent.smart_parameters['prev_episode'] = env.copy()
     step_size = step
     n = 2
     types = ["l1","l2","l3","l4"]
     # Initializing AGA predictions
     if('agents_aga' not in agent.smart_parameters.keys()):
         agent.smart_parameters['agents_aga'] = {}
+
+        agent.smart_parameters['prev_episode'] = env.copy()
         return
     if(env.episode == 1):
+        agent.smart_parameters['prev_episode'] = env.copy()
         return
     #
     for agents in env.components['agents']:
@@ -76,13 +78,14 @@ def AGA(env,agent,epsilon=0.1,step=0.01):
                     copy_agents.radius = radius
                     copy_agents.angle = angle
                     copy_agents.level = level
+                    copy_agents.target = None
                     type_index = choose_types(agent.smart_parameters["agents_aga"][index][1],epsilon)
                     copy_agents.type = types[type_index]
                 else:
                     copy_agents.radius = random.uniform(0,1)
                     copy_agents.angle = random.uniform(0,1)
                     copy_agents.level = random.uniform(0,1)
-
+                    copy_agents.target=None
                     copy_agents.type = random.sample(types, 1)[0]
 
             # Can use any step
@@ -104,7 +107,7 @@ def AGA(env,agent,epsilon=0.1,step=0.01):
         agent.smart_parameters['agents_aga'][index][0].angle += step_size * model.coef_[1]
         agent.smart_parameters['agents_aga'][index][0].level += step_size * model.coef_[2]
 
-# agent.smart_parameters["prev_episode"] = env.copy()
+    agent.smart_parameters["prev_episode"] = env.copy()
 
     return
 
