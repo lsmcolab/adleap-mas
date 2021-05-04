@@ -1,18 +1,19 @@
 import random
 import heapq
-
+import numpy as np
 class SquareGrid:
     def __init__(self, width, height):
         self.width = width
         self.height = height
         self.walls = []
-    
+        self.agents = []
+        self.targets = []
     def in_bounds(self, id):
         (x, y) = id
         return 0 <= x < self.width and 0 <= y < self.height
     
     def passable(self, id):
-        return id not in self.walls
+        return id not in self.walls and id not in self.agents and id not in self.targets
     
     def neighbors(self, id):
         (x, y) = id
@@ -27,13 +28,16 @@ class SquareGrid:
         (x2, y2) = to_node
         return abs(x1 - x2) + abs(y1 - y2)
 
-    def update(self,sim_map,start):
+    def update(self,sim_map,start,goal):
         for y in reversed(range(self.height)):
             for x in range(self.width):
                 xy =sim_map[x,y]
                 if xy == -1:
                     self.walls.append((x,y)),  # obstacle
-
+                if xy == 1 and not (x,y)==start and not (x,y) == goal:
+                    self.agents.append((x,y))
+                if xy == np.inf and not (x,y) == goal and not (x,y) ==start:
+                    self.targets.append((x,y))
 class PriorityQueue:
     def __init__(self):
         self.elements = []
@@ -53,8 +57,10 @@ def heuristic(a, b):
     return abs(x1 - x2) + abs(y1 - y2)
 
 def a_star(sim_map, dim_w, dim_h, start, goal):
+    # This case occurs when tasks move
+
     graph = SquareGrid(dim_w,dim_h)
-    graph.update(sim_map,start) # allocating the obstacles
+    graph.update(sim_map,start,goal) # allocating the obstacles
 
     start = (start[0],start[1])
     goal  = (goal[0] ,goal[1] )
@@ -78,9 +84,15 @@ def a_star(sim_map, dim_w, dim_h, start, goal):
                 came_from[next] = current
     
     path = [goal]
-    while(path[-1] != start):
-        path.append(came_from[path[-1]])
-    path.reverse()
+
+    # In some cases, there may be no possible paths
+    try:
+        while(path[-1] != start):
+            path.append(came_from[path[-1]])
+        path.reverse()
+    except:
+        path = []
+
     return path
 
 def a_star_planning(sim_map, dim_w, dim_h, action_space, start, goal):
@@ -101,6 +113,8 @@ def a_star_planning(sim_map, dim_w, dim_h, action_space, start, goal):
             actions.append(3)
         else:
             actions.append(-1)
+
+
 
     if len(actions) > 0:
         return actions[0]
