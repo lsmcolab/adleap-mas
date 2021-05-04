@@ -100,9 +100,8 @@ class Agent(AdhocAgent):
         print(self.index,self.type,':',self.position,self.direction,self.radius,self.angle,self.level)
 
 class Task():
-    """Task : These are parts of the 'components' of the environemnt.
+    """Task : These are parts of the 'components' of the environment.
     """
-
     def __init__(self, index, position, level):
         # task parameters
         self.index = index
@@ -323,7 +322,7 @@ def do_action(env):
     for task in components['tasks']:
         for ag in who_see(env, task.position):
             if sum([level for level in task.trying]) >= task.level:
-                info['action reward'] += 1
+                #info['action reward'] += 1
                 task.completed = True
             
             if task.completed and ag.target == task.position:
@@ -639,7 +638,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
             self.viewer.render(return_rgb_array=mode == 'rgb_array')
             import time
-            #time.sleep(1)
+            time.sleep(1)
 
         return
 
