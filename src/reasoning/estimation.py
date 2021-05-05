@@ -1,10 +1,90 @@
 import random as rd
+from copy import *
 
-def level_foraging_uniform_estimation(env):
+from src.reasoning.OEATA import HistoryElement
+
+
+
+def process_oeata( unknown_agent, current_state, just_finished_tasks):
+    # 1. Initialising the parameter variables
+    po = False
+    cts_agent = deepcopy(unknown_agent)
+    # if not po:
+    #     cts_agent = deepcopy(l_agent.visible_agents[unknown_agent.index])
+    # else:
+    #     memory_agents = l_agent.agent_memory
+    #     for m_a in memory_agents:
+    #         if m_a.index == unknown_agent.index:
+    #             cts_agent = m_a
+    #             break
+
+    'Start process OEATA'
+    for set_of_estimators in unknown_agent.smart_parameters['estimations'].learning_data.all_estimators:
+        if unknown_agent.next_action == 4:
+            unknown_agent.smart_parameters['estimations'].learning_data.evaluation(set_of_estimators, cts_agent, current_state)
+            unknown_agent.smart_parameters['estimations'].learning_data.generation(set_of_estimators, cts_agent, current_state)
+        else:
+            unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators, cts_agent,
+                                                                                          current_state,
+                                                                                          just_finished_tasks)
+
+        new_estimated_parameter, type_probability = unknown_agent.smart_parameters['estimations'].learning_data.estimation(set_of_estimators)
+        #todo: fix it
+        for estimation_history in unknown_agent.smart_parameters['estimations'].estimation_histories:
+            if set_of_estimators.type == estimation_history.type:
+                estimation_history.estimation_history.append(new_estimated_parameter)
+                estimation_history.type_probability = type_probability
+
+
+    'End of Process'
+    # te.type_probability = pf_type_probability
+    #
+    #     # d. If a load action was performed, restart the estimation process
+    # todo: change unknown_agent to cts_agent. What is their differences
+    if unknown_agent.next_action == 4 and unknown_agent.is_item_nearby(current_state.items) != -1:
+        if unknown_agent.choose_target_state != None:
+            hist = HistoryElement(unknown_agent.choose_target_state.copy(), copy(unknown_agent.last_loaded_item_pos),
+                                  copy(unknown_agent.choose_target_pos), unknown_agent.choose_target_direction)
+
+            unknown_agent.smart_parameters['estimations'].learning_data.history_of_tasks.append(hist)
+
+        unknown_agent.choose_target_state = current_state.copy()
+        unknown_agent.choose_target_pos = unknown_agent.get_position()
+        unknown_agent.choose_target_direction = unknown_agent.direction
+    normalize_type_probabilities(unknown_agent.smart_parameters['estimations'])
+
+def normalize_type_probabilities(estimations):
+        # 1. Defining the values
+        # print 'Normalizing:',self.l1_estimation.type_probability , self.l2_estimation.type_probability,self.l3_estimation.type_probability, self.l4_estimation.type_probability
+        sum_of_probabilities = 0
+        type_belief_values = []
+        for te in estimations.estimation_histories:
+            type_belief_values.append(te.type_probability)
+            sum_of_probabilities += te.type_probability
+
+        # 3. Normalising
+        if sum_of_probabilities != 0:
+            belief_factor = 1 / float(sum_of_probabilities)
+            for te in estimations.estimation_histories:
+                te.type_probability *= belief_factor
+                te.type_probabilities.append(te.type_probability)
+
+        else:
+            probabilities = estimations.generate_equal_probabilities()
+            for i in range(len(estimations.estimation_histories)):
+                estimations.estimation_histories[i].type_probability = probabilities[i]
+                # estimations.estimation_histories[i].type_probabilities.append(probabilities[i])
+
+
+def level_foraging_uniform_estimation(env, just_finished_tasks):
+    adhoc_agent = env.get_adhoc_agent()
+    tmp_env = deepcopy(env)
     if env.visibility == 'partial':
+
         for agent in env.components['agents']:
             if agent != env.get_adhoc_agent() and\
             None in [agent.level,agent.radius,agent.angle,agent.type]:
+                process_oeata(agent, tmp_env, just_finished_tasks)
                 agent.level = rd.uniform(0,1)
                 agent.radius = rd.uniform(0,1)
                 agent.angle = rd.uniform(0,1)
@@ -14,8 +94,13 @@ def level_foraging_uniform_estimation(env):
             if task.level is None:
                 task.level = rd.uniform(0,1)
                 
-    env.visibility = 'full'
+    else:
+        for agent in env.components['agents']:
+            if agent != env.get_adhoc_agent():
+                process_oeata(agent, tmp_env, just_finished_tasks)
+
     return env
+
 
 def truco_uniform_estimation(env):
     if env.visibility == 'partial':

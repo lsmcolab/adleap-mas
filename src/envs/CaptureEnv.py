@@ -463,6 +463,30 @@ def reward(state, next_state):
     return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
     #return 0
 
+def get_target_non_adhoc_agent(agent, real_env):
+    # agent planning
+    adhoc_agent_index = real_env.components['agents'].index(real_env.get_adhoc_agent())
+
+    # changing the perspective
+    copied_env = real_env.copy()
+
+    # generating the observable scenario
+    observable_env = copied_env.observation_space(copied_env)
+
+    # planning the action from agent i perspective
+    if agent.type is not None:
+        module = __import__(agent.type)
+        planning_method = getattr(module, agent.type + '_planning')
+
+        agent.next_action, agent.target = \
+            planning_method(observable_env, agent)
+    else:
+        agent.next_action, agent.target = \
+            real_env.action_space.sample(), None
+
+
+    # retuning the results
+    return agent.target
 
 # Changes the actual environment to partial observed environment
 def environment_transformation(copied_env):

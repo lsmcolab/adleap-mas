@@ -100,8 +100,9 @@ class Agent(AdhocAgent):
         print(self.index,self.type,':',self.position,self.direction,self.radius,self.angle,self.level)
 
 class Task():
-    """Task : These are parts of the 'components' of the environment.
+    """Task : These are parts of the 'components' of the environemnt.
     """
+
     def __init__(self, index, position, level):
         # task parameters
         self.index = index
@@ -271,6 +272,7 @@ def update(env):
 def do_action(env):
     # 1. Position and direction
     # a. defining the agents new position and direction
+    just_finished_tasks = []
     state, components = env.state, env.components
     positions, directions = {}, {}
     action2direction = {
@@ -278,12 +280,11 @@ def do_action(env):
         1: np.pi,  # West
         2: np.pi / 2,  # North
         3: 3 * np.pi / 2}  # South
-    info = {'action reward':0}
+    info = {'action reward':0, 'just_finished_tasks':[]}
 
     for agent in components['agents']:
         if agent.next_action != 4:
-            positions[agent.index] = new_position_given_action( \
-                state, agent.position, agent.next_action)
+            positions[agent.index] = new_position_given_action(state, agent.position, agent.next_action)
             directions[agent.index] = action2direction[agent.next_action]
 
         else:
@@ -324,6 +325,8 @@ def do_action(env):
             if sum([level for level in task.trying]) >= task.level:
                 #info['action reward'] += 1
                 task.completed = True
+                if task not in just_finished_tasks:
+                    just_finished_tasks.append(task)
             
             if task.completed and ag.target == task.position:
                 ag.target = None
@@ -333,8 +336,34 @@ def do_action(env):
         task.trying = []
 
     next_state = update(env)
+    info['just_finished_tasks'] = just_finished_tasks
     return next_state, info
 
+
+def get_target_non_adhoc_agent(agent, real_env):
+    # agent planning
+    adhoc_agent_index = real_env.components['agents'].index(real_env.get_adhoc_agent())
+
+    # changing the perspective
+    copied_env = real_env.copy()
+
+    # generating the observable scenario
+    observable_env = copied_env.observation_space(copied_env)
+
+    # planning the action from agent i perspective
+    if agent.type is not None:
+        module = __import__(agent.type)
+        planning_method = getattr(module, agent.type + '_planning')
+
+        agent.next_action, agent.target = \
+            planning_method(observable_env, agent)
+    else:
+        agent.next_action, agent.target = \
+            real_env.action_space.sample(), None
+
+
+    # retuning the results
+    return agent.target
 
 def levelforaging_transition(action, real_env):
     # agent planning
@@ -638,7 +667,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
             self.viewer.render(return_rgb_array=mode == 'rgb_array')
             import time
-            time.sleep(1)
+            #time.sleep(1)
 
         return
 
