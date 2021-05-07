@@ -329,6 +329,8 @@ def do_action(env):
                     just_finished_tasks.append(task)
             
             if task.completed and ag.target == task.position:
+                ag.smart_parameters['last_completed_task'] = task
+                ag.smart_parameters['choose_task_state']= env.copy()
                 ag.target = None
 
     # c. reseting the task trying
