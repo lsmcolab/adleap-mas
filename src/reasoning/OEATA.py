@@ -23,12 +23,13 @@ class OeataConfig:
 
 
 class HistoryElement:
-    def __init__(self, choose_target_state=None, target=None, agent_choose_target_position=None,
-                 agent_choose_target_direction=None):
+    def __init__(self, choose_target_state=None, target=None):
+        # , agent_choose_target_position=None,
+        #          agent_choose_target_direction=None):
         self.target = target
         self.choose_target_state = choose_target_state
-        self.agent_choose_target_position = agent_choose_target_position
-        self.agent_choose_target_direction = agent_choose_target_direction
+        # self.agent_choose_target_position = agent_choose_target_position
+        # self.agent_choose_target_direction = agent_choose_target_direction
 
 
 class Estimator:
@@ -153,13 +154,14 @@ class OEATA_process:
             if success_in_history > 0:
 
                 target = get_target_non_adhoc_agent(tmp_agent, current_state)
-                estimator = Estimator(tmp_param.radius, tmp_param.angle, tmp_param.level, current_state.copy(), target, success_in_history, 0)
+                estimator = Estimator(tmp_param.radius, tmp_param.angle, tmp_param.level, current_state.copy(), target,
+                                      success_in_history, 0)
 
                 set_of_estimators.Estimators.append(estimator)
                 none_count += 1
 
-        del tmp_agent
-        del tmp_param
+            del tmp_agent
+            del tmp_param
 
     ###################################################################################################################
     def initialisation(self, unknown_agent_position, unknown_agent_direction,  unknown_agent_radius,unknown_agent_angle
@@ -262,18 +264,25 @@ class OEATA_process:
                         estimator.target = target
                         estimator.choose_target_state = current_state.copy()
                     del tmp_agent
-
+    ####################################################################################################################
+    def get_agent_index(self):
+        return
     ####################################################################################################################
     def check_history(self, parameter, selected_type):
 
         success_count = 0
         # print 'begin history ---------------------------------------------'
         for hist in self.history_of_tasks:
-            (x, y) = hist.agent_choose_target_position
             # print hist
             old_state = hist.choose_target_state.copy()
+            for a in old_state.components['agents']:
+                if a.index == self.agent.index:
+                    (x, y) = a.position
+                    direction = a.direction
+                    break
 
-            tmp_agent = Agent('T', selected_type, (x, y), hist.agent_choose_target_direction, parameter.radius,
+
+            tmp_agent = Agent('T', selected_type, (x, y), direction, parameter.radius,
                               parameter.angle, parameter.level)
 
             target = get_target_non_adhoc_agent(tmp_agent, old_state)
@@ -287,52 +296,57 @@ class OEATA_process:
     ###################################################################################################################
     def evaluation(self, set_of_estimators, cts_agent, current_state ):
         # 1. Getting the agent to update
-        last_finished_task = cts_agent.last_loaded_item_pos
+        remaining_tasks = 0
+        for task in current_state.components['tasks']:
+            if not task.completed:
+                remaining_tasks +=1
+
+
+        last_completed_task = cts_agent.smart_parameters['last_completed_task']
 
         # 3. Running and updating the estimator filter method
 
-        if cts_agent.is_item_nearby(current_state.items) != -1: #This is to check if the load action is really doable and there is an item around
 
-                self.load_count += 1
-                estimators_to_remove = []
-                for estimator in set_of_estimators.Estimators:
+        self.load_count += 1
+        estimators_to_remove = []
+        for estimator in set_of_estimators.Estimators:
 
-                    if current_state.items_left() != 0: # Is there any item to load
-                        x, y = cts_agent.position[0], cts_agent.position[1]
-                        direction = cts_agent.direction
+            if remaining_tasks != 0: # Is there any item to load
+                x, y = cts_agent.position[0], cts_agent.position[1]
+                direction = cts_agent.direction
 
-                        tmp_agent = Agent('T', set_of_estimators.type, (x, y), direction, estimator.parameter.radius,
-                                          estimator.parameter.angle, estimator.parameter.level)
+                tmp_agent = Agent('T', set_of_estimators.type, (x, y), direction, estimator.parameter.radius,
+                                  estimator.parameter.angle, estimator.parameter.level)
 
-                        # 4. Calculating route
-                        target_task = get_target_non_adhoc_agent(tmp_agent, current_state)
+                # 4. Calculating route
+                target_task = get_target_non_adhoc_agent(tmp_agent, current_state)
 
-                    else:
-                        break
+            else:
+                break
 
-                # d. Filtering the estimator
-                    if estimator.target_task == last_finished_task:
-                        self.bag_of_estimators.levels_bag.append(estimator.parameter.level)
-                        self.bag_of_estimators.angles_bag.append(estimator.parameter.angle)
-                        self.bag_of_estimators.radius_bag.append(estimator.parameter.radius)
+        # d. Filtering the estimator
+            if estimator.target_task == last_completed_task:
+                self.bag_of_estimators.levels_bag.append(estimator.parameter.level)
+                self.bag_of_estimators.angles_bag.append(estimator.parameter.angle)
+                self.bag_of_estimators.radius_bag.append(estimator.parameter.radius)
 
-                        estimator.target_task = target_task
-                        estimator.choose_target_state = current_state.copy()
-                        estimator.success_rate = self.check_history(estimator.parameter , set_of_estimators.type) + 1
-                        estimator.failure_rate = 0
-                    else:
-                        if int(estimator.failure_rate) > 0:
-                            estimators_to_remove.append(estimator)
-                        else:
-                            estimator.failure_rate += 1
-                            estimator.success_rate -= 1
-                            estimator.target_task = target_task
-                            estimator.choose_target_state = current_state.copy()
+                estimator.target_task = target_task
+                estimator.choose_target_state = current_state.copy()
+                estimator.success_rate = self.check_history(estimator.parameter , set_of_estimators.type) + 1
+                estimator.failure_rate = 0
+            else:
+                if int(estimator.failure_rate) > 0:
+                    estimators_to_remove.append(estimator)
+                else:
+                    estimator.failure_rate += 1
+                    estimator.success_rate -= 1
+                    estimator.target_task = target_task
+                    estimator.choose_target_state = current_state.copy()
 
-                # 4. Removing the marked data
-                for marked_estimator in estimators_to_remove:
-                    if marked_estimator in set_of_estimators.Estimators:
-                        set_of_estimators.Estimators.remove(marked_estimator)
+        # 4. Removing the marked data
+        for marked_estimator in estimators_to_remove:
+            if marked_estimator in set_of_estimators.Estimators:
+                set_of_estimators.Estimators.remove(marked_estimator)
 
         return
 

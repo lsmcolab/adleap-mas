@@ -18,13 +18,16 @@ def process_oeata( unknown_agent, current_state, just_finished_tasks):
     #             cts_agent = m_a
     #             break
 
-    'Start process OEATA'
+
+    # 'Start process OEATA'
     for set_of_estimators in unknown_agent.smart_parameters['estimations'].learning_data.all_estimators:
-        if unknown_agent.next_action == 4:
-            unknown_agent.smart_parameters['estimations'].learning_data.evaluation(set_of_estimators, cts_agent, current_state)
-            unknown_agent.smart_parameters['estimations'].learning_data.generation(set_of_estimators, cts_agent, current_state)
+        if unknown_agent.smart_parameters['last_completed_task'] !=None:
+            if unknown_agent != current_state.get_adhoc_agent():
+                unknown_agent.smart_parameters['estimations'].learning_data.evaluation(set_of_estimators, cts_agent, current_state)
+                unknown_agent.smart_parameters['estimations'].learning_data.generation(set_of_estimators, cts_agent, current_state)
         else:
-            unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators, cts_agent,
+            if just_finished_tasks:
+                unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators, cts_agent,
                                                                                           current_state,
                                                                                           just_finished_tasks)
 
@@ -41,16 +44,18 @@ def process_oeata( unknown_agent, current_state, just_finished_tasks):
     #
     #     # d. If a load action was performed, restart the estimation process
     # todo: change unknown_agent to cts_agent. What is their differences
-    if unknown_agent.next_action == 4 and unknown_agent.is_item_nearby(current_state.items) != -1:
-        if unknown_agent.choose_target_state != None:
-            hist = HistoryElement(unknown_agent.choose_target_state.copy(), copy(unknown_agent.last_loaded_item_pos),
-                                  copy(unknown_agent.choose_target_pos), unknown_agent.choose_target_direction)
+    # if unknown_agent.next_action == 4 and unknown_agent.is_item_nearby(current_state.items) != -1:
+    if unknown_agent.smart_parameters['last_completed_task'] != None:
+        if unknown_agent.smart_parameters['choose_task_state'] != None:
+            hist = HistoryElement(unknown_agent.smart_parameters['choose_task_state'].copy())\
+                # , copy(unknown_agent.last_loaded_item_pos),
+                #                   copy(unknown_agent.choose_target_pos), unknown_agent.choose_target_direction)
 
             unknown_agent.smart_parameters['estimations'].learning_data.history_of_tasks.append(hist)
 
-        unknown_agent.choose_target_state = current_state.copy()
-        unknown_agent.choose_target_pos = unknown_agent.get_position()
-        unknown_agent.choose_target_direction = unknown_agent.direction
+        unknown_agent.smart_parameters['choose_task_state'] = current_state.copy()
+        # unknown_agent.choose_target_pos = unknown_agent.get_position()
+        # unknown_agent.choose_target_direction = unknown_agent.direction
     normalize_type_probabilities(unknown_agent.smart_parameters['estimations'])
 
 def normalize_type_probabilities(estimations):
@@ -96,8 +101,7 @@ def level_foraging_uniform_estimation(env, just_finished_tasks):
                 
     else:
         for agent in env.components['agents']:
-            if agent != env.get_adhoc_agent():
-                process_oeata(agent, tmp_env, just_finished_tasks)
+            process_oeata(agent, tmp_env, just_finished_tasks)
 
     return env
 
