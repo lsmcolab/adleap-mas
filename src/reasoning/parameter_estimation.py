@@ -68,7 +68,7 @@ class ParameterEstimation:
 
         for te in self.estimation_histories:
             if selected_type == te.type:
-                return te.get_last_estimation()
+                return te.estimation_history[-1]
 
     ####################################################################################################################
     def generate_equal_probabilities(self):
@@ -125,7 +125,7 @@ class ParameterEstimation:
             tmp_prob = te.get_last_type_probability()
             if tmp_prob > highest_probability:
                 highest_probability = tmp_prob
-                selected_type = type
+                selected_type = te.type
 
         return selected_type
 

@@ -3,8 +3,6 @@ from copy import *
 
 from src.reasoning.OEATA import HistoryElement
 
-
-
 def process_oeata( unknown_agent, current_state, just_finished_tasks):
     # 1. Initialising the parameter variables
     po = False
@@ -33,6 +31,7 @@ def process_oeata( unknown_agent, current_state, just_finished_tasks):
 
         new_estimated_parameter, type_probability = unknown_agent.smart_parameters['estimations'].learning_data.estimation(set_of_estimators)
         #todo: fix it
+        unknown_agent.smart_parameters['estimated_parameter'] = new_estimated_parameter
         for estimation_history in unknown_agent.smart_parameters['estimations'].estimation_histories:
             if set_of_estimators.type == estimation_history.type:
                 estimation_history.estimation_history.append(new_estimated_parameter)

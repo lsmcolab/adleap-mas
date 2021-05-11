@@ -154,7 +154,7 @@ class OEATA_process:
             if success_in_history > 0:
 
                 target = get_target_non_adhoc_agent(tmp_agent, current_state)
-                estimator = Estimator(tmp_param.radius, tmp_param.angle, tmp_param.level, current_state.copy(), target,
+                estimator = Estimator(tmp_param, current_state.copy(), target,
                                       success_in_history, 0)
 
                 set_of_estimators.Estimators.append(estimator)
