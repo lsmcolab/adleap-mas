@@ -93,8 +93,7 @@ for i in range(rounds):
         # Step on environment
         state, reward, done, info = env.step(adhoc_agent.next_action)
         just_finished_tasks = info['just_finished_tasks']
-        # just_finished_tasks.append(env.components['tasks'][1])
-        # print (done)
+
         print (len(just_finished_tasks))
         log_file.write(env)
         level_foraging_uniform_estimation(env, just_finished_tasks)

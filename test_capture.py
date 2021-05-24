@@ -16,10 +16,10 @@ from src.reasoning.AGA import *
 # TODO : fix pomcp black box .
 components = {
     'agents':[
-        Agent(index='A',atype="pomcp",position=(4,5),direction=np.pi/2,radius=0.1,angle=1.0,level=1.0),
-        Agent(index='B',atype='c1',position=(5,4),direction=np.pi/2,radius=0.7,angle=0.5,level=1.0),
+        Agent(index='A',atype="l3",position=(4,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+        Agent(index='B',atype='l3',position=(5,4),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
        Agent(index='C',atype='l3',position=(6,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
-        Agent(index='D',atype='l3',position=(5,6),direction=np.pi/2,radius=0.6,angle=0.7,level=1.0),
+        Agent(index='D',atype='l3',position=(5,6),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
     ],
     'adhoc_agent_index': 'A',
     'tasks':[Task('1',(0,0),1.0),
@@ -44,7 +44,7 @@ for i in range(rounds):
     state = env.reset()
     done = False
     adhoc_agent = env.get_adhoc_agent()
-    while not done and env.episode < 50:
+    while not done and env.episode < 30:
         # Rendering the environment
         env.render()
         #AGA(state, adhoc_agent,epsilon,step_size)

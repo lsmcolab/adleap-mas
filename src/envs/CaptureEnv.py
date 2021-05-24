@@ -369,22 +369,28 @@ def do_action(env):
 
     # 2. Tasks
     # a. verifying the tasks to be completed
-    for agent in components['agents']:
-        if agent.next_action == 4:
-            task = there_is_task(env, agent.position, agent.direction)
-            if task is not None:
-                if agent.level is not None:
-                    task.trying.append(agent.level)
-                else:
-                    task.trying.append(rd.uniform(0, 1))
+    # for agent in components['agents']:
+    #     if agent.next_action == 4:
+    #         task = there_is_task(env, agent.position, agent.direction)
+    #         if task is not None:
+    #             if agent.level is not None:
+    #                 task.trying.append(agent.level)
+    #             else:
+    #                 task.trying.append(rd.uniform(0, 1))
 
+    update(env)
     # b. calculating the reward
     for task in components['tasks']:
+        if(task.completed):
+            continue
         surround_agents = who_surround(env,task.position)
-        see_agents = who_see(env,task.position)
-        total_level = sum([a.level for a in surround_agents])
+        see_index = [a.index for a in who_see(env,task.position)]
+
+
+        total_level = sum([a.level for a in surround_agents if a.index in see_index])
         if(total_level >= task.level and surround(task,env)):
             #info['action reward']+= len(see_agents)
+            print(total_level,[a.index for a in surround_agents],see_index,surround(task,env),task.index)
             task.completed=True
 
         for ag in env.components['agents']:
@@ -412,13 +418,15 @@ def surround(task,env):
 
     return True
 
+# Agents that see task and are surrounding it
 def who_surround(env,position):
     (w,h) = env.state.shape
     who_surr = []
     for step in [(-1,0),(0,1),(1,0),(0,-1)] :
         new_pos = ((position[0]+step[0]),(position[1]+step[1]))
         for agent in env.components['agents']:
-            if(agent.position == new_pos and agent in who_see(env,position)):
+
+            if(agent.position == new_pos ):
                 who_surr.append(agent)
 
     return who_surr
