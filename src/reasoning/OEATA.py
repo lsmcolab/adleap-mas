@@ -349,4 +349,3 @@ class OEATA_process:
                 set_of_estimators.Estimators.remove(marked_estimator)
 
         return
-

@@ -51,10 +51,10 @@ class FilledPolygonCv4(rendering.Geom):
         self._color.vec4 = (r, g, b, a)
 
 
-def make_circleCv4(radius=10, angle= 2*np.pi, res=30):
+def make_circleCv4(radius=10, angle=2 * np.pi, res=30):
     points = [(0, 0)]
-    for i in range(res+1):
-        ang = (np.pi - angle)/2 + (angle * (i / res))
+    for i in range(res + 1):
+        ang = (np.pi - angle) / 2 + (angle * (i / res))
         points.append((np.cos(ang) * radius, np.sin(ang) * radius))
     return FilledPolygonCv4(points)
 
@@ -67,15 +67,18 @@ class DrawText(rendering.Geom):
     def render1(self):
         self.label.draw()
 
+
 """
     Ad-hoc 
 """
+
+
 class Agent(AdhocAgent):
     """Agent : Main reasoning Component of the Environment. Derives from AdhocAgent Class
     """
-    def __init__(self, index, atype, position, direction, radius, angle, level):
 
-        super(Agent, self).__init__(index,atype)
+    def __init__(self, index, atype, position, direction, radius, angle, level):
+        super(Agent, self).__init__(index, atype)
 
         # agent parameters
         self.position = position
@@ -90,14 +93,15 @@ class Agent(AdhocAgent):
                            self.direction, self.radius, self.angle, self.level)
 
         # 2. Copying the parameters
-        copy_agent.next_action =  self.next_action
+        copy_agent.next_action = self.next_action
         copy_agent.target = None if self.target is None else self.target
         copy_agent.smart_parameters = self.smart_parameters
 
         return copy_agent
 
     def show(self):
-        print(self.index,self.type,':',self.position,self.direction,self.radius,self.angle,self.level)
+        print(self.index, self.type, ':', self.position, self.direction, self.radius, self.angle, self.level)
+
 
 class Task():
     """Task : These are parts of the 'components' of the environemnt.
@@ -127,6 +131,8 @@ class Task():
 """
     Customising the Level-Foraging Env
 """
+
+
 def end_condition(state):
     return (sum(sum(state == np.inf)) == 0)
 
@@ -140,14 +146,14 @@ def who_see(env, position):
             direction = env.action_space.sample()
 
         if a.radius is not None:
-            radius = np.sqrt(env.state.shape[0]**2 + env.state.shape[1]**2)*a.radius
+            radius = np.sqrt(env.state.shape[0] ** 2 + env.state.shape[1] ** 2) * a.radius
         else:
-            radius = np.sqrt(env.state.shape[0]**2 + env.state.shape[1]**2)*rd.uniform(0,1)
+            radius = np.sqrt(env.state.shape[0] ** 2 + env.state.shape[1] ** 2) * rd.uniform(0, 1)
 
         if a.radius is not None:
-            angle = 2*np.pi*a.angle
+            angle = 2 * np.pi * a.angle
         else:
-            angle = 2*np.pi*rd.uniform(0,1)
+            angle = 2 * np.pi * rd.uniform(0, 1)
 
         if is_visible(position, a.position, direction, radius, angle):
             who.append(a)
@@ -203,7 +209,7 @@ def new_position_given_action(state, pos, action):
 def get_visible_agents_and_tasks(state, agent, components):
     # 1. Defining the agent vision parameters
     direction = agent.direction
-    radius = np.sqrt(state.shape[0]**2 + state.shape[1]**2) * agent.radius
+    radius = np.sqrt(state.shape[0] ** 2 + state.shape[1] ** 2) * agent.radius
     angle = 2 * np.pi * agent.angle
 
     agents, tasks = [], []
@@ -234,7 +240,7 @@ def angle_of_gradient(obj, viewer, direction):
 
     x = np.cos(direction) * xt + np.sin(direction) * yt
     y = -np.sin(direction) * xt + np.cos(direction) * yt
-    if(y==0 and x==0):
+    if (y == 0 and x == 0):
         return 0
     return np.arctan2(y, x)
 
@@ -280,7 +286,7 @@ def do_action(env):
         1: np.pi,  # West
         2: np.pi / 2,  # North
         3: 3 * np.pi / 2}  # South
-    info = {'action reward':0, 'just_finished_tasks':[]}
+    info = {'action reward': 0, 'just_finished_tasks': []}
 
     for agent in components['agents']:
         if agent.next_action != 4:
@@ -317,20 +323,20 @@ def do_action(env):
                 if agent.level is not None:
                     task.trying.append(agent.level)
                 else:
-                    task.trying.append(rd.uniform(0,1))
+                    task.trying.append(rd.uniform(0, 1))
 
     # b. calculating the reward
     for task in components['tasks']:
         for ag in who_see(env, task.position):
             if sum([level for level in task.trying]) >= task.level:
-                #info['action reward'] += 1
+                # info['action reward'] += 1
                 task.completed = True
                 if task not in just_finished_tasks:
                     just_finished_tasks.append(task)
-            
+
             if task.completed and ag.target == task.position:
                 ag.smart_parameters['last_completed_task'] = task
-                ag.smart_parameters['choose_task_state']= env.copy()
+                ag.smart_parameters['choose_task_state'] = env.copy()
                 ag.target = None
 
     # c. reseting the task trying
@@ -363,9 +369,9 @@ def get_target_non_adhoc_agent(agent, real_env):
         agent.next_action, agent.target = \
             real_env.action_space.sample(), None
 
-
     # retuning the results
     return agent.target
+
 
 def levelforaging_transition(action, real_env):
     # agent planning
@@ -394,37 +400,40 @@ def levelforaging_transition(action, real_env):
         else:
             real_env.components['agents'][i].next_action = action
             real_env.components['agents'][i].target = real_env.components['agents'][i].target
-            
+
     # environment step
     next_state, info = do_action(real_env)
 
     # retuning the results
     return next_state, info
 
+
 # The reward must keep be calculated keeping the partial observability in mind
 def reward(state, next_state):
-    #return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
+    # return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
     return 0
+
+
 # Changes the actual environment to partial observed environment
 def environment_transformation(copied_env):
     agent = copied_env.get_adhoc_agent()
     if agent.radius is not None:
-        radius = np.sqrt(copied_env.state.shape[0]**2 + copied_env.state.shape[1]**2)*agent.radius
+        radius = np.sqrt(copied_env.state.shape[0] ** 2 + copied_env.state.shape[1] ** 2) * agent.radius
     else:
-        radius = np.sqrt(copied_env.state.shape[0]**2 + copied_env.state.shape[1]**2)*rd.uniform(0,1)
+        radius = np.sqrt(copied_env.state.shape[0] ** 2 + copied_env.state.shape[1] ** 2) * rd.uniform(0, 1)
 
     if agent.radius is not None:
-        angle = 2*np.pi*agent.angle
+        angle = 2 * np.pi * agent.angle
     else:
-        angle = 2*np.pi*rd.uniform(0,1)
+        angle = 2 * np.pi * rd.uniform(0, 1)
 
     if agent is not None:
         # 1. Removing the invisible agents and tasks from environment
         invisible_agents = []
         for i in range(len(copied_env.components['agents'])):
             if not is_visible(copied_env.components['agents'][i].position,
-            agent.position,agent.direction,radius,angle) and\
-            copied_env.components['agents'][i] != agent:
+                              agent.position, agent.direction, radius, angle) and \
+                    copied_env.components['agents'][i] != agent:
                 invisible_agents.append(i)
 
         for index in sorted(invisible_agents, reverse=True):
@@ -474,10 +483,11 @@ def environment_transformation(copied_env):
         raise IOError(agent, 'is an invalid agent.')
 
 
-
 """
     Level-Foraging Environments 
 """
+
+
 class LevelForagingEnv(AdhocReasoningEnv):
     colors = { \
         'red': (1.0, 0.0, 0.0), \
@@ -500,11 +510,11 @@ class LevelForagingEnv(AdhocReasoningEnv):
     }
 
     action_dict = {
-        0:'East',
-        1:'West',
-        2:'North',
-        3:'South',
-        4:'Load'
+        0: 'East',
+        1: 'West',
+        2: 'North',
+        3: 'South',
+        4: 'Load'
     }
 
     def __init__(self, shape, components, visibility='full'):
@@ -530,7 +540,6 @@ class LevelForagingEnv(AdhocReasoningEnv):
         for element in components:
             if element == 'agents':
                 for ag in components[element]:
-
                     self.state_set.initial_state[ag.position[0], ag.position[1]] = 1
 
             if element == 'tasks':
@@ -539,7 +548,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
             if element == 'obstacle':
                 for ob in components[element]:
-                    self.state_set.initial_state[ob.position[0],ob.position[1]] = -1
+                    self.state_set.initial_state[ob.position[0], ob.position[1]] = -1
 
         # Setting the inital components
         self.state_set.initial_components = self.copy_components(components)
@@ -548,14 +557,15 @@ class LevelForagingEnv(AdhocReasoningEnv):
         components = self.copy_components(self.components)
         copied_env = LevelForagingEnv(self.state.shape, components, self.visibility)
         copied_env.viewer = self.viewer
-        copied_env.state = np.array([ np.array([self.state[x,y] for y in range(self.state.shape[1])]) for x in range(self.state.shape[0]) ])
+        copied_env.state = np.array(
+            [np.array([self.state[x, y] for y in range(self.state.shape[1])]) for x in range(self.state.shape[0])])
         copied_env.episode = self.episode
 
         # Setting the initial state
         copied_env.state_set.initial_state = np.zeros(copied_env.state.shape)
         for x in range(self.state_set.initial_state.shape[0]):
             for y in range(self.state_set.initial_state.shape[1]):
-                copied_env.state_set.initial_state[x,y] = self.state_set.initial_state[x,y]
+                copied_env.state_set.initial_state[x, y] = self.state_set.initial_state[x, y]
         return copied_env
 
     def get_adhoc_agent(self):
@@ -564,59 +574,59 @@ class LevelForagingEnv(AdhocReasoningEnv):
                 return agent
         return None
 
-    def state_is_equal(self,state):
+    def state_is_equal(self, state):
         for x in range(self.state.shape[0]):
             for y in range(self.state.shape[1]):
-                if self.state[x,y] != state[x,y]:
+                if self.state[x, y] != state[x, y]:
                     return False
         return True
 
-    def observation_is_equal(self,obs):
+    def observation_is_equal(self, obs):
         observable_env = self.observation_space(self.copy())
         for x in range(observable_env.state.shape[0]):
             for y in range(observable_env.state.shape[1]):
-                if observable_env.state[x,y] != obs.state[x,y]:
+                if observable_env.state[x, y] != obs.state[x, y]:
                     return False
         return True
 
-    def get_out_range_position(self,agent):
+    def get_out_range_position(self, agent):
         empty_spaces = []
 
         dim_w, dim_h = self.state.shape
         direction = agent.direction
-        radius = np.sqrt(dim_w**2 + dim_h**2)*agent.radius
-        angle = 2*np.pi*agent.angle
+        radius = np.sqrt(dim_w ** 2 + dim_h ** 2) * agent.radius
+        angle = 2 * np.pi * agent.angle
 
         for x in range(dim_w):
             for y in range(dim_h):
-                if not is_visible((x,y),agent.position,direction,radius,angle):
-                    empty_spaces.append((x,y))
+                if not is_visible((x, y), agent.position, direction, radius, angle):
+                    empty_spaces.append((x, y))
         return empty_spaces
 
-    def sample_state(self,agent,sample_p=0.1,n_sample=10):
+    def sample_state(self, agent, sample_p=0.1, n_sample=10):
         # 1. Defining the base simulation
         u_env = self.copy()
 
         # - getting empty space out of range
         empty_position = u_env.get_out_range_position(agent)
-        
+
         # - setting environment components
         count = 0
         while len(empty_position) > 0 and count < n_sample:
             # - setting teammates
-            if rd.uniform(0,1) < sample_p:
-                pos = rd.sample(empty_position,1)[0]
-                u_env.state[pos[0],pos[1]] = 1
+            if rd.uniform(0, 1) < sample_p:
+                pos = rd.sample(empty_position, 1)[0]
+                u_env.state[pos[0], pos[1]] = 1
                 empty_position.remove(pos)
             count += 1
 
             # - setting tasks
-            if rd.uniform(0,1) < sample_p:
-                pos = rd.sample(empty_position,1)[0]
-                u_env.state[pos[0],pos[1]] = np.inf
+            if rd.uniform(0, 1) < sample_p:
+                pos = rd.sample(empty_position, 1)[0]
+                u_env.state[pos[0], pos[1]] = np.inf
                 empty_position.remove(pos)
             count += 1
-    
+
         return u_env
 
     def render(self, mode='human'):
@@ -629,7 +639,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
                 self.viewer = rendering.Viewer(self.screen_width, self.screen_height)
                 self.draw_scale = (self.screen_width - (self.pad * self.screen_width)) / self.state.shape[0] \
                     if self.state.shape[0] > self.state.shape[1] else (self.screen_height - (
-                            self.pad * self.screen_height)) / self.state.shape[1]
+                        self.pad * self.screen_height)) / self.state.shape[1]
                 self.draw_start_x = self.screen_width / 2 - (self.draw_scale * self.state.shape[0]) / 2
                 self.draw_start_y = self.screen_height / 2 - (self.draw_scale * self.state.shape[1]) / 2
 
@@ -669,7 +679,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
             self.viewer.render(return_rgb_array=mode == 'rgb_array')
             import time
-            #time.sleep(1)
+            # time.sleep(1)
 
         return
 
@@ -884,8 +894,8 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
     def draw_vision(self, agent, transagent):
         vision = make_circleCv4(radius=self.draw_scale *
-                                       np.sqrt(self.state.shape[0]**2 + self.state.shape[1]**2) * agent.radius,
-                                angle= (2*np.pi) * agent.angle)
+                                       np.sqrt(self.state.shape[0] ** 2 + self.state.shape[1] ** 2) * agent.radius,
+                                angle=(2 * np.pi) * agent.angle)
         vision.set_color(self.colors['white'][0], self.colors['white'][1], self.colors['white'][2], 0.7)
         vision.add_attr(transagent)
         self.viewer.geoms.insert(1, vision)

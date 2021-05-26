@@ -48,7 +48,6 @@ class EstimationHistory: #Keeping the history of type and parameter estimations 
         self.action_probabilities.append(action_probability)
 ########################################################################################################################
 
-
 class ParameterEstimation:
 
     def __init__(self,  estimation_config):
@@ -67,7 +66,9 @@ class ParameterEstimation:
     def get_parameters_for_selected_type(self, selected_type):
 
         for te in self.estimation_histories:
+
             if selected_type == te.type:
+                
                 return te.estimation_history[-1]
 
     ####################################################################################################################
@@ -150,5 +151,4 @@ class ParameterEstimation:
                 return te.get_last_type_probability()
 
         return 0
-
 
