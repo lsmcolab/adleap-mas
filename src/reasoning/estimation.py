@@ -38,7 +38,12 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
         unknown_agent.smart_parameters['estimated_parameter'] = new_estimated_parameter
         for estimation_history in unknown_agent.smart_parameters['estimations'].estimation_histories:
             if set_of_estimators.type == estimation_history.type:
-                estimation_history.estimation_history.append(new_estimated_parameter)
+                print ('new_estimated_parameter')
+                print(new_estimated_parameter)
+                if new_estimated_parameter is None:
+                    estimation_history.estimation_history.append(estimation_history.estimation_history[-1])
+                else:
+                    estimation_history.estimation_history.append(new_estimated_parameter)
                 estimation_history.type_probability = type_probability
 
     'End of Process'
@@ -104,7 +109,8 @@ def level_foraging_uniform_estimation(env, just_finished_tasks):
 
     else:
         for agent in env.components['agents']:
-            process_oeata(agent, tmp_env, just_finished_tasks)
+            if agent != env.get_adhoc_agent():
+                process_oeata(agent, tmp_env, just_finished_tasks)
 
     return env
 

@@ -223,7 +223,6 @@ class OEATA_process:
         # sets are not empty
         estimated_parameter = None
         if level_values != [] :
-
             if self.oeata_config.parameter_calculation_mode == 'MEAN':
                 estimated_parameter = self.mean_estimation(level_values, angle_values, radius_values)
             if self.oeata_config.parameter_calculation_mode == 'MODE':
