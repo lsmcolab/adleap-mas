@@ -63,7 +63,7 @@ for i in range(rounds):
         for a in env.components['agents']:
             a.smart_parameters['last_completed_task'] = None
             a.smart_parameters['choose_task_state'] = env.copy()
-            if a.index != adhoc_agent:
+            if a.index != adhoc_agent.index:
                 param_estim = ParameterEstimation(estimation_config)
                 param_estim.estimation_initialisation()
                 oeata = OEATA_process(estimation_config, a)

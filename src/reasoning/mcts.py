@@ -28,10 +28,14 @@ def rollout(node,agent,max_depth,discount_factor):
 def get_state_with_estimated_values(state):
     adhoc_agent = state.get_adhoc_agent()
     for agent in state.components['agents']:
-        if agent.index != adhoc_agent:
+        if agent.index != adhoc_agent.index:
+            # print (agent.smart_parameters['estimations'].estimation_histories)
+            # print (agent.index)
+
             selected_type = agent.smart_parameters['estimations'].get_highest_type_probability()
             selected_parameter = agent.smart_parameters['estimations'].get_parameters_for_selected_type(selected_type)
-
+            # print (selected_type)
+            # print (selected_parameter)
             agent.type= selected_type
             agent.angle= selected_parameter.angle
             agent.radius = selected_parameter.radius

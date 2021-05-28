@@ -130,7 +130,6 @@ class ParameterEstimation:
 
         return selected_type
 
-
     ####################################################################################################################
     # Initialisation random values for parameters of each type and probability of actions in time step 0
     def estimation_initialisation(self):
@@ -145,7 +144,6 @@ class ParameterEstimation:
 
     ####################################################################################################################
     def get_last_selected_type_probability(self,selected_type):
-
         for te in self.estimation_histories:
             if selected_type == te.type:
                 return te.get_last_type_probability()
