@@ -68,7 +68,7 @@ class ParameterEstimation:
         for te in self.estimation_histories:
 
             if selected_type == te.type:
-                
+
                 return te.estimation_history[-1]
 
     ####################################################################################################################
