@@ -1,154 +1,175 @@
 import numpy as np
 import sklearn.linear_model
-from sklearn.metrics import log_loss
 import random
-
+from sklearn.metrics import log_loss
+from src.reasoning.fundamentals import Parameter
+from src.reasoning.parameter_estimation import ParameterEstimation
 import warnings
-
-# Uncomment below to remove warnings
-#warnings.filterwarnings("ignore")
-
-from src.reasoning import *
-
-def choose_types(type_prob,epsilon=0.1):
-    if(random.uniform(0,1)<epsilon):
-        return random.randint(0,len(type_prob)-1)
-    else:
-        return np.argmax(type_prob)
+warnings.filterwarnings("ignore")
+class AGAConfig:
+    def __init__(self,fundamental_values,grid_size=4,step_size=0.01,decay_step=0.999):
+        self.fundamental_values = fundamental_values
+        self.step_size = step_size
+        self.decay_step = decay_step
+        self.grid_size = int(grid_size)
 
 
-def AGA(env,agent,epsilon=0.1,step=0.01):
-    """ AGA estimation method
-    :param env: Observation state of the agent.
-    :param agent: The adhoc reasoning agent
-    :param epsilon: Exploration vs Exploitation trade off
-    :param step: Update step size
+class AGAprocess:
+    def __init__(self,aga_config,env):
+        self.config = aga_config
+        adhoc_agent = env.get_adhoc_agent()
+        self.adhoc_index = adhoc_agent.index
+        self.previous_state = env
 
-    agent.smart_parameters['agents_aga'] stores a prediction of each agent once it sees it. This prediction is updated
-    at each call . Each agent is identified by it's index.
-    """
-    # Storing a copy of the observation for next step
-    step_size = step
-    n = 2
-    types = ["l1","l2","l3","l4"]
-    # Initializing AGA predictions
-    if('agents_aga' not in agent.smart_parameters.keys()):
-        agent.smart_parameters['agents_aga'] = {}
-
-        agent.smart_parameters['prev_episode'] = env.copy()
-        return
-    if(env.episode == 1):
-        agent.smart_parameters['prev_episode'] = env.copy()
-        return
-    #
-    for agents in env.components['agents']:
-        if(agents.index not in agent.smart_parameters["agents_aga"].keys()):
-            agent.smart_parameters["agents_aga"][agents.index] = [agents.copy(),[1/len(types) for type in types]]
-            agent.smart_parameters["agents_aga"][agents.index][0].radius = random.uniform(0,1)
-            agent.smart_parameters["agents_aga"][agents.index][0].angle = random.uniform(0, 1)
-            agent.smart_parameters["agents_aga"][agents.index][0].level = random.uniform(0, 1)
-
-    # Grid of parameters
-    grid = []
-    for i in np.linspace(0,1,n):
-        for j in np.linspace(0,1,n):
-            for k in np.linspace(0,1,n):
-                grid.append([i,j,k])
+        for a in env.components['agents']:
+            if(a.index != adhoc_agent.index):
+                a.smart_parameters['estimations'] = ParameterEstimation(self.config)
+                a.smart_parameters['estimations'].estimation_initialisation()
+                a.smart_parameters['estimations'].normalize_type_probabilities()
 
 
-    for agents in env.components['agents']:
-        pred_action = []
-        index = agents.index
-        type_index = 0
-        actual_action = agents.next_action
-        pos = None
+    def update(self,env):
+        grid = []
+        for i in np.linspace(self.config.fundamental_values.radius_min,self.config.fundamental_values.radius_max,self.config.grid_size):
+            for j in np.linspace(self.config.fundamental_values.angle_min,self.config.fundamental_values.angle_max,self.config.grid_size):
+                for k in np.linspace(self.config.fundamental_values.level_min,self.config.fundamental_values.level_max,self.config.grid_size):
+                    grid.append([i,j,k])
 
-        old_env = agent.smart_parameters["prev_episode"]
-        #Meaningful updates occur only if an agent is visible in current and previous state.
-        for i in range(0,len(old_env.components["agents"])):
-            if(old_env.components["agents"][i].index == index):
-                pos = i
+        if(env.episode == 0):
+            self.previous_state = env
+            return
+        #################################################
 
-        if(pos == None):
-            continue
-        for [radius,angle,level] in grid:
-            env_copy = old_env.copy()
-            for copy_agents in env_copy.components['agents']:
-                if(copy_agents.index==index):
-                    copy_agents.radius = radius
-                    copy_agents.angle = angle
-                    copy_agents.level = level
-                    copy_agents.target = None
-                    type_index = choose_types(agent.smart_parameters["agents_aga"][index][1],epsilon)
-                    copy_agents.type = types[type_index]
+        for agents in env.components['agents']:
+            if(agents.index == self.adhoc_index):
+                continue
+            pred_action = []
+            index = agents.index
+            type_index = 0
+            actual_action = agents.next_action
+            pos = None
+            probability_update = 1
+            old_env = self.previous_state
+            # Meaningful updates occur only if an agent is visible in current and previous state.
+            for i in range(0, len(old_env.components["agents"])):
+                if (old_env.components["agents"][i].index == index):
+                    pos = i
+
+            if (pos == None):
+                continue
+            type = agents.smart_parameters['estimations'].get_highest_type_probability()
+
+            for [radius, angle, level] in grid:
+                env_copy = old_env.copy()
+                for copy_agents in env_copy.components['agents']:
+                    if (copy_agents.index == index):
+                        copy_agents.radius = radius
+                        copy_agents.angle = angle
+                        copy_agents.level = level
+                        copy_agents.target = None
+                        copy_agents.type = type
+                    elif(copy_agents.index == self.adhoc_index):
+                        pass
+
+                    else:
+                        copy_agents.radius = random.uniform(self.config.fundamental_values.radius_min, self.config.fundamental_values.radius_max)
+                        copy_agents.angle = random.uniform(self.config.fundamental_values.angle_min, self.config.fundamental_values.angle_max)
+                        copy_agents.level = random.uniform(self.config.fundamental_values.level_min, self.config.fundamental_values.level_max)
+                        copy_agents.target = None
+                        copy_agents.type = copy_agents.smart_parameters['estimations'].get_sampled_probability()
+
+                # Can use any step
+                env_copy.step(random.sample([i for i in range(0,env.action_space.n)],1)[0])
+                pred_action.append(env_copy.components['agents'][pos].next_action)
+
+
+                if (env_copy.components["agents"][pos].next_action == actual_action):
+                    probability_update *=  1.04
                 else:
-                    copy_agents.radius = random.uniform(0,1)
-                    copy_agents.angle = random.uniform(0,1)
-                    copy_agents.level = random.uniform(0,1)
-                    copy_agents.target=None
-                    copy_agents.type = random.sample(types, 1)[0]
+                    probability_update *=  0.96
 
-            # Can use any step
-            env_copy.step(0)
-            pred_action.append(env_copy.components['agents'][pos].next_action)
-            if(env_copy.components["agents"][pos].next_action==actual_action):
-                agent.smart_parameters["agents_aga"][index][1][type_index]*=0.905
-            else:
-                agent.smart_parameters["agents_aga"][index][1][type_index] *= 1.095
 
-            for t in range(0,len(types)):
-                agent.smart_parameters["agents_aga"][index][1][t] /= sum(agent.smart_parameters['agents_aga'][index][1])
-        y = [0.96 if (pred_action[i] == actual_action) else 0.01 for i in range(0,len(pred_action))]
-        model = sklearn.linear_model.LinearRegression()
-        model.fit(np.array(grid),y)
 
-        # Updating the predictions
-        agent.smart_parameters['agents_aga'][index][0].radius += step_size * model.coef_[0]
-        agent.smart_parameters['agents_aga'][index][0].angle += step_size * model.coef_[1]
-        agent.smart_parameters['agents_aga'][index][0].level += step_size * model.coef_[2]
+            y = [0.96 if (pred_action[i] == actual_action) else 0.01 for i in range(0, len(pred_action))]
 
-    agent.smart_parameters["prev_episode"] = env.copy()
+            current_estimate = agents.smart_parameters['estimations'].get_parameters_for_selected_type(type)
 
-    return
+            new_estimate = self.aga_update(grid,y,current_estimate,2)
 
-def print_stats(adhoc_agent):
-    if("agents_aga" not in adhoc_agent.smart_parameters.keys()):
-        return
-    stats = {}
-    for i in adhoc_agent.smart_parameters["agents_aga"].keys():
-        if(i==adhoc_agent.index):
-            continue
-        agent = adhoc_agent.smart_parameters["agents_aga"][i][0]
-        types = adhoc_agent.smart_parameters["agents_aga"][i][1]
-        stats[agent.index] = " Radius : " + str(agent.radius) + " Angle : " + str(agent.angle) + " Level : " + str(agent.level) \
-                                        + " Type : " + str(types) + " "
 
-    print(stats)
+            agents.smart_parameters['estimations'].update_type(type,new_estimate,probability_update)
+            self.config.step_size*=self.config.decay_step
+        #################################################
 
-# To calculate performance of AGA
-def AGA_loss(env,adhoc_agent):
-    if ("agents_aga" not in adhoc_agent.smart_parameters.keys()):
-        return -1
-
-    loss = {'radius':0,'angle':0,'level':0,'type':0}
-    total_agent = 0
-    one_hot = {"l1" : [1,0,0,0], "l2":[0,1,0,0], "l3":[0,0,1,0], "l4" : [0,0,0,1]}
-    for agent in env.components["agents"]:
-        if (agent.index == adhoc_agent.index or agent.index not in adhoc_agent.smart_parameters["agents_aga"].keys()):
-            continue
-        total_agent += 1
-        agent_pred = adhoc_agent.smart_parameters["agents_aga"][agent.index][0]
-        types = adhoc_agent.smart_parameters["agents_aga"][agent.index][1]
-        loss["radius"] += (agent.radius - agent_pred.radius)**2
-        loss["angle"] += (agent.angle - agent_pred.angle) ** 2
-        loss["level"] += (agent.level - agent_pred.level)**2
-        loss["type"] += log_loss(one_hot[agent.type],np.array(types))
-
-    if(total_agent == 0):
+        self.previous_state = env
         return
 
-    for key in ["radius","angle","level"]:
-        loss[key] = np.sqrt(loss[key]/total_agent)
-    loss["type"] = loss["type"]/total_agent
 
-    return loss
+    def aga_update(self,X,y,current_estimate,degree=2,univariate=True):
+        step_size = self.config.step_size
+
+        if not univariate:
+            reg = sklearn.linear_model.LinearRegression()
+
+            reg.fit(np.array(X), y)
+            gradient = reg.coef_
+
+            # f_coefficients = np.polynomial.polynomial.polyfit(x_train, y_train,
+            #                                                   deg=self.polynomial_degree, full=False)
+
+            current_estimate.radius += self.config.step_size * gradient[0]
+            current_estimate.angle += self.config.step_size * gradient[1]
+            current_estimate.level += self.config.step_size * gradient[2]
+            current_estimate.radius = np.clip(current_estimate.radius, self.config.fundamental_values.radius_min,
+                                              self.config.fundamental_values.radius_max)
+            current_estimate.angle = np.clip(current_estimate.angle, self.config.fundamental_values.angle_min,
+                                             self.config.fundamental_values.angle_max)
+            current_estimate.level = np.clip(current_estimate.level, self.config.fundamental_values.level_min,
+                                             self.config.fundamental_values.level_max)
+
+            # Not sure if we need this rounding
+            # new_parameters.level, new_parameters.angle, new_parameters.radius = \
+            #    round(new_parameters.level, 2), round(new_parameters.angle, 2), round(new_parameters.radius, 2)
+
+            return current_estimate
+
+        else:
+            parameter_estimate = []
+            min_max = []
+            min_max.append([self.config.fundamental_values.radius_min,self.config.fundamental_values.radius_max])
+            min_max.append([self.config.fundamental_values.angle_min,self.config.fundamental_values.angle_max])
+            min_max.append([self.config.fundamental_values.level_min,self.config.fundamental_values.level_max])
+            current_est = [current_estimate.radius,current_estimate.angle,current_estimate.level]
+
+            for i in range(3):
+
+                # Get current independent variables
+                current_parameter_set = [elem[i] for elem in X]
+
+                # Obtain the parameter in questions upper and lower limits
+                p_min = min_max[i][0]
+                p_max = min_max[i][1]
+
+                # Fit polynomial to the parameter being modelled
+                f_poly = np.polynomial.polynomial.polyfit(current_parameter_set, y,
+                                                          deg=degree, full=False)
+
+                f_poly = np.polynomial.polynomial.Polynomial(coef=f_poly, domain=[p_min, p_max], window=[p_min, p_max])
+
+                # get gradient
+                f_poly_deriv = f_poly.deriv()
+
+                current_estimation = current_est[i]
+
+                delta = f_poly_deriv(current_estimation)
+
+                # update parameter
+                new_estimation = current_estimation + step_size * delta
+
+                if (new_estimation < p_min):
+                    new_estimation = p_min
+                if (new_estimation > p_max):
+                    new_estimation = p_max
+
+                parameter_estimate.append(new_estimation)
+            return Parameter(parameter_estimate[0], parameter_estimate[1], parameter_estimate[2])

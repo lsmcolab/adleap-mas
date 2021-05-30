@@ -383,14 +383,16 @@ def do_action(env):
     for task in components['tasks']:
         if(task.completed):
             continue
+
+        # Agents should surround as well as see the task
         surround_agents = who_surround(env,task.position)
         see_index = [a.index for a in who_see(env,task.position)]
+        check = [1 if a.index in see_index else 0 for a in surround_agents]
 
 
-        total_level = sum([a.level for a in surround_agents if a.index in see_index])
-        if(total_level >= task.level and surround(task,env)):
+        if(surround(task,env) and 0 not in check):
             #info['action reward']+= len(see_agents)
-            print(total_level,[a.index for a in surround_agents],see_index,surround(task,env),task.index)
+           # print(total_level,[a.index for a in surround_agents],see_index,surround(task,env),task.index)
             task.completed=True
 
         for ag in env.components['agents']:

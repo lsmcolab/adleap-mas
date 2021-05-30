@@ -43,7 +43,7 @@ class EstimationHistory: #Keeping the history of type and parameter estimations 
             return 1.0/5  ##todo: change it to the len of types
 
     ####################################################################################################################
-    def update_estimation(self, estimation, action_probability):
+    def update_estimation(self, estimation, action_probability=0.2):
         self.estimation_history.append(estimation)
         self.action_probabilities.append(action_probability)
 ########################################################################################################################
@@ -66,9 +66,7 @@ class ParameterEstimation:
     def get_parameters_for_selected_type(self, selected_type):
 
         for te in self.estimation_histories:
-
             if selected_type == te.type:
-
                 return te.estimation_history[-1]
 
     ####################################################################################################################
@@ -148,5 +146,13 @@ class ParameterEstimation:
             if selected_type == te.type:
                 return te.get_last_type_probability()
 
+    ####################################################################################################################
+    def update_type(self,selected_type,estimation,probability):
+        for te in self.estimation_histories:
+            if selected_type == te.type:
+                te.estimation_history.append(estimation)
+                te.type_probability *= probability
+
+        self.normalize_type_probabilities()
         return 0
 

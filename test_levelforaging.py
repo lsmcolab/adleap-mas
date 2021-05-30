@@ -10,7 +10,10 @@ sys.path.append('src/reasoning')
 from src.reasoning.estimation import *
 from src.envs.LevelForagingEnv import LevelForagingEnv, Agent, Task
 from src.log import LogFile
+
 from src.reasoning.AGA import *
+from src.reasoning.ABU import *
+
 ###
 # Main
 ###
@@ -27,6 +30,9 @@ components = {
             Task('3',(5,5),1.0),
             Task('4',(8,8),1.0)]}
 
+
+#####################################################
+
 env = LevelForagingEnv((10,10),components,visibility='full')
 env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkblue',\
                         'entropy':'blue','mcts':'yellow','pomcp':'red'}
@@ -34,27 +40,35 @@ state = env.reset()
 log_file = LogFile(env)
 
 rounds = 1
-epsilon = 0.80
-decay = 0.99
-step_size = 0.01
-loss = []
-time_step = 0
 
-# OEATA Configuration
-estimation_mode = 'OEATA'
+# Estimator Configuration
+estimation_mode = 'ABU'
 oeata_parameter_calculation_mode = 'MEAN'   #  It can be MEAN, MODE, MEDIAN
 agent_types = ['l1','l2','l3']
 estimators_length = 100
 mutation_rate = 0.2
+aga,abu = None,None
+
+fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1, angle_min=0.1, level_max=1,
+                                       level_min=0, agent_types=agent_types, env_dim=[10, 10],
+                                       estimation_mode=estimation_mode)
+
+
+if estimation_mode == 'AGA':
+    estimation_config = AGAConfig(fundamental_values, 4, 0.01, 0.999)
+    aga = AGAprocess(estimation_config, state)
+
+elif estimation_mode == "ABU":
+    estimation_config = ABUConfig(fundamental_values, 4)
+    abu = ABUprocess(estimation_config, state)
+
+
 
 for i in range(rounds):
     state = env.reset()
     done = False
     adhoc_agent = env.get_adhoc_agent()
 
-    fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1, angle_min=0.1, level_max=1,
-                                           level_min=0, agent_types=agent_types, env_dim=[10,10],
-                                           estimation_mode=estimation_mode)
 
     if estimation_mode == 'OEATA':
         estimation_config = OeataConfig(estimators_length, oeata_parameter_calculation_mode, mutation_rate,
@@ -71,36 +85,36 @@ for i in range(rounds):
                 param_estim.learning_data = oeata
                 a.smart_parameters['estimations'] = param_estim
 
-    while not done and env.episode < 200:
+
+
+    while not done and env.episode < 10:
         # Rendering the environment
         # env.render()
-        # AGA(state, adhoc_agent,epsilon,step_size)
-        #
-        # # Uncomment for extra information
-        #
-        # #print_stats(adhoc_agent)
-        # l = AGA_loss(env,adhoc_agent)
-        # if (not l is None and time_step%100==0):
-        #     loss.append(l)
 
-        time_step+=1
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
         method = getattr(module, adhoc_agent.type+'_planning')
         if(adhoc_agent.type == "mcts" or adhoc_agent.type=="pomcp"):
             adhoc_agent.next_action, adhoc_agent.target = method(state,adhoc_agent)
-                                            # estimation_algorithm=level_foraging_uniform_estimation)
         else:
             adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
 
+        if(estimation_mode=='AGA'):
+            aga.update(env)
+        elif(estimation_mode == 'ABU'):
+            abu.update(env)
         # Step on environment
         state, reward, done, info = env.step(adhoc_agent.next_action)
         just_finished_tasks = info['just_finished_tasks']
+
         # just_finished_tasks.append(env.components['tasks'][1])
         # print (done)
+
         print (len(just_finished_tasks))
         log_file.write(env)
-        level_foraging_uniform_estimation(env, just_finished_tasks)
+
+#        if(estimation_mode == 'OEATA'):
+#            level_foraging_uniform_estimation(env, just_finished_tasks)
 
         print(env.components['tasks'][1].completed)
         print(env.components['tasks'][2].completed)
@@ -110,6 +124,8 @@ for i in range(rounds):
         # Verifying the end condition
         if done:
             break
-    epsilon = epsilon*decay
-    step_size = step_size*decay
+
+    for agent in env.components['agents']:
+        if(agent.index != adhoc_agent.index):
+            print(agent.smart_parameters['estimations'].estimation_histories[0].get_estimation_history())
     env.close()

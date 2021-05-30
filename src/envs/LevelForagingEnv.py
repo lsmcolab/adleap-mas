@@ -550,7 +550,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
                 for ob in components[element]:
                     self.state_set.initial_state[ob.position[0], ob.position[1]] = -1
 
-        # Setting the inital components
+        # Setting the initial components
         self.state_set.initial_components = self.copy_components(components)
 
     def copy(self):
