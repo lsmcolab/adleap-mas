@@ -5,7 +5,7 @@ import random as rd
 #####
 # LEADER 2 ALGORITHM FROM ALBRECHT AND STONE
 #####
-# returns the action to lead to furthest task
+# returns the action to lead to task with highest sum of coordinates
 def l2_planning(env, agent):
 	# 1. Choosing a target
 	if agent.target is None or env.state[agent.target[0],agent.target[1]] == -1:

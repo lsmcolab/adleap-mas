@@ -5,7 +5,6 @@ from gym import error, spaces
 from gym.envs.classic_control import rendering
 import numpy as np
 import random as rd
-
 from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
 """
@@ -338,7 +337,8 @@ def do_action(env):
         1: np.pi,  # West
         2: np.pi / 2,  # North
         3: 3 * np.pi / 2}  # South
-    info = {'action reward': 0}
+    info = {'action reward': 0, 'just_finished_tasks':[]}
+    just_finished_tasks = []
 
     for agent in components['agents']:
         if agent.next_action != 4:
@@ -390,24 +390,32 @@ def do_action(env):
         check = [1 if a.index in see_index else 0 for a in surround_agents]
 
 
-        if(surround(task,env) and 0 not in check):
+        if(surround(task,env) and agents_are_facing(task,surround_agents)):
             #info['action reward']+= len(see_agents)
-           # print(total_level,[a.index for a in surround_agents],see_index,surround(task,env),task.index)
+            #print([a.index for a in surround_agents],surround(task,env),task.index)
             task.completed=True
+            if(task.index not in [t.index for t in just_finished_tasks]):
+                just_finished_tasks.append(task)
 
         for ag in env.components['agents']:
             if task.completed and (ag.target == task.index or ag.target==task.position):
+                ag.smart_parameters['last_completed_task'] = task
+                ag.smart_parameters['choose_task_state'] = env.copy()
                 ag.target = None
                 ag.target_position = None
 
-    # c. reseting the task trying
+    # c. re-setting the task trying
     for task in components['tasks']:
         task.trying = []
 
     next_state = update(env)
     for task in components['tasks']:
-        task.move(env)
+        task.move_2(env)
+        # task.move_2(env) for random motion of the prey
+        # task.move(env) for task to maximise distance from the closest task.
     next_state = update(env)
+
+    info['just_finished_tasks'] = just_finished_tasks
     return next_state, info
 
 def surround(task,env):
@@ -416,6 +424,27 @@ def surround(task,env):
     for step in [(-1,0),(0,1),(1,0),(0,-1)]:
         new_pos = ((pos[0]+step[0]),(pos[1]+step[1]))
         if( 0<=new_pos[0]<w and 0<=new_pos[1]<h  and env.state[new_pos[0]][new_pos[1]]==0):
+            return False
+
+    return True
+
+def agents_are_facing(task,agents):
+    task_pos = task.position
+    for agent in agents:
+
+        # 2. Verifying if the agent can complete a task
+        if agent.direction == np.pi / 2:
+            pos = (agent.position[0], agent.position[1] + 1)
+        elif agent.direction == 3 * np.pi / 2:
+            pos = (agent.position[0], agent.position[1] - 1)
+        elif agent.direction == 0:
+            pos = (agent.position[0] + 1, agent.position[1])
+        elif agent.direction == np.pi:
+            pos = (agent.position[0] - 1, agent.position[1])
+
+        if pos != task_pos:
+            target_position = None
+            agent.target = target_position
             return False
 
     return True
@@ -438,6 +467,7 @@ def capture_transition(action, real_env):
     adhoc_agent_index = real_env.components['agents'].index(real_env.get_adhoc_agent())
 
     for i in range(len(real_env.components['agents'])):
+
         if i != adhoc_agent_index:
             # changing the perspective
             copied_env = real_env.copy()
@@ -468,11 +498,6 @@ def capture_transition(action, real_env):
     return next_state, info
 
 
-# The reward must keep be calculated keeping the partial observability in mind
-def reward(state, next_state):
-    return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
-    #return 0
-
 def get_target_non_adhoc_agent(agent, real_env):
     # agent planning
     adhoc_agent_index = real_env.components['agents'].index(real_env.get_adhoc_agent())
@@ -494,9 +519,16 @@ def get_target_non_adhoc_agent(agent, real_env):
         agent.next_action, agent.target = \
             real_env.action_space.sample(), None
 
-
     # retuning the results
     return agent.target
+
+
+
+# The reward must keep be calculated keeping the partial observability in mind
+def reward(state, next_state):
+    return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
+    #return 0
+
 
 # Changes the actual environment to partial observed environment
 def environment_transformation(copied_env):
@@ -713,6 +745,7 @@ class CaptureEnv(AdhocReasoningEnv):
             count += 1
 
         return u_env
+
 
     def render(self, mode='human'):
         # Render the environment to the screen

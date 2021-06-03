@@ -19,7 +19,7 @@ from src.reasoning.ABU import *
 ###
 components = {
     'agents':[
-        Agent(index='A',atype='mcts',position=(0,0),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+        Agent(index='A',atype='l1',position=(0,0),direction=np.pi/2,radius=0.1,angle=0.1,level=0.1),
         Agent(index='B',atype='l1',position=(0,9),direction=np.pi/2,radius=0.7,angle=0.5,level=1.0),
         Agent(index='C',atype='l2',position=(9,9),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
         Agent(index='D',atype='l3',position=(9,0),direction=np.pi/2,radius=0.6,angle=0.7,level=1.0),
@@ -37,7 +37,7 @@ env = LevelForagingEnv((10,10),components,visibility='full')
 env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkblue',\
                         'entropy':'blue','mcts':'yellow','pomcp':'red'}
 state = env.reset()
-log_file = LogFile(env)
+#log_file = LogFile(env)
 
 rounds = 1
 
@@ -56,11 +56,11 @@ fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1
 
 if estimation_mode == 'AGA':
     estimation_config = AGAConfig(fundamental_values, 4, 0.01, 0.999)
-    aga = AGAprocess(estimation_config, state)
+    aga = AGAprocess(estimation_config, env)
 
 elif estimation_mode == "ABU":
     estimation_config = ABUConfig(fundamental_values, 4)
-    abu = ABUprocess(estimation_config, state)
+    abu = ABUprocess(estimation_config, env)
 
 
 
@@ -89,7 +89,7 @@ for i in range(rounds):
 
     while not done and env.episode < 10:
         # Rendering the environment
-        # env.render()
+        env.render()
 
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
@@ -111,10 +111,10 @@ for i in range(rounds):
         # print (done)
 
         print (len(just_finished_tasks))
-        log_file.write(env)
+        #log_file.write(env)
 
-#        if(estimation_mode == 'OEATA'):
-#            level_foraging_uniform_estimation(env, just_finished_tasks)
+        if(estimation_mode == 'OEATA'):
+            level_foraging_uniform_estimation(env, just_finished_tasks)
 
         print(env.components['tasks'][1].completed)
         print(env.components['tasks'][2].completed)
@@ -125,7 +125,10 @@ for i in range(rounds):
         if done:
             break
 
-    for agent in env.components['agents']:
-        if(agent.index != adhoc_agent.index):
-            print(agent.smart_parameters['estimations'].estimation_histories[0].get_estimation_history())
+        for agent in env.components['agents']:
+            if(agent.index != adhoc_agent.index):
+                selected_type = agent.smart_parameters['estimations'].get_highest_type_probability()
+                selected_parameter = agent.smart_parameters['estimations'].get_parameters_for_selected_type(selected_type)
+                print(agent.index,selected_type,selected_parameter.radius,selected_parameter.angle,selected_parameter.level)
+
     env.close()

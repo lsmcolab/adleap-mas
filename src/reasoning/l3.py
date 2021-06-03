@@ -8,6 +8,7 @@ import random as rd
 # returns the action to lead to nearest task
 def l3_planning(env, agent):
 	# 1. Choosing a target
+
 	if agent.target is None or env.state[agent.target[0],agent.target[1]] == -1:
 		# - choosing a target
 		target_position = l3_choose_target(env.state, env.action_space, agent)
@@ -45,6 +46,7 @@ def l3_planning(env, agent):
 # returns the nearest visible task
 def l3_choose_target(state, action_space, agent):
 	# 0. Initialising the support variables
+	#print("l3 Agent {}".format(agent.index))
 	nearest_task_idx, min_distance = -1, np.inf
 
 	# 1. Searching for max distance item

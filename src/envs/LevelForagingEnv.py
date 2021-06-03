@@ -339,7 +339,7 @@ def do_action(env):
                 ag.smart_parameters['choose_task_state'] = env.copy()
                 ag.target = None
 
-    # c. reseting the task trying
+    # c. resetting the task trying
     for task in components['tasks']:
         task.trying = []
 

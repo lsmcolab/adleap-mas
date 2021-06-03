@@ -101,7 +101,8 @@ def level_foraging_uniform_estimation(env, just_finished_tasks):
                 agent.level = rd.uniform(0, 1)
                 agent.radius = rd.uniform(0, 1)
                 agent.angle = rd.uniform(0, 1)
-                agent.type = rd.sample(['l1', 'l2', 'l3', 'l4'], 1)[0]
+                # Removed 'l4' for now
+                agent.type = rd.sample(['l1', 'l2', 'l3'], 1)[0]
 
         for task in env.components['tasks']:
             if task.level is None:
@@ -113,6 +114,33 @@ def level_foraging_uniform_estimation(env, just_finished_tasks):
                 process_oeata(agent, tmp_env, just_finished_tasks)
 
     return env
+
+def capture_uniform_estimation(env, just_finished_tasks):
+    adhoc_agent = env.get_adhoc_agent()
+    tmp_env = deepcopy(env)
+    if env.visibility == 'partial':
+
+        for agent in env.components['agents']:
+            if agent != env.get_adhoc_agent() and \
+                    None in [agent.level, agent.radius, agent.angle, agent.type]:
+                process_oeata(agent, tmp_env, just_finished_tasks)
+                agent.level = rd.uniform(0, 1)
+                agent.radius = rd.uniform(0, 1)
+                agent.angle = rd.uniform(0, 1)
+                # Removed 'l4' for now
+                agent.type = rd.sample(['c1', 'c2', 'c3'], 1)[0]
+
+        for task in env.components['tasks']:
+            if task.level is None:
+                task.level = rd.uniform(0, 1)
+
+    else:
+        for agent in env.components['agents']:
+            if agent != env.get_adhoc_agent():
+                process_oeata(agent, tmp_env, just_finished_tasks)
+
+    return env
+
 
 
 def truco_uniform_estimation(env):

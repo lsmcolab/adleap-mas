@@ -21,10 +21,10 @@ from src.reasoning.ABU import *
 # TODO : fix pomcp black box .
 components = {
     'agents':[
-        Agent(index='A',atype="l3",position=(4,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
-        Agent(index='B',atype='l3',position=(5,4),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
-       Agent(index='C',atype='l3',position=(6,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
-        Agent(index='D',atype='l3',position=(5,6),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+        Agent(index='A',atype="c3",position=(4,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+        Agent(index='B',atype='c3',position=(5,4),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+       Agent(index='C',atype='c3',position=(6,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+        Agent(index='D',atype='c3',position=(5,6),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
     ],
     'adhoc_agent_index': 'A',
     'tasks':[Task('1',(0,0),1.0),
@@ -40,9 +40,9 @@ state = env.reset()
 log_file = LogFile(env)
 
 # Estimator Configuration
-estimation_mode = 'ABU'
+estimation_mode = 'AGA'
 oeata_parameter_calculation_mode = 'MEAN'   #  It can be MEAN, MODE, MEDIAN
-agent_types = ['l1','l2','l3']
+agent_types = ['c1','c2','c3']
 estimators_length = 100
 mutation_rate = 0.2
 aga,abu = None,None
@@ -65,9 +65,6 @@ elif estimation_mode == "ABU":
 
 
 rounds = 1
-epsilon = 0.80
-decay = 0.99
-step_size = 0.01
 loss = []
 time_step = 0
 for i in range(rounds):
@@ -91,13 +88,15 @@ for i in range(rounds):
                 a.smart_parameters['estimations'] = param_estim
 
 
-    while not done and env.episode < 30:
+    while not done and env.episode < 10:
         # Rendering the environment
-        env.render()
+
+        #env.render()
         print("Episode : ", env.episode)
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
         method = getattr(module, adhoc_agent.type+'_planning')
+
         if(adhoc_agent.type == "mcts" or adhoc_agent.type=="pomcp"):
             adhoc_agent.next_action, adhoc_agent.target = method(state,adhoc_agent)
         else:
@@ -108,20 +107,31 @@ for i in range(rounds):
         elif (estimation_mode == 'ABU'):
             abu.update(env)
 
+
         # Step on environment
         state, reward, done, info = env.step(adhoc_agent.next_action)
-        log_file.write(env)
+        just_finished_tasks = info['just_finished_tasks']
+
+
         # Verifying the end condition
+
+        if (estimation_mode == 'OEATA'):
+            capture_uniform_estimation(env, just_finished_tasks)
+
+        for agent in env.components['agents']:
+            print(agent.index)
+
+        print(env.components['tasks'][1].completed)
+        print(env.components['tasks'][2].completed)
+        print(env.components['tasks'][3].completed)
+        print(env.components['tasks'][0].completed)
+        print("---------------------------------")
+
         if done:
             break
-    epsilon = epsilon*decay
-    step_size = step_size*decay
 
-#    if (estimation_mode == 'OEATA'):
-#        level_foraging_uniform_estimation(env, just_finished_tasks)
 
-    for agent in env.components['agents']:
-        if(agent.index != adhoc_agent.index):
-            print(agent.smart_parameters['estimations'].estimation_histories[0].get_estimation_history())
+
+
 
     env.close()

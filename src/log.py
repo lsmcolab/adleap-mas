@@ -16,7 +16,7 @@ def lineno():
 ######
 class LogFile:
 
-    def __init__(self,env,*args,file_name=""):
+    def __init__(self,env=None,file_name="",*args):
         # self.filename = './results/'+ str(self.n_agents) + '_' +\
         #     str(self.n_tasks) + '_' + self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss") + '.csv'
         self.env = env
@@ -32,24 +32,26 @@ class LogFile:
 
     def write_header(self):
         with open(self.filename, 'w') as logfile:
-            logfile.write('Iteration;')
-            logfile.write('CPU Usage (%);')
-            logfile.write('Memory Usage (RAM) (%);')
-            logfile.write('Additional Info;')
-            for header in self.header:
+            #logfile.write('Iteration;')
+            #logfile.write('CPU Usage (%);')
+            #logfile.write('Memory Usage (RAM) (%);')
+            #logfile.write('Additional Info;')
+            for header in self.header[0]:
                 logfile.write(str(header)+";")
             logfile.write('\n')
 
-    def write(self,env,*args):
+    def write(self,env=None,*args):
+
         with open(self.filename, 'a') as logfile:
-            logfile.write(str(env.episode) + ';')
-            logfile.write(str(psutil.cpu_percent())+";")
-            logfile.write(str(psutil.virtual_memory()[2])+";")
-            logfile.write(str(env)+";")
+            #logfile.write(str(env.episode) + ';')
+            #logfile.write(str(psutil.cpu_percent())+";")
+            #logfile.write(str(psutil.virtual_memory()[2])+";")
+            #logfile.write(str(env)+";")
             if(not len(args) ==len(self.header)):
                 warnings.warn("Initialisation and writing have different sizes .")
 
-            for val in args:
+            for val in args[0]:
+
                 logfile.write(str(val)+";")
 
 

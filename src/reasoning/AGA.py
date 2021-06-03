@@ -22,6 +22,7 @@ class AGAprocess:
         self.previous_state = env
 
         for a in env.components['agents']:
+
             if(a.index != adhoc_agent.index):
                 a.smart_parameters['estimations'] = ParameterEstimation(self.config)
                 a.smart_parameters['estimations'].estimation_initialisation()
@@ -29,6 +30,7 @@ class AGAprocess:
 
 
     def update(self,env):
+
         grid = []
         for i in np.linspace(self.config.fundamental_values.radius_min,self.config.fundamental_values.radius_max,self.config.grid_size):
             for j in np.linspace(self.config.fundamental_values.angle_min,self.config.fundamental_values.angle_max,self.config.grid_size):
@@ -90,7 +92,7 @@ class AGAprocess:
 
 
 
-            y = [0.96 if (pred_action[i] == actual_action) else 0.01 for i in range(0, len(pred_action))]
+            y = [0.96 if (pred_action[i] == actual_action) else 0.04 for i in range(0, len(pred_action))]
 
             current_estimate = agents.smart_parameters['estimations'].get_parameters_for_selected_type(type)
 
@@ -98,6 +100,7 @@ class AGAprocess:
 
 
             agents.smart_parameters['estimations'].update_type(type,new_estimate,probability_update)
+
             self.config.step_size*=self.config.decay_step
         #################################################
 

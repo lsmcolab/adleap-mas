@@ -9,13 +9,14 @@ import logging
 
 logging.basicConfig(filename='parameter_estimation.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
 
-
+# For a single type
 ########################################################################################################################
 class EstimationHistory: #Keeping the history of type and parameter estimations for each agent
     def __init__(self, a_type):
         self.type = a_type  # Type for which we are doing estimation
         self.type_probability = 0
         self.type_probabilities = []
+        # Entries of this list are 'Parameters'
         self.estimation_history = []
 
     ####################################################################################################################
@@ -145,6 +146,12 @@ class ParameterEstimation:
         for te in self.estimation_histories:
             if selected_type == te.type:
                 return te.get_last_type_probability()
+    ####################################################################################################################
+    def get_probability_type(self,selected_type):
+        for te in self.estimation_histories:
+            if selected_type == te.type:
+                return te.type_probabilities[-1]
+
 
     ####################################################################################################################
     def update_type(self,selected_type,estimation,probability):
