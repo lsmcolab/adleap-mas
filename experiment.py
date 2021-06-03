@@ -193,9 +193,9 @@ for exp in range(1,args.num_exp+1):
             adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
 
         if (estimation_mode == 'AGA'):
-            aga.update(env)
+            aga.update(state)
         elif (estimation_mode == 'ABU'):
-            abu.update(env)
+            abu.update(state)
 
 
         # Step on environment

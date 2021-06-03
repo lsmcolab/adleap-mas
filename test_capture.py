@@ -37,7 +37,7 @@ env = CaptureEnv((10,10),components,visibility='full')
 env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkblue',\
                         'entropy':'blue','mcts':'yellow','pomcp':'red'}
 state = env.reset()
-log_file = LogFile(env)
+#log_file = LogFile(env)
 
 # Estimator Configuration
 estimation_mode = 'AGA'
@@ -103,9 +103,9 @@ for i in range(rounds):
             adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
 
         if (estimation_mode == 'AGA'):
-            aga.update(env)
+            aga.update(state)
         elif (estimation_mode == 'ABU'):
-            abu.update(env)
+            abu.update(state)
 
 
         # Step on environment

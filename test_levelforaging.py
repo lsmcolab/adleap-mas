@@ -100,9 +100,9 @@ for i in range(rounds):
             adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
 
         if(estimation_mode=='AGA'):
-            aga.update(env)
+            aga.update(state)
         elif(estimation_mode == 'ABU'):
-            abu.update(env)
+            abu.update(state)
         # Step on environment
         state, reward, done, info = env.step(adhoc_agent.next_action)
         just_finished_tasks = info['just_finished_tasks']
