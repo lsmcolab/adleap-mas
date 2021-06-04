@@ -21,16 +21,16 @@ from src.reasoning.ABU import *
 # TODO : fix pomcp black box .
 components = {
     'agents':[
-        Agent(index='A',atype="c3",position=(4,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
-        Agent(index='B',atype='c3',position=(5,4),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
-       Agent(index='C',atype='c3',position=(6,5),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
-        Agent(index='D',atype='c3',position=(5,6),direction=np.pi/2,radius=1.0,angle=1.0,level=1.0),
+        Agent(index='A',atype="mcts",position=(1,0),direction=3*np.pi/2,radius=0.6,angle=0.16,level=0.9),
+        Agent(index='B',atype='c1',position=(8,2),direction=3*np.pi/2,radius=0.40,angle=0.19,level=0.58),
+       Agent(index='C',atype='c3',position=(6,4),direction=3*np.pi/2,radius=0.15,angle=0.4,level=0.7),
+        Agent(index='D',atype='c1',position=(2,7),direction=np.pi,radius=0.11,angle=0.41,level=0.57),
     ],
     'adhoc_agent_index': 'A',
-    'tasks':[Task('1',(0,0),1.0),
-            Task('2',(9,9),1.0),
-            Task('3',(5,5),1.0),
-            Task('4',(8,8),1.0)]}
+    'tasks':[Task('1',(7,0),1.0),
+            Task('2',(8,1),1.0),
+            Task('3',(7,4),1.0),
+            Task('4',(5,6),1.0)]}
 
 env = CaptureEnv((10,10),components,visibility='full')
 # env = LevelForagingEnv((10,10),components,visibility='full')
@@ -54,11 +54,11 @@ fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1
 
 if estimation_mode == 'AGA':
     estimation_config = AGAConfig(fundamental_values, 4, 0.01, 0.999)
-    aga = AGAprocess(estimation_config, state)
+    aga = AGAprocess(estimation_config, env)
 
 elif estimation_mode == "ABU":
     estimation_config = ABUConfig(fundamental_values, 4)
-    abu = ABUprocess(estimation_config, state)
+    abu = ABUprocess(estimation_config, env)
 
 #################################################
 
@@ -121,11 +121,19 @@ for i in range(rounds):
         for agent in env.components['agents']:
             print(agent.index)
 
-        print(env.components['tasks'][1].completed)
+        print(env.components['tasks'][1].completed,len(just_finished_tasks))
         print(env.components['tasks'][2].completed)
         print(env.components['tasks'][3].completed)
         print(env.components['tasks'][0].completed)
         print("---------------------------------")
+
+        for agent in env.components['agents']:
+            if(agent.index != adhoc_agent.index):
+                selected_type = agent.smart_parameters['estimations'].get_highest_type_probability()
+                selected_parameter = agent.smart_parameters['estimations'].get_parameters_for_selected_type(selected_type)
+                print(agent.index,selected_type,selected_parameter.radius,selected_parameter.angle,selected_parameter.level)
+
+
 
         if done:
             break
