@@ -2,7 +2,6 @@ from copy import deepcopy
 from datetime import datetime
 import gym
 from gym import error, spaces
-from gym.envs.classic_control import rendering
 import numpy as np
 import random as rd
 import time
@@ -12,32 +11,41 @@ from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 """
     Rendering 
 """
-try:
-    import pyglet
-except ImportError as e:
-    raise ImportError('''
-    Cannot import pyglet.
-    HINT: you can install pyglet directly via 'pip install pyglet'.
-    But if you really just want to install all Gym dependencies and not have to think about it,
-    'pip install -e .[all]' or 'pip install gym[all]' will do it.
-    ''')
+turn_on_display = False
+if turn_on_display:
+    try:
+        from gym.envs.classic_control import rendering
+    except ImportError as e:
+        raise ImportError('''
+        Cannot import rendering
+        ''')
+        
+    try:
+        import pyglet
+    except ImportError as e:
+        raise ImportError('''
+        Cannot import pyglet.
+        HINT: you can install pyglet directly via 'pip install pyglet'.
+        But if you really just want to install all Gym dependencies and not have to think about it,
+        'pip install -e .[all]' or 'pip install gym[all]' will do it.
+        ''')
 
-try:
-    from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
-except ImportError as e:
-    raise ImportError('''
-    Error occurred while running `from pyglet.gl import *`
-    HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
-    If you're running on a server, you may need a virtual frame buffer; something like this should work:
-    'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
-    ''')
+    try:
+        from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
+    except ImportError as e:
+        raise ImportError('''
+        Error occurred while running `from pyglet.gl import *`
+        HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
+        If you're running on a server, you may need a virtual frame buffer; something like this should work:
+        'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
+        ''')
 
-class DrawText(rendering.Geom):
-    def __init__(self, label:pyglet.text.Label):
-        rendering.Geom.__init__(self)
-        self.label=label
-    def render1(self):
-        self.label.draw()
+    class DrawText(rendering.Geom):
+        def __init__(self, label:pyglet.text.Label):
+            rendering.Geom.__init__(self)
+            self.label=label
+        def render1(self):
+            self.label.draw()
 
 """
     Ad-hoc 

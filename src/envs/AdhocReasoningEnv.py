@@ -1,7 +1,6 @@
 from copy import deepcopy
 import gym
 from gym import error, spaces
-from gym.envs.classic_control import rendering
 from gym.utils import seeding
 from inspect import isfunction
 import numpy as np

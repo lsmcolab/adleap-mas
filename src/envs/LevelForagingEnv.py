@@ -1,7 +1,6 @@
 from datetime import datetime
 import gym
 from gym import error, spaces
-from gym.envs.classic_control import rendering
 import numpy as np
 import random as rd
 
@@ -10,62 +9,71 @@ from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 """
     Rendering 
 """
-try:
-    import pyglet
-except ImportError as e:
-    raise ImportError('''
-    Cannot import pyglet.
-    HINT: you can install pyglet directly via 'pip install pyglet'.
-    But if you really just want to install all Gym dependencies and not have to think about it,
-    'pip install -e .[all]' or 'pip install gym[all]' will do it.
-    ''')
+turn_on_display = False
+if turn_on_display:
+    try:
+        from gym.envs.classic_control import rendering
+    except ImportError as e:
+        raise ImportError('''
+        Cannot import rendering
+        ''')
 
-try:
-    from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
-except ImportError as e:
-    raise ImportError('''
-    Error occurred while running `from pyglet.gl import *`
-    HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
-    If you're running on a server, you may need a virtual frame buffer; something like this should work:
-    'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
-    ''')
+    try:
+        import pyglet
+    except ImportError as e:
+        raise ImportError('''
+        Cannot import pyglet.
+        HINT: you can install pyglet directly via 'pip install pyglet'.
+        But if you really just want to install all Gym dependencies and not have to think about it,
+        'pip install -e .[all]' or 'pip install gym[all]' will do it.
+        ''')
 
-
-class FilledPolygonCv4(rendering.Geom):
-    def __init__(self, v):
-        rendering.Geom.__init__(self)
-        self.v = v
-
-    def render1(self):
-        if len(self.v) == 4:
-            glBegin(GL_QUADS)
-        elif len(self.v) > 4:
-            glBegin(GL_POLYGON)
-        else:
-            glBegin(GL_TRIANGLES)
-        for p in self.v:
-            glVertex3f(p[0], p[1], 0)  # draw each vertex
-        glEnd()
-
-    def set_color(self, r, g, b, a):
-        self._color.vec4 = (r, g, b, a)
+    try:
+        from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
+    except ImportError as e:
+        raise ImportError('''
+        Error occurred while running `from pyglet.gl import *`
+        HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
+        If you're running on a server, you may need a virtual frame buffer; something like this should work:
+        'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
+        ''')
 
 
-def make_circleCv4(radius=10, angle=2 * np.pi, res=30):
-    points = [(0, 0)]
-    for i in range(res + 1):
-        ang = (np.pi - angle) / 2 + (angle * (i / res))
-        points.append((np.cos(ang) * radius, np.sin(ang) * radius))
-    return FilledPolygonCv4(points)
+    class FilledPolygonCv4(rendering.Geom):
+        def __init__(self, v):
+            rendering.Geom.__init__(self)
+            self.v = v
+
+        def render1(self):
+            if len(self.v) == 4:
+                glBegin(GL_QUADS)
+            elif len(self.v) > 4:
+                glBegin(GL_POLYGON)
+            else:
+                glBegin(GL_TRIANGLES)
+            for p in self.v:
+                glVertex3f(p[0], p[1], 0)  # draw each vertex
+            glEnd()
+
+        def set_color(self, r, g, b, a):
+            self._color.vec4 = (r, g, b, a)
 
 
-class DrawText(rendering.Geom):
-    def __init__(self, label: pyglet.text.Label):
-        rendering.Geom.__init__(self)
-        self.label = label
+    def make_circleCv4(radius=10, angle=2 * np.pi, res=30):
+        points = [(0, 0)]
+        for i in range(res + 1):
+            ang = (np.pi - angle) / 2 + (angle * (i / res))
+            points.append((np.cos(ang) * radius, np.sin(ang) * radius))
+        return FilledPolygonCv4(points)
 
-    def render1(self):
-        self.label.draw()
+
+    class DrawText(rendering.Geom):
+        def __init__(self, label: pyglet.text.Label):
+            rendering.Geom.__init__(self)
+            self.label = label
+
+        def render1(self):
+            self.label.draw()
 
 
 """
