@@ -24,7 +24,7 @@ parser.add_argument('--num_tasks',dest='tasks',default=4,type=int,help = "Number
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
 parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=100,help="number of episodes")
-parser.add_argument('--po',dest='po',type=bool,default=True,help="Partial Observability (T/F) ")
+parser.add_argument('--po',dest='po',type=bool,default=True,help="Partial Observability (True/False) ")
 args = parser.parse_args()
 
 
@@ -121,105 +121,104 @@ def list_stats(env):
     return stats
 
 
-for exp in range(1,args.num_exp+1):
-    fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,exp)
-    log_file = LogFile(None,fname,header)
+fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
+log_file = LogFile(None,fname,header)
 
-    if(args.env=="LevelForagingEnv"):
-        # Estimator Configuration
-        estimation_mode = args.estimation
-        oeata_parameter_calculation_mode = 'MEAN'  # It can be MEAN, MODE, MEDIAN
-        agent_types = ['l1', 'l2', 'l3']
-        estimators_length = 100
-        mutation_rate = 0.2
-        aga, abu = None, None
+if(args.env=="LevelForagingEnv"):
+    # Estimator Configuration
+    estimation_mode = args.estimation
+    oeata_parameter_calculation_mode = 'MEAN'  # It can be MEAN, MODE, MEDIAN
+    agent_types = ['l1', 'l2', 'l3']
+    estimators_length = 100
+    mutation_rate = 0.2
+    aga, abu = None, None
 
-        fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1, angle_min=0.1, level_max=1,
-                                               level_min=0, agent_types=agent_types, env_dim=[args.dim, args.dim],
-                                               estimation_mode=estimation_mode)
+    fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1, angle_min=0.1, level_max=1,
+                                            level_min=0, agent_types=agent_types, env_dim=[args.dim, args.dim],
+                                            estimation_mode=estimation_mode)
 
-    else:
-        # Estimator Configuration
-        estimation_mode = args.estimation
-        oeata_parameter_calculation_mode = 'MEAN'  # It can be MEAN, MODE, MEDIAN
-        agent_types = ['c1', 'c2', 'c3']
-        estimators_length = 100
-        mutation_rate = 0.2
-        aga, abu = None, None
+else:
+    # Estimator Configuration
+    estimation_mode = args.estimation
+    oeata_parameter_calculation_mode = 'MEAN'  # It can be MEAN, MODE, MEDIAN
+    agent_types = ['c1', 'c2', 'c3']
+    estimators_length = 100
+    mutation_rate = 0.2
+    aga, abu = None, None
 
-        fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1, angle_min=0.1, level_max=1,
-                                               level_min=0, agent_types=agent_types, env_dim=[args.dim, args.dim],
-                                               estimation_mode=estimation_mode)
+    fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1, angle_min=0.1, level_max=1,
+                                            level_min=0, agent_types=agent_types, env_dim=[args.dim, args.dim],
+                                            estimation_mode=estimation_mode)
 
-    env = create_env(args.dim,args.agents,args.tasks)
-    state = env.reset()
+env = create_env(args.dim,args.agents,args.tasks)
+state = env.reset()
 
 # 4 is the dimension of the grid
-    if estimation_mode == 'AGA':
+if estimation_mode == 'AGA':
 
-        estimation_config = AGAConfig(fundamental_values, 4, 0.01, 0.999)
-        aga = AGAprocess(estimation_config, env)
+    estimation_config = AGAConfig(fundamental_values, 4, 0.01, 0.999)
+    aga = AGAprocess(estimation_config, env)
 
-    elif estimation_mode == "ABU":
-        estimation_config = ABUConfig(fundamental_values, 4)
-        abu = ABUprocess(estimation_config, env)
+elif estimation_mode == "ABU":
+    estimation_config = ABUConfig(fundamental_values, 4)
+    abu = ABUprocess(estimation_config, env)
 
-    adhoc_agent = env.get_adhoc_agent()
+adhoc_agent = env.get_adhoc_agent()
 
-    if estimation_mode == 'OEATA':
-        estimation_config = OeataConfig(estimators_length, oeata_parameter_calculation_mode, mutation_rate,
-                                                 fundamental_values)
+if estimation_mode == 'OEATA':
+    estimation_config = OeataConfig(estimators_length, oeata_parameter_calculation_mode, mutation_rate,
+                                                fundamental_values)
 
-        for a in env.components['agents']:
-            a.smart_parameters['last_completed_task'] = None
-            a.smart_parameters['choose_task_state'] = env.copy()
-            if a.index != adhoc_agent.index:
-                param_estim = ParameterEstimation(estimation_config)
-                param_estim.estimation_initialisation()
-                oeata = OEATA_process(estimation_config, a)
-                oeata.initialisation(a.position, a.direction, a.radius,a.angle,a.level, env)
-                param_estim.learning_data = oeata
-                a.smart_parameters['estimations'] = param_estim
+    for a in env.components['agents']:
+        a.smart_parameters['last_completed_task'] = None
+        a.smart_parameters['choose_task_state'] = env.copy()
+        if a.index != adhoc_agent.index:
+            param_estim = ParameterEstimation(estimation_config)
+            param_estim.estimation_initialisation()
+            oeata = OEATA_process(estimation_config, a)
+            oeata.initialisation(a.position, a.direction, a.radius,a.angle,a.level, env)
+            param_estim.learning_data = oeata
+            a.smart_parameters['estimations'] = param_estim
 
-    done = False
-    while not done and env.episode < args.num_episodes:
-        # Rendering the environment
-        # env.render()
+done = False
+while not done and env.episode < args.num_episodes:
+    # Rendering the environment
+    # env.render()
 
-        # Main Agent taking an action
-        module = __import__(adhoc_agent.type)
-        method = getattr(module, adhoc_agent.type+'_planning')
+    # Main Agent taking an action
+    module = __import__(adhoc_agent.type)
+    method = getattr(module, adhoc_agent.type+'_planning')
 
-        if(adhoc_agent.type == "mcts" or adhoc_agent.type=="pomcp"):
-            adhoc_agent.next_action, adhoc_agent.target = method(state,adhoc_agent)
+    if(adhoc_agent.type == "mcts" or adhoc_agent.type=="pomcp"):
+        adhoc_agent.next_action, adhoc_agent.target = method(state,adhoc_agent)
+    else:
+        adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
+
+    if (estimation_mode == 'AGA'):
+        aga.update(state)
+    elif (estimation_mode == 'ABU'):
+        abu.update(state)
+
+
+    # Step on environment
+    state, reward, done, info = env.step(adhoc_agent.next_action)
+    just_finished_tasks = info['just_finished_tasks']
+
+    # Verifying the end condition
+
+    if (estimation_mode == 'OEATA'):
+        if(args.env=="LevelForagingEnv"):
+            level_foraging_uniform_estimation(env, just_finished_tasks)
         else:
-            adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
 
-        if (estimation_mode == 'AGA'):
-            aga.update(state)
-        elif (estimation_mode == 'ABU'):
-            abu.update(state)
+            capture_uniform_estimation(env,just_finished_tasks)
 
+    stats = list_stats(env)
+    print(stats)
+    log_file.write(None, stats)
 
-        # Step on environment
-        state, reward, done, info = env.step(adhoc_agent.next_action)
-        just_finished_tasks = info['just_finished_tasks']
-
-        # Verifying the end condition
-
-        if (estimation_mode == 'OEATA'):
-            if(args.env=="LevelForagingEnv"):
-                level_foraging_uniform_estimation(env, just_finished_tasks)
-            else:
-
-                capture_uniform_estimation(env,just_finished_tasks)
-
-        stats = list_stats(env)
-        print(stats)
-        log_file.write(None, stats)
-
-        if done:
-            break
+    if done:
+        break
 
 
 

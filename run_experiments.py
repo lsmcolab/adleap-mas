@@ -6,24 +6,41 @@ import time
 # FUNCTIONS       
 ###
 # python cmd format functions               
-def get_python_cmd(env, estimation, num_agents, num_tasks, dim, num_exp, num_episodes,po):
+def get_python_cmd(env, estimation, num_agents, num_tasks, dim, num_exp, num_episodes):
     return 'python experiment.py'+\
      ' --env ' + str(env) + ' --estimation ' + str(estimation) + \
      ' --num_agents ' + str(num_agents) + ' --num_tasks ' + str(num_tasks) + \
-     ' --dim ' + str(dim) + ' --num_exp ' + str(num_exp) + ' --num_episodes ' + str(num_episodes) + ' --po ' + str(po)
-
-python_cmd = get_python_cmd(env = 'CaptureEnv', estimation = 'AGA', num_agents = 5,
-                             num_tasks = 10, dim = 20, num_exp = 1, num_episodes = 200,po=False)
+     ' --dim ' + str(dim) + ' --num_exp ' + str(num_exp) + ' --num_episodes ' + str(num_episodes) + \
+     ' --po False' 
 
 ###
 # SCRIPT
 ###
-# writing the bash file                     
-with open("run.sh", "w") as bashfile:           
-    bashfile.write("#$ -S /bin/bash\n\n")       
-    bashfile.write("#$ -l h_vmem=4G\n")         
-    bashfile.write("#$ -l h_rt=00:10:00\n\n")  
-    bashfile.write("source /etc/profile\n")     
-    bashfile.write("module add anaconda3/wmlce\n")                              
-    bashfile.write("source activate wmlce_env\n\n")                             
-    bashfile.write(python_cmd)
+num_exp = 20
+num_episodes = 200
+for experiment_id in range(num_exp):
+    for num_agents in [7]:#5,7,10
+        for num_tasks in [20]:#20,25,30
+            for dim in [20]:#20,25,30
+                for estimation in ['AGA','ABU',"OEATA"]:
+                        # defining the experiment parameters
+                        python_cmd = get_python_cmd('CaptureEnv',estimation,num_agents,
+                                    num_tasks,dim,experiment_id,num_episodes)
+
+                        # writing the bash file                     
+                        with open("run.sh", "w") as bashfile:           
+                            bashfile.write("#$ -S /bin/bash\n\n")
+                            bashfile.write("#$ -N "+estimation+"_a"+str(num_agents)+\
+                                    "_i"+str(num_tasks)+"_d"+str(dim)+"_e"+str(experiment_id))       
+                            bashfile.write("#$ -l h_vmem=4G\n")         
+                            bashfile.write("#$ -l h_rt=00:10:00\n\n")  
+                            bashfile.write("source /etc/profile\n")     
+                            bashfile.write("module add anaconda3/wmlce\n")                              
+                            bashfile.write("source activate wmlce_env\n\n")                             
+                            bashfile.write(python_cmd)
+
+                        time.sleep(0.25)
+
+                        # submiting the job
+                        os.system("qsub -o qsuboutput -e qsuberror run.sh")
+                        time.sleep(0.25)
