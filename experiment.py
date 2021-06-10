@@ -18,7 +18,7 @@ from src.reasoning.ABU import *
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='AGA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 4, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=4,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
@@ -53,7 +53,7 @@ def create_env(dim,num_agents,num_tasks):
         Agent(index=str(0), atype='mcts',
               position=(random_pos[0] % dim, int(random_pos[0] / dim)),
               direction=random.sample(direction, 1)[0], radius=random.uniform(0.1, 1), angle=random.uniform(0.1, 1),
-              level=random.uniform(0.1, 1)))
+              level=random.uniform(0, 1)))
 
     for i in range(1, num_agents + num_tasks):
         if (i < num_agents):
@@ -202,11 +202,12 @@ for exp in range(1,args.num_exp+1):
         state, reward, done, info = env.step(adhoc_agent.next_action)
         just_finished_tasks = info['just_finished_tasks']
         # Verifying the end condition
-
+        print(len(just_finished_tasks))
         if (estimation_mode == 'OEATA'):
             if(args.env=="LevelForagingEnv"):
                 level_foraging_uniform_estimation(env, just_finished_tasks)
             else:
+                print(1)
                 capture_uniform_estimation(env,just_finished_tasks)
 
         stats = list_stats(env)

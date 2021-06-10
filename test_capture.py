@@ -40,7 +40,7 @@ state = env.reset()
 #log_file = LogFile(env)
 
 # Estimator Configuration
-estimation_mode = 'AGA'
+estimation_mode = 'OEATA'
 oeata_parameter_calculation_mode = 'MEAN'   #  It can be MEAN, MODE, MEDIAN
 agent_types = ['c1','c2','c3']
 estimators_length = 100
