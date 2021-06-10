@@ -23,7 +23,7 @@ parser.add_argument('--num_agents',dest='agents', default = 4, type = int, help 
 parser.add_argument('--num_tasks',dest='tasks',default=4,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
-parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=10,help="number of episodes")
+parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=100,help="number of episodes")
 args = parser.parse_args()
 
 
@@ -181,7 +181,7 @@ for exp in range(1,args.num_exp+1):
     done = False
     while not done and env.episode < args.num_episodes:
         # Rendering the environment
-#        env.render()
+        # env.render()
 
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
