@@ -9,72 +9,6 @@ from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 """
     Rendering 
 """
-turn_on_display = False
-if turn_on_display:
-    try:
-        from gym.envs.classic_control import rendering
-    except ImportError as e:
-        raise ImportError('''
-        Cannot import rendering
-        ''')
-
-    try:
-        import pyglet
-    except ImportError as e:
-        raise ImportError('''
-        Cannot import pyglet.
-        HINT: you can install pyglet directly via 'pip install pyglet'.
-        But if you really just want to install all Gym dependencies and not have to think about it,
-        'pip install -e .[all]' or 'pip install gym[all]' will do it.
-        ''')
-
-    try:
-        from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
-    except ImportError as e:
-        raise ImportError('''
-        Error occurred while running `from pyglet.gl import *`
-        HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
-        If you're running on a server, you may need a virtual frame buffer; something like this should work:
-        'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
-        ''')
-
-
-    class FilledPolygonCv4(rendering.Geom):
-        def __init__(self, v):
-            rendering.Geom.__init__(self)
-            self.v = v
-
-        def render1(self):
-            if len(self.v) == 4:
-                glBegin(GL_QUADS)
-            elif len(self.v) > 4:
-                glBegin(GL_POLYGON)
-            else:
-                glBegin(GL_TRIANGLES)
-            for p in self.v:
-                glVertex3f(p[0], p[1], 0)  # draw each vertex
-            glEnd()
-
-        def set_color(self, r, g, b, a):
-            self._color.vec4 = (r, g, b, a)
-
-
-    def make_circleCv4(radius=10, angle=2 * np.pi, res=30):
-        points = [(0, 0)]
-        for i in range(res + 1):
-            ang = (np.pi - angle) / 2 + (angle * (i / res))
-            points.append((np.cos(ang) * radius, np.sin(ang) * radius))
-        return FilledPolygonCv4(points)
-
-
-    class DrawText(rendering.Geom):
-        def __init__(self, label: pyglet.text.Label):
-            rendering.Geom.__init__(self)
-            self.label = label
-
-        def render1(self):
-            self.label.draw()
-
 
 """
     Ad-hoc 
@@ -525,10 +459,10 @@ class LevelForagingEnv(AdhocReasoningEnv):
         4: 'Load'
     }
 
-    def __init__(self, shape, components, visibility='full'):
+    def __init__(self, shape, components, visibility='full',display=False):
         self.viewer = None
         self.visibility = visibility
-
+        self.display = display
         # Defining the Ad-hoc Reasoning Env parameters
         state_set = StateSet(spaces.Box( \
             low=-1, high=np.inf, shape=shape, dtype=np.int64), end_condition)
@@ -638,6 +572,70 @@ class LevelForagingEnv(AdhocReasoningEnv):
         return u_env
 
     def render(self, mode='human'):
+        if not self.display:
+            return
+
+        try:
+            global rendering
+            from gym.envs.classic_control import rendering
+
+        except ImportError as e:
+            raise ImportError('''
+            Cannot import rendering
+            ''')
+        try:
+            global pyglet
+            import pyglet
+        except ImportError as e:
+            raise ImportError('''
+            Cannot import pyglet.
+            HINT: you can install pyglet directly via 'pip install pyglet'.
+            But if you really just want to install all Gym dependencies and not have to think about it,
+            'pip install -e .[all]' or 'pip install gym[all]' will do it.
+            ''')
+
+        try:
+            global glBegin,glEnd,GL_QUADS,GL_POLYGON,GL_TRIANGLES,glVertex3f
+            from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
+        except ImportError as e:
+            raise ImportError('''
+            Error occurred while running `from pyglet.gl import *`
+            HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
+            If you're running on a server, you may need a virtual frame buffer; something like this should work:
+            'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
+            ''')
+        global FilledPolygonCv4
+        class FilledPolygonCv4(rendering.Geom):
+            def __init__(self, v):
+                rendering.Geom.__init__(self)
+                self.v = v
+
+            def render1(self):
+                if len(self.v) == 4:
+                    glBegin(GL_QUADS)
+                elif len(self.v) > 4:
+                    glBegin(GL_POLYGON)
+                else:
+                    glBegin(GL_TRIANGLES)
+                for p in self.v:
+                    glVertex3f(p[0], p[1], 0)  # draw each vertex
+                glEnd()
+
+            def set_color(self, r, g, b, a):
+                self._color.vec4 = (r, g, b, a)
+
+
+        global DrawText
+        class DrawText(rendering.Geom):
+            def __init__(self, label: pyglet.text.Label):
+                rendering.Geom.__init__(self)
+                self.label = label
+
+            def render1(self):
+                self.label.draw()
+
+
+
         # Render the environment to the screen
         adhoc_agent_index = self.components['agents'].index(self.get_adhoc_agent())
         if self.state is not None:
@@ -687,7 +685,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
             self.viewer.render(return_rgb_array=mode == 'rgb_array')
             import time
-            # time.sleep(1)
+            time.sleep(1)
 
         return
 
@@ -919,3 +917,11 @@ class LevelForagingEnv(AdhocReasoningEnv):
             x=self.draw_start_x, y=(1 + self.state.shape[1]) * self.draw_scale,
             anchor_x='left', anchor_y='center', color=(0, 0, 0, 255)))
         self.viewer.add_geom(progress_label)
+
+
+def make_circleCv4(radius=10, angle=2 * np.pi, res=30):
+    points = [(0, 0)]
+    for i in range(res + 1):
+        ang = (np.pi - angle) / 2 + (angle * (i / res))
+        points.append((np.cos(ang) * radius, np.sin(ang) * radius))
+    return FilledPolygonCv4(points)

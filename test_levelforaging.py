@@ -33,7 +33,7 @@ components = {
 
 #####################################################
 
-env = LevelForagingEnv((10,10),components,visibility='full')
+env = LevelForagingEnv((10,10),components,visibility='full',display=True)
 env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkblue',\
                         'entropy':'blue','mcts':'yellow','pomcp':'red'}
 state = env.reset()

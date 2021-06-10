@@ -32,7 +32,7 @@ components = {
             Task('3',(7,4),1.0),
             Task('4',(5,6),1.0)]}
 
-env = CaptureEnv((10,10),components,visibility='full')
+env = CaptureEnv((10,10),components,visibility='full',display=False)
 # env = LevelForagingEnv((10,10),components,visibility='full')
 env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkblue',\
                         'entropy':'blue','mcts':'yellow','pomcp':'red'}
@@ -40,7 +40,7 @@ state = env.reset()
 #log_file = LogFile(env)
 
 # Estimator Configuration
-estimation_mode = 'OEATA'
+estimation_mode = 'AGA'
 oeata_parameter_calculation_mode = 'MEAN'   #  It can be MEAN, MODE, MEDIAN
 agent_types = ['c1','c2','c3']
 estimators_length = 100
@@ -72,6 +72,7 @@ for i in range(rounds):
     done = False
     adhoc_agent = env.get_adhoc_agent()
 
+
     if estimation_mode == 'OEATA':
         estimation_config = OeataConfig(estimators_length, oeata_parameter_calculation_mode, mutation_rate,
                                                  fundamental_values)
@@ -91,7 +92,7 @@ for i in range(rounds):
     while not done and env.episode < 10:
         # Rendering the environment
 
-        #env.render()
+        env.render()
         print("Episode : ", env.episode)
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
