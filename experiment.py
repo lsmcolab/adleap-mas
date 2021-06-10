@@ -24,6 +24,7 @@ parser.add_argument('--num_tasks',dest='tasks',default=4,type=int,help = "Number
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
 parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=100,help="number of episodes")
+parser.add_argument('--po',dest='po',type=bool,default=True,help="Partial Observability (T/F) ")
 args = parser.parse_args()
 
 
@@ -48,12 +49,14 @@ def create_env(dim,num_agents,num_tasks):
     random_pos = random.sample([i for i in range(0, dim * dim)], num_agents + num_tasks)
 
     agents, tasks = [], []
+    angle_adhoc = random.uniform(0.1, 1) if args.po else 1
+    radius_adhoc = random.uniform(0.1,1) if args.po else 1
 
     agents.append(
         Agent(index=str(0), atype='mcts',
               position=(random_pos[0] % dim, int(random_pos[0] / dim)),
-              direction=random.sample(direction, 1)[0], radius=random.uniform(0.1, 1), angle=random.uniform(0.1, 1),
-              level=random.uniform(0, 1)))
+                direction=random.sample(direction, 1)[0], radius=radius_adhoc, angle=angle_adhoc,
+                level=random.uniform(0, 1)))
 
     for i in range(1, num_agents + num_tasks):
         if (i < num_agents):
@@ -201,13 +204,14 @@ for exp in range(1,args.num_exp+1):
         # Step on environment
         state, reward, done, info = env.step(adhoc_agent.next_action)
         just_finished_tasks = info['just_finished_tasks']
+
         # Verifying the end condition
-        print(len(just_finished_tasks))
+
         if (estimation_mode == 'OEATA'):
             if(args.env=="LevelForagingEnv"):
                 level_foraging_uniform_estimation(env, just_finished_tasks)
             else:
-                print(1)
+
                 capture_uniform_estimation(env,just_finished_tasks)
 
         stats = list_stats(env)

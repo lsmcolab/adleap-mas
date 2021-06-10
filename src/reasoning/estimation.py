@@ -7,7 +7,7 @@ from src.reasoning.OEATA import HistoryElement
 def process_oeata(unknown_agent, current_state, just_finished_tasks):
     # 1. Initialising the parameter variables
     po = False
-    cts_agent = deepcopy(unknown_agent)
+    cts_agent = unknown_agent.copy()
     # if not po:
     #     cts_agent = deepcopy(l_agent.visible_agents[unknown_agent.index])
     # else:
@@ -91,7 +91,7 @@ def normalize_type_probabilities(estimations):
 
 def level_foraging_uniform_estimation(env, just_finished_tasks):
     adhoc_agent = env.get_adhoc_agent()
-    tmp_env = deepcopy(env)
+    tmp_env = env.copy()
     if env.visibility == 'partial':
 
         for agent in env.components['agents']:
@@ -117,7 +117,7 @@ def level_foraging_uniform_estimation(env, just_finished_tasks):
 
 def capture_uniform_estimation(env, just_finished_tasks):
     adhoc_agent = env.get_adhoc_agent()
-    tmp_env = deepcopy(env)
+    tmp_env = env.copy()
     if env.visibility == 'partial':
 
         for agent in env.components['agents']:
