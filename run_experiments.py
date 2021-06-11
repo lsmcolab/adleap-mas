@@ -29,9 +29,7 @@ for experiment_id in range(num_exp):
 
                         # writing the bash file                     
                         with open("run.sh", "w") as bashfile:           
-                            bashfile.write("#$ -S /bin/bash\n\n")
-                            bashfile.write("#$ -N "+estimation+"_a"+str(num_agents)+\
-                                    "_i"+str(num_tasks)+"_d"+str(dim)+"_e"+str(experiment_id))       
+                            bashfile.write("#$ -S /bin/bash\n\n")      
                             bashfile.write("#$ -l h_vmem=4G\n")         
                             bashfile.write("#$ -l h_rt=00:10:00\n\n")  
                             bashfile.write("source /etc/profile\n")     
@@ -42,5 +40,9 @@ for experiment_id in range(num_exp):
                         time.sleep(0.25)
 
                         # submiting the job
-                        os.system("qsub -o qsuboutput -e qsuberror run.sh")
+                        os.system("qsub -o qsuboutput/"+\
+                            str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+\
+                            "d"+str(dim)+"e"+str(experiment_id)+".txt -e qsuberror/"+\
+                            str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+\
+                            "d"+str(dim)+"e"+str(experiment_id)+".txt  run.sh")
                         time.sleep(0.25)

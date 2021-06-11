@@ -33,6 +33,8 @@ class Parameter:
         self.angle = float(angle)
         self.radius = float(radius)
 
+    def show(self):
+        print(self.level,self.angle,self.radius)
 
 ########################################################################################################################
 
