@@ -38,17 +38,12 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
                     estimation_history.estimation_history.append(new_estimated_parameter)
                 estimation_history.type_probability = type_probability
 
-<<<<<<< HEAD
     # 'End of Process'
     # te.type_probability = pf_type_probability
     #
     #     # d. If a load action was performed, restart the estimation process
     # todo: change unknown_agent to cts_agent. What is their differences
     # if unknown_agent.next_action == 4 and unknown_agent.is_item_nearby(current_state.items) != -1:
-=======
-    'End of Process'
-
->>>>>>> 948dac725416a8a010b6ed5acdfed03f473d721c
     if unknown_agent.smart_parameters['last_completed_task'] != None:
         if unknown_agent.smart_parameters['choose_task_state'] != None:
             hist = HistoryElement(unknown_agent.smart_parameters['choose_task_state'].copy()) \
@@ -56,15 +51,10 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
             unknown_agent.smart_parameters['estimations'].learning_data.history_of_tasks.append(hist)
 
         unknown_agent.smart_parameters['choose_task_state'] = current_state.copy()
-<<<<<<< HEAD
         # unknown_agent.choose_target_pos = unknown_agent.get_position()
         # unknown_agent.choose_target_direction = unknown_agent.direction
     unknown_agent.smart_parameters['estimations'].normalize_type_probabilities()
     return unknown_agent
-=======
-
-    normalize_type_probabilities(unknown_agent.smart_parameters['estimations'])
->>>>>>> 948dac725416a8a010b6ed5acdfed03f473d721c
 
 
 def process_pomcp_estimation(env):
