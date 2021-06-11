@@ -42,7 +42,7 @@ state = env.reset()
 rounds = 1
 
 # Estimator Configuration
-estimation_mode = 'ABU'
+estimation_mode = 'POMCP'
 oeata_parameter_calculation_mode = 'MEAN'   #  It can be MEAN, MODE, MEDIAN
 agent_types = ['l1','l2','l3']
 estimators_length = 100
@@ -85,6 +85,12 @@ for i in range(rounds):
                 param_estim.learning_data = oeata
                 a.smart_parameters['estimations'] = param_estim
 
+    if estimation_mode =='POMCP':
+        estimation_config = PomcpConfig(fundamental_values)
+        param_estim = ParameterEstimation(estimation_config)
+        param_estim.estimation_initialisation()
+        for a in env.components['agents']:
+            a.smart_parameters['estimations'] = param_estim
 
 
     while not done and env.episode < 10:
@@ -115,6 +121,8 @@ for i in range(rounds):
 
         if(estimation_mode == 'OEATA'):
             level_foraging_uniform_estimation(env, just_finished_tasks)
+        elif (estimation_mode == 'POMCP'):
+            process_pomcp_estimation(env)
 
         print(env.components['tasks'][1].completed)
         print(env.components['tasks'][2].completed)
