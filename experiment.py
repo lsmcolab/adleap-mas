@@ -154,7 +154,7 @@ fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,ar
 log_file = LogFile(None,fname,header)
 
 # 3. Creating the environment
-env = create_env(args.env,args.dim,args.agents,args.tasks)
+env = create_env(args.env,args.dim,args.agents,args.tasks,False)
 state = env.reset()
 
 # 4. Estimation algorithm's settings

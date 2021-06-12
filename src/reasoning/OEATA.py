@@ -262,7 +262,7 @@ class OEATA_process:
                     target = get_target_non_adhoc_agent(tmp_agent, current_state.copy())
 
 
-                    if target is not (-1,-1) or current_state.items_left() == 0:
+                    if target is not None or current_state.items_left() == 0:
                         estimator.target = target
                         estimator.choose_target_state = current_state.copy()
                     del tmp_agent
