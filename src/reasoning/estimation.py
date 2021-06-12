@@ -12,6 +12,8 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
 
     # 'Start process OEATA'
     for set_of_estimators in unknown_agent.smart_parameters['estimations'].learning_data.all_estimators:
+
+
         if unknown_agent.smart_parameters['last_completed_task'] != None:
             if unknown_agent != current_state.get_adhoc_agent():
                 unknown_agent.smart_parameters['estimations'].learning_data.evaluation(set_of_estimators, cts_agent,

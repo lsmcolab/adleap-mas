@@ -150,6 +150,7 @@ class ParameterEstimation:
     def get_probability_type(self,selected_type):
         for te in self.estimation_histories:
             if selected_type == te.type:
+                #print("Len : " , len(te.type_probabilities),te.type_probabilities)
                 return te.type_probabilities[-1]
 
 

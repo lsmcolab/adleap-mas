@@ -37,7 +37,7 @@ env = LevelForagingEnv((10,10),components,visibility='full',display=True)
 env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkblue',\
                         'entropy':'blue','mcts':'yellow','pomcp':'red'}
 state = env.reset()
-#log_file = LogFile(env)
+
 
 rounds = 1
 
@@ -113,11 +113,9 @@ for i in range(rounds):
         state, reward, done, info = env.step(adhoc_agent.next_action)
         just_finished_tasks = info['just_finished_tasks']
 
-        # just_finished_tasks.append(env.components['tasks'][1])
-        # print (done)
+
 
         print (len(just_finished_tasks))
-        #log_file.write(env)
 
         if(estimation_mode == 'OEATA'):
             level_foraging_uniform_estimation(env, just_finished_tasks)

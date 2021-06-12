@@ -168,7 +168,7 @@ class OEATA_process:
                        ,unknown_agent_level, choose_target_state):
         # 1. Generating initial estimators
         tmp_cts = choose_target_state.copy()
-        none_count, none_threshold = 0, 500
+        none_count, none_threshold = 0, 500 # Where is this used?
 
         for type in self.oeata_config.fundamental_values.agent_types:
             set_of_estimators = SetOfEstimators(type)
@@ -179,9 +179,11 @@ class OEATA_process:
                               , unknown_agent_level)
 
             target = get_target_non_adhoc_agent(tmp_agent, tmp_cts)
-
+            #print(target)
             # 5. Adding to the list of estimators
-            if target is not (-1, -1):
+            # if target is not (-1,-1)
+            # Note : Initialised using actual values??
+            if target is not None:
                 agent_param = Parameter(tmp_agent.level, tmp_agent.angle, tmp_agent.radius)
                 estimator = Estimator(agent_param, tmp_cts, target, 1, 0)
                 set_of_estimators.Estimators.append(estimator)
@@ -205,7 +207,7 @@ class OEATA_process:
                     target = get_target_non_adhoc_agent(tmp_agent, choose_target_state)
 
                     # 5. Adding to the data set
-                    if target is not (-1, -1):
+                    if target is not None:
                         agent_param = Parameter(tmp_agent.level, tmp_agent.angle, tmp_agent.radius)
                         estimator = Estimator(agent_param, tmp_cts, target, 1, 0)
                         set_of_estimators.Estimators.append(estimator)
@@ -248,7 +250,7 @@ class OEATA_process:
         for estimator in set_of_estimators.Estimators:
 
             for task in just_finished_tasks:
-                if estimator.target_task == task.position:
+                if estimator.target_task == task.position or estimator.target_task==task.index:
 
                     tmp_parameter = estimator.parameter
                     x, y = cts_agent.position[0], cts_agent.position[1]
@@ -258,6 +260,7 @@ class OEATA_process:
                                       tmp_parameter.level)
 
                     target = get_target_non_adhoc_agent(tmp_agent, current_state.copy())
+
 
                     if target is not (-1,-1) or current_state.items_left() == 0:
                         estimator.target = target
@@ -320,11 +323,13 @@ class OEATA_process:
                 # 4. Calculating route
                 target_task = get_target_non_adhoc_agent(tmp_agent, current_state)
 
+
             else:
                 break
 
+            #print(estimator.target_task,last_completed_task.index,last_completed_task.position)
         # d. Filtering the estimator
-            if estimator.target_task == last_completed_task:
+            if estimator.target_task== last_completed_task.index or estimator.target_task== last_completed_task.position:
                 self.bag_of_estimators.levels_bag.append(estimator.parameter.level)
                 self.bag_of_estimators.angles_bag.append(estimator.parameter.angle)
                 self.bag_of_estimators.radius_bag.append(estimator.parameter.radius)

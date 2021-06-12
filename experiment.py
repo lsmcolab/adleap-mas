@@ -16,14 +16,14 @@ from src.reasoning.AGA import *
 from src.reasoning.ABU import *
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
+parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 4, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=4,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
-parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=100,help="number of episodes")
+parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=20,help="number of episodes")
 parser.add_argument('--po',dest='po',type=bool,default=True,help="Partial Observability (True/False) ")
 args = parser.parse_args()
 
@@ -103,7 +103,9 @@ def list_stats(env):
         est_radius.append(selected_parameter.radius)
         est_angle.append(selected_parameter.angle)
         est_level.append(selected_parameter.level)
+
         type_prob.append(a.smart_parameters['estimations'].get_probability_type(a.type))
+
 
 
     stats.append(iteration)
