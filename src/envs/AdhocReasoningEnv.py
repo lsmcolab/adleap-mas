@@ -117,7 +117,7 @@ class AdhocReasoningEnv(gym.Env):
         self.viewer = None  # Viewer is the variable used to manage the graphical inteface.
         self.state = None   # The state can be any chosen form of representation. For ex : np array.
         self.episode = 0    # Number of episodes after env.reset()
-
+        self.simulation = False
         # Setting the Markovian components for the environment
         # State
         if isinstance(state_set,StateSet):
