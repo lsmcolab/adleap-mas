@@ -4,65 +4,39 @@ import random
 
 # Chooses the task with maximum sum of coordinates . Same as l2, but works with task index instead
 def c2_planning(env,agent):
-    # action = None
-    # if(agent.target):
-    #     for t in env.components['tasks']:
-    #         if(agent.target == t.index):
-    #             if((agent.position[0]-t.position[0])**2 + (agent.position[1]-t.position[1])**2 == 1):
-    #                 if(random.uniform(0,1)<0.5):
-    #                     action = 4
-    #                     return action,agent.target
-    #                 else:
-    #                     steps =  [(-1,0),(0,-1),(1,0),(0,1)]
-    #                     poss = []
-    #                     for i,step in enumerate(steps):
-    #                         (w,h) = env.state.shape
-    #                         if(0<=t.position[0]+step[0]<w and 0<=t.position[1]+step[1]<h):
-    #                             new_pos = (t.position[0]+step[0],t.position[1]+step[1])
-    #                             if( env.state[new_pos[0],new_pos[1]] == 0):
-    #                                 poss.append((i,new_pos))
-    #                     if(len(poss)==0):
-    #                         return 4,agent.target
-    #                     action = random.sample(poss,1)[0]
-    #                     agent.target_position = action[1]
-    #             else:
-    #                 agent.target_position = t.position
-    #
-    # else:
-    #     agent.target = choose_target(env,agent)
-    #
-    # if(agent.target == None):
-    #     action = random.sample([0,1,2,3,4],1)[0]
-    #     return action,None
-    # next_action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
-    #                               env.action_space, agent.position, agent.target_position)
-    #
     action = None
     agent_task = None
-    task_position = None
+    target_pos = None
     if(agent.target):
         for t in env.components['tasks']:
-            if(t.index == agent.target and not t.completed):
-                agent_task = t
-                task_position = t.position
+            if(t.index == agent.target ):
+                if(t.completed):
+                    agent.target = choose_target(env,agent)
+                    target_pos = agent.target_position
+                else:
+                    target_pos = t.position
 
-    if(agent_task is not None):
-        agent.target_position = task_position
-        action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
-                                   env.action_space, agent.position, agent.target_position)
-        return action,agent.target
+        if(target_pos):
+            agent.target_position = target_pos
+            action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
+                                     env.action_space, agent.position, agent.target_position)
+            return action, agent.target
+        else:
+            action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
+                                     env.action_space, agent.position, agent.target_position)
+            return action, agent.target
+
+
     else:
         agent.target = choose_target(env,agent)
-        if(agent.target is None):
-            return random.sample([0,1,2,3,4],1)[0],None
+        if(not agent.target):
+            action = env.action_space.sample()
+            return action, None
+        else:
+            action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
+                                   env.action_space, agent.position, agent.target_position)
 
-        for t in env.components['tasks']:
-            if(t.index == agent.target):
-                agent.target_position = t.position
-
-        action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
-                                 env.action_space, agent.position, agent.target_position)
-        return action, agent.target
+            return action,agent.target
 
 
 

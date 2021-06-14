@@ -58,7 +58,7 @@ def create_env(env,dim,num_agents,num_tasks,display=True):
     radius_adhoc = random.uniform(0.1,1) if args.po else 1
 
     agents.append(
-        Agent(index=str(0), atype='l1',
+        Agent(index=str(0), atype='mcts',
               position=(random_pos[0] % dim, int(random_pos[0] / dim)),
                 direction=random.sample(direction, 1)[0], radius=radius_adhoc, angle=angle_adhoc,
                 level=random.uniform(0, 1)))
@@ -137,7 +137,7 @@ def get_env_types(env):
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
+parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 5, type = int, help = "Number of agents")

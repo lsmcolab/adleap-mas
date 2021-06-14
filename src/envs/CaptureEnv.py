@@ -343,7 +343,6 @@ def do_action(env):
                 if(not env.simulation):
                     ag.smart_parameters['last_completed_task'] = task
                     ag.smart_parameters['choose_task_state'] = env.copy()
-                    print("OEATA : ", task.index)
                 ag.target = None
                 ag.target_position = None
 
