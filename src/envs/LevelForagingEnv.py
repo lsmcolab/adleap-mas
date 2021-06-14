@@ -287,7 +287,6 @@ def do_action(env):
                 if not env.simulation:
                     ag.smart_parameters['last_completed_task'] = task
                     ag.smart_parameters['choose_task_state'] = env.copy()
-                #print("none : ",ag.index,task.position)
                 ag.target = None
 
     # c. resetting the task trying

@@ -148,7 +148,7 @@ def get_env_types(env):
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
+parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 3, type = int, help = "Number of agents")
