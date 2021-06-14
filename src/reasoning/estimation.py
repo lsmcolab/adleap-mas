@@ -5,35 +5,34 @@ from src.reasoning.OEATA import HistoryElement
 from src.reasoning.pomcp_estimation import *
 
 def process_oeata(unknown_agent, current_state, just_finished_tasks):
+    print('finished tasks',just_finished_tasks)
+    print(unknown_agent.smart_parameters['last_completed_task'])
     # 1. Initialising the parameter variables
-    po = False
     cts_agent = unknown_agent.copy()
 
     # 'Start process OEATA'
     for set_of_estimators in unknown_agent.smart_parameters['estimations'].learning_data.all_estimators:
-
-
         if unknown_agent.smart_parameters['last_completed_task'] != None:
             if unknown_agent != current_state.get_adhoc_agent():
                 unknown_agent.smart_parameters['estimations'].learning_data.evaluation(set_of_estimators, cts_agent,
                                                                                        current_state)
                 unknown_agent.smart_parameters['estimations'].learning_data.generation(set_of_estimators, cts_agent,
                                                                                        current_state)
-        elif just_finished_tasks:
-            unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators,
+                                                                                       
+        if just_finished_tasks:
+            if unknown_agent != current_state.get_adhoc_agent():
+                unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators,
                                                                                             cts_agent,
                                                                                             current_state,
                                                                                             just_finished_tasks)
+        
 
         new_estimated_parameter, type_probability = unknown_agent.smart_parameters[
             'estimations'].learning_data.estimation(set_of_estimators)
 
-        # todo: fix it
         unknown_agent.smart_parameters['estimated_parameter'] = new_estimated_parameter
         for estimation_history in unknown_agent.smart_parameters['estimations'].estimation_histories:
             if set_of_estimators.type == estimation_history.type:
-                #print ('new_estimated_parameter')
-                #print(new_estimated_parameter)
                 if new_estimated_parameter is None:
                     estimation_history.estimation_history.append(estimation_history.estimation_history[-1])
                 else:
@@ -41,24 +40,15 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
                 estimation_history.type_probability = type_probability
 
     # 'End of Process'
-    # te.type_probability = pf_type_probability
-    #
-    #     # d. If a load action was performed, restart the estimation process
-    # todo: change unknown_agent to cts_agent. What is their differences
-    # if unknown_agent.next_action == 4 and unknown_agent.is_item_nearby(current_state.items) != -1:
     if unknown_agent.smart_parameters['last_completed_task'] != None:
         if unknown_agent.smart_parameters['choose_task_state'] != None:
-            # NOTE: Changes here
-
-            hist = HistoryElement(unknown_agent.smart_parameters['choose_task_state'].copy(),unknown_agent.smart_parameters['last_completed_task']) \
-
+            hist = HistoryElement(unknown_agent.smart_parameters['choose_task_state'].copy(),unknown_agent.smart_parameters['last_completed_task'])
             unknown_agent.smart_parameters['estimations'].learning_data.history_of_tasks.append(hist)
 
         unknown_agent.smart_parameters['choose_task_state'] = current_state.copy()
-        # unknown_agent.choose_target_pos = unknown_agent.get_position()
-        # unknown_agent.choose_target_direction = unknown_agent.direction
+
         # To prevent successive updates between two task completions
-        unknown_agent.smart_parameters['last_completed_task']=None
+        unknown_agent.smart_parameters['last_completed_task'] = None
     unknown_agent.smart_parameters['estimations'].normalize_type_probabilities()
     return unknown_agent
 
@@ -126,7 +116,7 @@ def level_foraging_uniform_estimation(env, just_finished_tasks):
     else:
         for agent in env.components['agents']:
             if agent != env.get_adhoc_agent():
-                process_oeata(agent, tmp_env, just_finished_tasks)
+                agent = process_oeata(agent, tmp_env, just_finished_tasks)
 
     return env
 

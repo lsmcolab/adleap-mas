@@ -136,7 +136,7 @@ def mcts_planning(env,agent,max_depth=10, max_it=100,estimation_algorithm=None):
     # 1. Setting the environment for simulation
     copy_env = env.copy()
     copy_env.viewer = None
-    env.simulation = True
+    copy_env.simulation = True
     # 2. Planning
     next_action, search_tree =\
      monte_carlo_tree_search(copy_env,copy_env.action_space,agent,max_it,max_depth,estimation_algorithm)
