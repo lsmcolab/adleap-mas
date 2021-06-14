@@ -19,7 +19,8 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
                                                                                        current_state)
                 unknown_agent.smart_parameters['estimations'].learning_data.generation(set_of_estimators, cts_agent,
                                                                                        current_state)
-        elif just_finished_tasks:
+        if just_finished_tasks:
+
             unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators,
                                                                                             cts_agent,
                                                                                             current_state,
