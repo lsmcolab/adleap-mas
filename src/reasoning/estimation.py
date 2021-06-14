@@ -48,13 +48,17 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
     # if unknown_agent.next_action == 4 and unknown_agent.is_item_nearby(current_state.items) != -1:
     if unknown_agent.smart_parameters['last_completed_task'] != None:
         if unknown_agent.smart_parameters['choose_task_state'] != None:
-            hist = HistoryElement(unknown_agent.smart_parameters['choose_task_state'].copy()) \
+            # NOTE: Changes here
+
+            hist = HistoryElement(unknown_agent.smart_parameters['choose_task_state'].copy(),unknown_agent.smart_parameters['last_completed_task']) \
 
             unknown_agent.smart_parameters['estimations'].learning_data.history_of_tasks.append(hist)
 
         unknown_agent.smart_parameters['choose_task_state'] = current_state.copy()
         # unknown_agent.choose_target_pos = unknown_agent.get_position()
         # unknown_agent.choose_target_direction = unknown_agent.direction
+        # To prevent successive updates between two task completions
+        unknown_agent.smart_parameters['last_completed_task']=None
     unknown_agent.smart_parameters['estimations'].normalize_type_probabilities()
     return unknown_agent
 
@@ -137,8 +141,8 @@ def capture_uniform_estimation(env, just_finished_tasks):
                     None in [agent.level, agent.radius, agent.angle, agent.type]:
                 process_oeata(agent, tmp_env, just_finished_tasks)
                 agent.level = rd.uniform(0, 1)
-                agent.radius = rd.uniform(0, 1)
-                agent.angle = rd.uniform(0, 1)
+                agent.radius = rd.uniform(0.1, 1)
+                agent.angle = rd.uniform(0.1, 1)
                 # Removed 'l4' for now
                 agent.type = rd.sample(['c1', 'c2', 'c3'], 1)[0]
 
@@ -149,7 +153,7 @@ def capture_uniform_estimation(env, just_finished_tasks):
     else:
         for agent in env.components['agents']:
             if agent != env.get_adhoc_agent():
-                agent = process_oeata(agent, env, just_finished_tasks) 
+                process_oeata(agent, env, just_finished_tasks)
 
     return env
 

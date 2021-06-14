@@ -333,8 +333,7 @@ def do_action(env):
 
 
         if(surround(task,env) and agents_are_facing(task,surround_agents)):
-            #info['action reward']+= len(see_agents)
-            #print([a.index for a in surround_agents],surround(task,env),task.index)
+
             task.completed=True
             if(task.index not in [t.index for t in just_finished_tasks]):
                 just_finished_tasks.append(task)

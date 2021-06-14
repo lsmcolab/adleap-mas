@@ -58,7 +58,7 @@ def create_env(env,dim,num_agents,num_tasks,display=True):
     radius_adhoc = random.uniform(0.1,1) if args.po else 1
 
     agents.append(
-        Agent(index=str(0), atype='mcts',
+        Agent(index=str(0), atype='l1',
               position=(random_pos[0] % dim, int(random_pos[0] / dim)),
                 direction=random.sample(direction, 1)[0], radius=radius_adhoc, angle=angle_adhoc,
                 level=random.uniform(0, 1)))
@@ -137,7 +137,7 @@ def get_env_types(env):
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
+parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 5, type = int, help = "Number of agents")
@@ -154,7 +154,7 @@ fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,ar
 log_file = LogFile(None,fname,header)
 
 # 3. Creating the environment
-env = create_env(args.env,args.dim,args.agents,args.tasks,False)
+env = create_env(args.env,args.dim,args.agents,args.tasks,True)
 state = env.reset()
 
 # 4. Estimation algorithm's settings
@@ -200,7 +200,7 @@ while not done and env.episode < args.num_episodes:
     # Rendering the environment
     if env.display:
         env.render()
-
+    print("Episode : ", env.episode)
     # Main Agent taking an action
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
@@ -216,8 +216,10 @@ while not done and env.episode < args.num_episodes:
     # Step on environment
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
+    for t in env.components['tasks']:
+        print(t.index,t.completed,t.level)
 
-    
+    print(len(just_finished_tasks))
     if (estimation_mode == 'OEATA'):
         if(args.env=="LevelForagingEnv"):
             env = level_foraging_uniform_estimation(env, just_finished_tasks)

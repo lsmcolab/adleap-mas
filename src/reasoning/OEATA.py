@@ -173,20 +173,21 @@ class OEATA_process:
         for type in self.oeata_config.fundamental_values.agent_types:
             set_of_estimators = SetOfEstimators(type)
 
+            # # TODO: This part is using the actual values of the agent
             x, y, direction = unknown_agent_position[0], unknown_agent_position[1], unknown_agent_direction
             tmp_agent = Agent('T', set_of_estimators.type, (x, y), direction,
-                              unknown_agent_radius, unknown_agent_angle
-                              , unknown_agent_level)
-
-            target = get_target_non_adhoc_agent(tmp_agent, tmp_cts)
-            #print(target)
-            # 5. Adding to the list of estimators
-            # if target is not (-1,-1)
-            # Note : Initialised using actual values??
-            if target is not None:
-                agent_param = Parameter(tmp_agent.level, tmp_agent.angle, tmp_agent.radius)
-                estimator = Estimator(agent_param, tmp_cts, target, 1, 0)
-                set_of_estimators.Estimators.append(estimator)
+                               unknown_agent_radius, unknown_agent_angle
+                               , unknown_agent_level)
+            #
+            # target = get_target_non_adhoc_agent(tmp_agent, tmp_cts)
+            # #print(target)
+            # # 5. Adding to the list of estimators
+            # # if target is not (-1,-1)
+            # # Note : Initialised using actual values??
+            # if target is not None:
+            #     agent_param = Parameter(tmp_agent.level, tmp_agent.angle, tmp_agent.radius)
+            #     estimator = Estimator(agent_param, tmp_cts, target, 1, 0)
+            #     set_of_estimators.Estimators.append(estimator)
 
             tmp_parameter = Parameter()
             while len(set_of_estimators.Estimators) < self.oeata_config.estimators_length:
@@ -246,6 +247,11 @@ class OEATA_process:
     #####################################################################################################
     def update_estimators(self, set_of_estimators, cts_agent,  current_state, just_finished_tasks):
         # 1. Getting the agent to update
+        remaining_tasks = 0
+        for task in current_state.components['tasks']:
+            if not task.completed:
+                remaining_tasks +=1
+
 
         for estimator in set_of_estimators.Estimators:
 
@@ -262,7 +268,7 @@ class OEATA_process:
                     target = get_target_non_adhoc_agent(tmp_agent, current_state.copy())
 
 
-                    if target is not None or current_state.items_left() == 0:
+                    if target is not None or remaining_tasks == 0:
                         estimator.target = target
                         estimator.choose_target_state = current_state.copy()
                     del tmp_agent
@@ -289,10 +295,11 @@ class OEATA_process:
 
             target = get_target_non_adhoc_agent(tmp_agent, old_state)
 
-            if target == hist.target:
+            if target == hist.target.index or target == hist.target.position:
                 # print target, hist['loaded_item']
                 success_count += 1
         # print 'end history ---------------------------------------------'
+
         return success_count
 
     ###################################################################################################################

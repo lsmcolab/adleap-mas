@@ -85,6 +85,7 @@ def who_see(env, position):
         if a.direction is not None:
             direction = a.direction
         else:
+            # TODO : Correct this
             direction = env.action_space.sample()
 
         if a.radius is not None:
@@ -211,6 +212,7 @@ def update(env):
 
     for task in env.components['tasks']:
         x, y = task.position[0], task.position[1]
+
         if not task.completed:
             env.state[x, y] = np.inf
 
@@ -269,12 +271,17 @@ def do_action(env):
 
     # b. calculating the reward
     for task in components['tasks']:
+        #print(task.completed)
+        if task.completed:
+            continue
+        if sum([level for level in task.trying]) >= task.level:
+            # info['action reward'] += 1
+            task.completed = True
+            if task not in just_finished_tasks:
+                just_finished_tasks.append(task)
+
+
         for ag in who_see(env, task.position):
-            if sum([level for level in task.trying]) >= task.level:
-                # info['action reward'] += 1
-                task.completed = True
-                if task not in just_finished_tasks:
-                    just_finished_tasks.append(task)
 
             if task.completed and ag.target == task.position:
                 ag.smart_parameters['last_completed_task'] = task
@@ -287,6 +294,7 @@ def do_action(env):
 
     next_state = update(env)
     info['just_finished_tasks'] = just_finished_tasks
+
     return next_state, info
 
 
