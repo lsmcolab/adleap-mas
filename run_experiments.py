@@ -11,7 +11,7 @@ def get_python_cmd(env, estimation, num_agents, num_tasks, dim, num_exp, num_epi
      ' --env ' + str(env) + ' --estimation ' + str(estimation) + \
      ' --num_agents ' + str(num_agents) + ' --num_tasks ' + str(num_tasks) + \
      ' --dim ' + str(dim) + ' --num_exp ' + str(num_exp) + ' --num_episodes ' + str(num_episodes) + \
-     ' --po False' 
+     ' --po False -- display False' 
 
 ###
 # SCRIPT
@@ -40,9 +40,8 @@ for experiment_id in range(num_exp):
                         time.sleep(0.25)
 
                         # submiting the job
-                        os.system("qsub -o qsuboutput/"+\
-                            str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+\
-                            "d"+str(dim)+"e"+str(experiment_id)+".txt -e qsuberror/"+\
-                            str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+\
-                            "d"+str(dim)+"e"+str(experiment_id)+".txt  run.sh")
+                        subprocess.run(["qsub",
+                         "-o","qsuboutput/"+ str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+"d"+str(dim)+"e"+str(experiment_id)+".txt",
+                         "-e","qsuberror/"+str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+"d"+str(dim)+"e"+str(experiment_id)+".txt",
+                         "run.sh"])
                         time.sleep(0.25)

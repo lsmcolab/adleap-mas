@@ -1,8 +1,4 @@
-from a_star import a_star_planning
 from node import QNode
-import numpy as np
-import random
-from copy import deepcopy
 
 def rollout_policy(state):
     return state.action_space.sample()
