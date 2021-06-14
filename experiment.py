@@ -211,13 +211,13 @@ while not done and env.episode < args.num_episodes:
         aga.update(state)
     elif (estimation_mode == 'ABU'):
         abu.update(state)
-
+    for ag in env.components['agents']:
+        print(ag.index,ag.target)
 
     # Step on environment
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
-    for t in env.components['tasks']:
-        print(t.index,t.completed,t.level)
+
 
     print(len(just_finished_tasks))
     if (estimation_mode == 'OEATA'):

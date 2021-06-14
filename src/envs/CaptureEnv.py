@@ -340,8 +340,10 @@ def do_action(env):
 
         for ag in env.components['agents']:
             if task.completed and (ag.target == task.index or ag.target==task.position):
-                ag.smart_parameters['last_completed_task'] = task
-                ag.smart_parameters['choose_task_state'] = env.copy()
+                if(not env.simulation):
+                    ag.smart_parameters['last_completed_task'] = task
+                    ag.smart_parameters['choose_task_state'] = env.copy()
+                    print("OEATA : ", task.index)
                 ag.target = None
                 ag.target_position = None
 
@@ -618,6 +620,7 @@ class CaptureEnv(AdhocReasoningEnv):
     def copy(self):
         components = self.copy_components(self.components)
         copied_env = CaptureEnv(self.state.shape, components, self.visibility)
+        copied_env.simulation = self.simulation
         copied_env.viewer = self.viewer
         copied_env.state = np.array(
             [np.array([self.state[x, y] for y in range(self.state.shape[1])]) for x in range(self.state.shape[0])])

@@ -287,6 +287,7 @@ def do_action(env):
                 if not env.simulation:
                     ag.smart_parameters['last_completed_task'] = task
                     ag.smart_parameters['choose_task_state'] = env.copy()
+                print("none : ",ag.index,task.position)
                 ag.target = None
 
     # c. resetting the task trying
@@ -361,8 +362,8 @@ def levelforaging_transition(action, real_env):
 
 # The reward must keep be calculated keeping the partial observability in mind
 def reward(state, next_state):
-    # return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
-    return 0
+    return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
+    #return 0
 
 
 # Changes the actual environment to partial observed environment

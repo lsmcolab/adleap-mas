@@ -35,7 +35,7 @@ def l2_planning(env, agent):
 		pos = (agent.position[0]-1,agent.position[1])
 
 	if pos == target_position:
-		target_position = None
+		#target_position = None
 		agent.target = target_position
 		return 4, target_position
 
