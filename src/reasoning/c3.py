@@ -1,21 +1,25 @@
 from a_star import a_star_planning
 import numpy as np
+import math
 import random
 
-# Chooses the closest task . Same as l1, but works with task index instead
+# Pursues prime index preys
 def c3_planning(env,agent):
-    action = None
-    agent_task = None
-    target_pos = None
+    action, target_pos = None, None
+    
+    # checking if the agent already chosen a prey
     if(agent.target):
         for t in env.components['tasks']:
             if(t.index == agent.target ):
+                # if it is completed, pursue a new one
                 if(t.completed):
                     agent.target = choose_target(env,agent)
                     target_pos = agent.target_position
+                # else, keep going
                 else:
                     target_pos = t.position
 
+        # defining the path to the prey
         if(target_pos):
             agent.target_position = target_pos
             action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
@@ -26,49 +30,29 @@ def c3_planning(env,agent):
                                      env.action_space, agent.position, agent.target_position)
             return action, agent.target
 
-
+    # else, choose one
     else:
         agent.target = choose_target(env,agent)
+
+        # if did not find a valid target, move randomly
         if(not agent.target):
             action = env.action_space.sample()
             return action, None
+        # else pursue it
         else:
             action = a_star_planning(env.state, env.state.shape[0], env.state.shape[1],
                                    env.action_space, agent.position, agent.target_position)
 
             return action,agent.target
 
-
-
+def is_prime(n):
+    if n % 2 == 0 and n > 2: 
+        return False
+    return all(n % i for i in range(3, int(math.sqrt(n)) + 1, 2))
 
 def choose_target(env, agent):
-    state = env.state
-    # 0. Initialising the support variables
-    nearest_task_idx, min_distance = -1, np.inf
-
-    # 1. Searching for max distance item
-    visible_tasks = [(x,y) for x in range(state.shape[0])
-                        for y in range(state.shape[1]) if state[x,y] == np.inf]
-
-    for i in range(0, len(visible_tasks)):
-        dist = distance(visible_tasks[i],agent.position)
-        if dist < min_distance:
-            min_distance = dist
-            nearest_task_idx = i
-
-    # 2. Verifying the found task
-    # a. no task found
-    if nearest_task_idx == -1:
-        return None
-    # b. task found
-    else:
-        agent.target_position = visible_tasks[nearest_task_idx]
-        task_idx = None
-        for t in env.components['tasks']:
-            if(t.position == agent.target_position):
-                task_idx = t.index
-
-        return task_idx
-
-def distance(obj, viewer):
-    return np.sqrt((obj[0] - viewer[0])**2 + (obj[1] - viewer[1])**2)
+    for task in env.components['tasks']:
+        if is_prime(int(task.index)):
+            agent.target_position = task.position
+            return task.index
+    return None

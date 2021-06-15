@@ -11,7 +11,7 @@ def get_python_cmd(env, estimation, num_agents, num_tasks, dim, num_exp, num_epi
      ' --env ' + str(env) + ' --estimation ' + str(estimation) + \
      ' --num_agents ' + str(num_agents) + ' --num_tasks ' + str(num_tasks) + \
      ' --dim ' + str(dim) + ' --num_exp ' + str(num_exp) + ' --num_episodes ' + str(num_episodes) + \
-     ' --po False -- display False' 
+     ' --po False' 
 
 ###
 # SCRIPT
