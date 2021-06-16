@@ -29,18 +29,23 @@ from src.reasoning.ABU import ABUConfig
 ###
 # B. FUNCTIONS
 ###
-def get_initial_positions(dim, npos):
+def get_initial_positions(env, dim, npos):
     pos = []
     while len(pos) < npos:
         x = random.randint(1,dim-1)
         y = random.randint(1,dim-1)
         
-        if (x,y) not in pos and (x+1,y) not in pos and\
-         (x+1,y+1) not in pos and (x,y+1) not in pos and\
-         (x-1,y+1) not in pos and (x-1,y) not in pos and\
-         (x-1,y-1) not in pos and (x,y-1) not in pos and\
-         (x+1,y-1) not in pos:
-            pos.append((x,y))
+        if(env=="LevelForagingEnv"):
+            if (x,y) not in pos and (x+1,y) not in pos and\
+            (x+1,y+1) not in pos and (x,y+1) not in pos and\
+            (x-1,y+1) not in pos and (x-1,y) not in pos and\
+            (x-1,y-1) not in pos and (x,y-1) not in pos and\
+            (x+1,y-1) not in pos:
+                pos.append((x,y))
+        else:
+            if (x,y) not in pos:
+                pos.append((x,y))
+
     return pos
 
 def create_env(env,dim,num_agents,num_tasks,display=True):
@@ -62,7 +67,7 @@ def create_env(env,dim,num_agents,num_tasks,display=True):
     direction = [0,np.pi/2,np.pi,3*np.pi/2]
 
 
-    random_pos = get_initial_positions(dim, num_agents + num_tasks)
+    random_pos = get_initial_positions(args.env, dim, num_agents + num_tasks)
 
     agents, tasks = [], []
     angle_adhoc = random.uniform(0.25, 1) if args.po else 1
@@ -76,11 +81,19 @@ def create_env(env,dim,num_agents,num_tasks,display=True):
 
     for i in range(1, num_agents + num_tasks):
         if (i < num_agents):
-            agents.append(
-                Agent(index=str(i), atype=random.sample(types,1)[0], position=(random_pos[i][0],random_pos[i][1]),
-                      direction=random.sample(direction,1)[0],radius=random.uniform(0.1,1), angle=random.uniform(0.1,1), level=random.uniform(0.1,1)))
+            if(args.env=="LevelForagingEnv"):
+                agents.append(
+                    Agent(index=str(i), atype=random.sample(types,1)[0], position=(random_pos[i][0],random_pos[i][1]),
+                        direction=random.sample(direction,1)[0],radius=random.uniform(0.1,1), angle=random.uniform(0.1,1), level=random.uniform(0.1,1)))                        
+            else:
+                agents.append(
+                    Agent(index=str(i), atype=random.sample(types,1)[0], position=(random_pos[i][0],random_pos[i][1]),
+                        direction=random.sample(direction,1)[0],radius=random.uniform(0.1,1), angle=random.uniform(0.1,1), level=1))
         else:
-            tasks.append(Task(str(i), position=(random_pos[i][0],random_pos[i][1]), level=random.uniform(0.5,1)))
+            if(args.env=="LevelForagingEnv"):
+                tasks.append(Task(str(i), position=(random_pos[i][0],random_pos[i][1]), level=random.uniform(0.5,1)))
+            else:
+                tasks.append(Task(str(i), position=(random_pos[i][0],random_pos[i][1]), level=0))
 
 
     components = {
@@ -148,11 +161,11 @@ def get_env_types(env):
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
+parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 5, type = int, help = "Number of agents")
-parser.add_argument('--num_tasks',dest='tasks',default=5,type=int,help = "Number of Tasks")
+parser.add_argument('--num_tasks',dest='tasks',default=10,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
 parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=200,help="number of episodes")

@@ -21,28 +21,11 @@ def rollout(node,agent,max_depth,discount_factor):
     return reward +\
      discount_factor*rollout(next_node,sim_agent,max_depth,discount_factor)
 
-def get_state_with_estimated_values(state):
-    adhoc_agent = state.get_adhoc_agent()
-    for agent in state.components['agents']:
-        if agent.index != adhoc_agent.index:
-            # print (agent.smart_parameters['estimations'].estimation_histories)
-            # print (agent.index)
-
-            selected_type = agent.smart_parameters['estimations'].get_highest_type_probability()
-            selected_parameter = agent.smart_parameters['estimations'].get_parameters_for_selected_type(selected_type)
-            # print (selected_type)
-            # print (selected_parameter)
-            agent.type= selected_type
-            agent.angle= selected_parameter.angle
-            agent.radius = selected_parameter.radius
-            agent.level= selected_parameter.level
-
 def simulate_action(node, agent, action):
     # 1. Copying the current state for simulation
     tmp_state = node.state.copy()
 
     # 2. Acting
-    get_state_with_estimated_values(tmp_state)
     next_state,reward, _, _ = tmp_state.step(action)
     next_node = QNode(action,next_state,node.depth+1,node)
 
@@ -92,7 +75,21 @@ def simulate(node, agent, max_depth,discount_factor=0.9):
     node.update(action, R)
     return R
 
-def monte_carlo_tree_search(state, action_space, agent, max_it, max_depth,estimation_algorithm):
+def get_state_with_estimated_values(state):
+    adhoc_agent = state.get_adhoc_agent()
+    for agent in state.components['agents']:
+        if agent.index != adhoc_agent.index:
+            selected_type = agent.smart_parameters['estimations'].get_highest_type_probability()
+            selected_parameter = agent.smart_parameters['estimations'].get_parameters_for_selected_type(selected_type)
+
+            agent.type= selected_type
+            agent.angle= selected_parameter.angle
+            agent.radius = selected_parameter.radius
+            agent.level= selected_parameter.level
+
+    return state
+
+def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm):
     # 1. Defining the root node
     root_node = None
     if 'search_tree' not in agent.smart_parameters:
@@ -112,8 +109,10 @@ def monte_carlo_tree_search(state, action_space, agent, max_it, max_depth,estima
                             state=state,depth=0,parent=None)
 
     # - estimating enviroment parameters
-    # if estimation_algorithm is not None:
-    #     root_node.state = estimation_algorithm(root_node.state)
+    if estimation_algorithm is not None:
+         root_node.state = estimation_algorithm(root_node.state)
+    else:
+        root_node.state = get_state_with_estimated_values(root_node.state)
 
     # - cleaning the memory cache
     import gc
@@ -126,19 +125,18 @@ def monte_carlo_tree_search(state, action_space, agent, max_it, max_depth,estima
         it += 1
 
     # 4. Retuning the best action and the search tree root node
-    return root_node.get_best_action(),root_node
+    return root_node.get_best_action(), root_node
 
 def mcts_planning(env,agent,max_depth=10, max_it=100,estimation_algorithm=None):
     # 1. Setting the environment for simulation
-
     copy_env = env.copy()
     copy_env.viewer = None
     copy_env.simulation = True
+
     # 2. Planning
     next_action, search_tree =\
-     monte_carlo_tree_search(copy_env,copy_env.action_space,agent,max_it,max_depth,estimation_algorithm)
+     monte_carlo_tree_search(copy_env,agent,max_it,max_depth,estimation_algorithm)
 
     # 3. Updating the search tree
     agent.smart_parameters['search_tree'] = search_tree
-
     return next_action, None

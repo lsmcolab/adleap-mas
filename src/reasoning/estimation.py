@@ -5,8 +5,6 @@ from src.reasoning.OEATA import HistoryElement
 from src.reasoning.pomcp_estimation import *
 
 def process_oeata(unknown_agent, current_state, just_finished_tasks):
-    print('finished tasks',just_finished_tasks)
-    print(unknown_agent.smart_parameters['last_completed_task'])
     # 1. Initialising the parameter variables
     cts_agent = unknown_agent.copy()
 
