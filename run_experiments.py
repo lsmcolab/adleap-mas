@@ -40,9 +40,8 @@ for experiment_id in range(num_exp):
                         time.sleep(0.25)
 
                         # submiting the job
-                        os.system("qsub -o qsuboutput/"+\
-                            str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+\
-                            "d"+str(dim)+"e"+str(experiment_id)+".txt -e qsuberror/"+\
-                            str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+\
-                            "d"+str(dim)+"e"+str(experiment_id)+".txt  run.sh")
+                        subprocess.run(["qsub",
+                         "-o","qsuboutput/"+ str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+"d"+str(dim)+"e"+str(experiment_id)+".txt",
+                         "-e","qsuberror/"+str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+"d"+str(dim)+"e"+str(experiment_id)+".txt",
+                         "run.sh"])
                         time.sleep(0.25)

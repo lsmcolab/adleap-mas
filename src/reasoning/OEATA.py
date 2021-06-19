@@ -346,7 +346,7 @@ class OEATA_process:
                 estimator.success_rate = self.check_history(estimator.parameter , set_of_estimators.type) + 1
                 estimator.failure_rate = 0
             else:
-                if int(estimator.failure_rate) > 0:
+                if int(estimator.failure_rate) > 2:
                     estimators_to_remove.append(estimator)
                 else:
                     estimator.failure_rate += 1

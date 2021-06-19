@@ -283,7 +283,7 @@ def do_action(env):
 
         for ag in who_see(env, task.position):
 
-            if task.completed and ag.target == task.position:
+            if task.completed and (ag.target == task.position or ag.target == task.index):
                 if not env.simulation:
                     ag.smart_parameters['last_completed_task'] = task
                     ag.smart_parameters['choose_task_state'] = env.copy()
