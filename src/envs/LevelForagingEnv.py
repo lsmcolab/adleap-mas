@@ -29,6 +29,9 @@ class Agent(AdhocAgent):
         self.angle = angle
         self.level = level
 
+        self.smart_parameters['last_completed_task'] = None
+        self.smart_parameters['choose_task_state'] = None
+
     def copy(self):
         # 1. Initialising the agent
         copy_agent = Agent(self.index, self.type, self.position, \
@@ -40,6 +43,11 @@ class Agent(AdhocAgent):
         copy_agent.smart_parameters = self.smart_parameters
 
         return copy_agent
+
+    def set_parameters(self, parameters):
+        self.radius = parameters[0]
+        self.angle = parameters[1]
+        self.level = parameters[2]
 
     def show(self):
         print(self.index, self.type, ':', self.position, self.direction, self.radius, self.angle, self.level)
@@ -268,21 +276,20 @@ def do_action(env):
                     task.trying.append(agent.level)
                 else:
                     task.trying.append(rd.uniform(0, 1))
+        else:
+            agent.smart_parameters['last_completed_task'] = None
 
     # b. calculating the reward
     for task in components['tasks']:
         #print(task.completed)
-        if task.completed:
-            continue
-        if sum([level for level in task.trying]) >= task.level:
-            # info['action reward'] += 1
-            task.completed = True
-            if task not in just_finished_tasks:
-                just_finished_tasks.append(task)
-
+        if not task.completed:
+            if sum([level for level in task.trying]) >= task.level:
+                # info['action reward'] += 1
+                task.completed = True
+                if task not in info['just_finished_tasks']:
+                    info['just_finished_tasks'].append(task)
 
         for ag in who_see(env, task.position):
-
             if task.completed and (ag.target == task.position or ag.target == task.index):
                 if not env.simulation:
                     ag.smart_parameters['last_completed_task'] = task
@@ -294,7 +301,6 @@ def do_action(env):
         task.trying = []
 
     next_state = update(env)
-    info['just_finished_tasks'] = just_finished_tasks
 
     return next_state, info
 
@@ -580,6 +586,35 @@ class LevelForagingEnv(AdhocReasoningEnv):
             count += 1
 
         return u_env
+
+    def get_target(self, agent_index, new_type=None, new_parameter=None):
+        # changing the perspective
+        copied_env = self.copy()
+        copied_env.components['adhoc_agent_index'] = agent_index
+
+        # generating the observable scenario
+        adhoc_agent = copied_env.get_adhoc_agent()
+        adhoc_agent.type = new_type
+        adhoc_agent.set_parameters(new_parameter)
+
+        obsavable_env = copied_env.observation_space(copied_env)
+
+        adhoc_agent = obsavable_env.get_adhoc_agent()
+        adhoc_agent.type = new_type
+        adhoc_agent.set_parameters(new_parameter)
+
+        # planning the action from agent i perspective
+        module = __import__(new_type)
+        planning_method = getattr(module,  new_type + '_planning')
+
+        _, target = \
+            planning_method(obsavable_env, adhoc_agent)
+
+        # retuning the results
+        for task in self.components['tasks']:
+            if task.position == target:
+                return task
+        return None
 
     def render(self, mode='human'):
         if not self.display:

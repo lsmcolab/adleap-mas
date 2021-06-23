@@ -3,7 +3,7 @@ from node import QNode
 def rollout_policy(state):
     return state.action_space.sample()
 
-def rollout(node,agent,max_depth,discount_factor):
+def rollout(node,max_depth,discount_factor):
     # 1. Checking if it is an end state or leaf node
     if is_terminal(node) or is_leaf(node,max_depth):
         return 0
@@ -17,11 +17,10 @@ def rollout(node,agent,max_depth,discount_factor):
     next_node = QNode(action,next_state,node.depth+1,node)
 
     # 4. Rolling out
-    sim_agent = next_node.state.get_adhoc_agent()
     return reward +\
-     discount_factor*rollout(next_node,sim_agent,max_depth,discount_factor)
+     discount_factor*rollout(next_node,max_depth,discount_factor)
 
-def simulate_action(node, agent, action):
+def simulate_action(node, action):
     # 1. Copying the current state for simulation
     tmp_state = node.state.copy()
 
@@ -49,15 +48,15 @@ def simulate(node, agent, max_depth,discount_factor=0.9):
     if node.children == []:
         # a. adding the children
         for action in node.actions:
-            (next_node, reward) = simulate_action(node, agent, action)
+            (next_node, reward) = simulate_action(node, action)
             node.children.append(next_node)
-        return rollout(node,agent,max_depth,discount_factor)
+        return rollout(node,max_depth,discount_factor)
 
     # 3. Selecting the best action
     action = node.select_action()
 
     # 4. Simulating the action
-    (next_node, reward) = simulate_action(node, agent, action)
+    (next_node, reward) = simulate_action(node, action)
 
     # 5. Adding the child on the tree
     if next_node.action in [c.action for c in node.children]:
@@ -110,7 +109,13 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
 
     # - estimating enviroment parameters
     if estimation_algorithm is not None:
-         root_node.state = estimation_algorithm(root_node.state)
+        if 'estimation_args' in agent.smart_parameters:
+            root_node.state, agent.smart_parameters['estimation'] = \
+                estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
+        else:
+            root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
+        root_adhoc_agent = root_node.state.get_adhoc_agent()
+        root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
     else:
         root_node.state = get_state_with_estimated_values(root_node.state)
 
