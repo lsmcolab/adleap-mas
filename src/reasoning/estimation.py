@@ -4,32 +4,57 @@ from copy import *
 
 from src.reasoning.pomcp_estimation import *
 
-def oeata_estimation(env, adhoc_agent, template_types, nparameters, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
+def aga_estimation(env, adhoc_agent,\
+ template_types, parameters_minmax, grid_size=4, reward_factor=0.04, step_size=0.01, decay_step=0.999, degree=2, univariate=True):
+    #####
+    # AGA INITIALISATION
+    #####
+    # Initialising the aga method inside the adhoc agent
+    if 'estimation' not in adhoc_agent.smart_parameters:
+        from aga import AGA
+        adhoc_agent.smart_parameters['estimation'] = AGA(env,template_types,parameters_minmax,grid_size,\
+                                                        reward_factor,step_size,decay_step,degree,univariate)
+        
+    #####    
+    # AGA PROCESS
+    #####
+    adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
+
+    #####
+    # AGA ESTIMATION
+    #####
+    return env, adhoc_agent.smart_parameters['estimation']
+
+def abu_estimation(env, adhoc_agent, template_types, nparameters, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
+    raise NotImplemented
+
+def oeata_estimation(env, adhoc_agent,\
+ template_types, nparameters, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
     #####
     # OEATA INITIALISATION
     #####
     # Initialising the oeata method inside the adhoc agent
-    if 'oeata' not in adhoc_agent.smart_parameters:
+    if 'estimation' not in adhoc_agent.smart_parameters:
         from oeata import OEATA
-        adhoc_agent.smart_parameters['oeata'] = OEATA(env,template_types,nparameters,N,xi,mr,d,normalise)
+        adhoc_agent.smart_parameters['estimation'] = OEATA(env,template_types,nparameters,N,xi,mr,d,normalise)
         
     #####    
     # OEATA PROCESS
     #####
-    adhoc_agent.smart_parameters['oeata'] = adhoc_agent.smart_parameters['oeata'].run(env)
+    adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].run(env)
 
     #####
     # OEATA ESTIMATION
     #####
     types, _, param_est =\
-        adhoc_agent.smart_parameters['oeata'].get_estimation(env)
+        adhoc_agent.smart_parameters['estimation'].get_estimation(env)
 
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
             teammate.type = types[teammate.index]
             teammate.set_parameters(param_est[teammate.index])
 
-    return env, adhoc_agent.smart_parameters['oeata']
+    return env, adhoc_agent.smart_parameters['estimation']
 
 def process_pomcp_estimation(env):
     iteration_max = 100

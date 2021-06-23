@@ -14,7 +14,7 @@ import sys
 sys.path.append('src/reasoning')
 
 from scenario_generator import *
-from src.reasoning.estimation import oeata_estimation
+from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estimation
 from src.log import LogFile
 
 ###
@@ -26,7 +26,7 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='AGA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 5, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=10,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
@@ -52,7 +52,7 @@ def list_stats(env):
 
     adhoc_agent = env.get_adhoc_agent()
     _, type_probs, param_est =\
-        adhoc_agent.smart_parameters['oeata'].get_estimation(env)
+        adhoc_agent.smart_parameters['estimation'].get_estimation(env)
         
     completion = sum([t.completed for t in env.components['tasks']])/len(env.components['tasks'])
     print(iteration,'-',environment,'-',estimation,'-',completion,'%')
@@ -109,13 +109,16 @@ adhoc_agent = env.get_adhoc_agent()
 
 if args.estimation == 'AGA':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), get_env_nparameters(args.env)
+     get_env_types(args.env), [(0,1),(0,1),(0,1)]
+    estimation_method = aga_estimation
 elif  args.estimation == 'ABU':
     adhoc_agent.smart_parameters['estimation_args'] =\
      get_env_types(args.env), get_env_nparameters(args.env)
+    estimation_method = abu_estimation
 elif args.estimation == 'OEATA':
     adhoc_agent.smart_parameters['estimation_args'] =\
      get_env_types(args.env), get_env_nparameters(args.env), 100, 2, 0.2, 100, np.mean
+    estimation_method = oeata_estimation
 else:
     raise NotImplemented
 
@@ -131,7 +134,7 @@ while not done and env.episode < args.num_episodes:
     # Main Agent taking an action
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
-    adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=oeata_estimation)
+    adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
 
     for ag in env.components['agents']:
         print(ag.index,ag.target)
@@ -140,7 +143,7 @@ while not done and env.episode < args.num_episodes:
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
 
-    # -- Estimation via OEATA
+    # Writing log
     stats = list_stats(env)
     log_file.write(None, stats)
 

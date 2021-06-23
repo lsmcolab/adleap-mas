@@ -110,12 +110,12 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
     # - estimating enviroment parameters
     if estimation_algorithm is not None:
         if 'estimation_args' in agent.smart_parameters:
-            root_node.state, agent.smart_parameters['oeata'] = \
+            root_node.state, agent.smart_parameters['estimation'] = \
                 estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
         else:
-            root_node.state, agent.smart_parameters['oeata'] = estimation_algorithm(root_node.state,agent)
+            root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
         root_adhoc_agent = root_node.state.get_adhoc_agent()
-        root_adhoc_agent.smart_parameters['oeata'] = agent.smart_parameters['oeata']
+        root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
     else:
         root_node.state = get_state_with_estimated_values(root_node.state)
 

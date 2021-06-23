@@ -1,5 +1,4 @@
 from math import *
-from src.reasoning.fundamentals import Parameter
 from numpy.random import choice
 import random
 import numpy as np
