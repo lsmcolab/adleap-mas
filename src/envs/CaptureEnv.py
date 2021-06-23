@@ -543,10 +543,8 @@ def environment_transformation(copied_env):
 
 
 """
-    Level-Foraging Environments 
+    Capture the Prey Environment
 """
-
-
 class CaptureEnv(AdhocReasoningEnv):
     colors = { \
         'red': (1.0, 0.0, 0.0), \

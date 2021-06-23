@@ -1,55 +1,35 @@
 import random as rd
+import numpy as np
 from copy import *
 
-from src.reasoning.OEATA import HistoryElement
 from src.reasoning.pomcp_estimation import *
 
-def process_oeata(unknown_agent, current_state, just_finished_tasks):
-    # 1. Initialising the parameter variables
-    cts_agent = unknown_agent.copy()
-
-    # 'Start process OEATA'
-    for set_of_estimators in unknown_agent.smart_parameters['estimations'].learning_data.all_estimators:
-        if unknown_agent.smart_parameters['last_completed_task'] != None:
-            if unknown_agent != current_state.get_adhoc_agent():
-                unknown_agent.smart_parameters['estimations'].learning_data.evaluation(set_of_estimators, cts_agent,
-                                                                                       current_state)
-                unknown_agent.smart_parameters['estimations'].learning_data.generation(set_of_estimators, cts_agent,
-                                                                                       current_state)
-                                                                                       
-        if just_finished_tasks:
-            if unknown_agent != current_state.get_adhoc_agent():
-                unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators,
-                                                                                            cts_agent,
-                                                                                            current_state,
-                                                                                            just_finished_tasks)
+def oeata_estimation(env, adhoc_agent, template_types, nparameters, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
+    #####
+    # OEATA INITIALISATION
+    #####
+    # Initialising the oeata method inside the adhoc agent
+    if 'oeata' not in adhoc_agent.smart_parameters:
+        from oeata import OEATA
+        adhoc_agent.smart_parameters['oeata'] = OEATA(env,template_types,nparameters,N,xi,mr,d,normalise)
         
+    #####    
+    # OEATA PROCESS
+    #####
+    adhoc_agent.smart_parameters['oeata'] = adhoc_agent.smart_parameters['oeata'].run(env)
 
-        new_estimated_parameter, type_probability = unknown_agent.smart_parameters[
-            'estimations'].learning_data.estimation(set_of_estimators)
+    #####
+    # OEATA ESTIMATION
+    #####
+    types, _, param_est =\
+        adhoc_agent.smart_parameters['oeata'].get_estimation(env)
 
-        unknown_agent.smart_parameters['estimated_parameter'] = new_estimated_parameter
-        for estimation_history in unknown_agent.smart_parameters['estimations'].estimation_histories:
-            if set_of_estimators.type == estimation_history.type:
-                if new_estimated_parameter is None:
-                    estimation_history.estimation_history.append(estimation_history.estimation_history[-1])
-                else:
-                    estimation_history.estimation_history.append(new_estimated_parameter)
-                estimation_history.type_probability = type_probability
+    for teammate in env.components['agents']:
+        if teammate.index != adhoc_agent.index:
+            teammate.type = types[teammate.index]
+            teammate.set_parameters(param_est[teammate.index])
 
-    # 'End of Process'
-    if unknown_agent.smart_parameters['last_completed_task'] != None:
-        if unknown_agent.smart_parameters['choose_task_state'] != None:
-            hist = HistoryElement(unknown_agent.smart_parameters['choose_task_state'].copy(),unknown_agent.smart_parameters['last_completed_task'])
-            unknown_agent.smart_parameters['estimations'].learning_data.history_of_tasks.append(hist)
-
-        unknown_agent.smart_parameters['choose_task_state'] = current_state.copy()
-
-        # To prevent successive updates between two task completions
-        unknown_agent.smart_parameters['last_completed_task'] = None
-    unknown_agent.smart_parameters['estimations'].normalize_type_probabilities()
-    return unknown_agent
-
+    return env, adhoc_agent.smart_parameters['oeata']
 
 def process_pomcp_estimation(env):
     iteration_max = 100
@@ -69,83 +49,11 @@ def process_pomcp_estimation(env):
                     estimation_history.estimation_history.append(estimated_parameter)
                 estimation_history.type_probability = 1
 
-
-def normalize_type_probabilities(estimations):
-    # 1. Defining the values
-    # print 'Normalizing:',self.l1_estimation.type_probability , self.l2_estimation.type_probability,self.l3_estimation.type_probability, self.l4_estimation.type_probability
-    sum_of_probabilities = 0
-    type_belief_values = []
-    for te in estimations.estimation_histories:
-        type_belief_values.append(te.type_probability)
-        sum_of_probabilities += te.type_probability
-
-    # 3. Normalising
-    if sum_of_probabilities != 0:
-        belief_factor = 1 / float(sum_of_probabilities)
-        for te in estimations.estimation_histories:
-            te.type_probability *= belief_factor
-            te.type_probabilities.append(te.type_probability)
-
-    else:
-        probabilities = estimations.generate_equal_probabilities()
-        for i in range(len(estimations.estimation_histories)):
-            estimations.estimation_histories[i].type_probability = probabilities[i]
-
-
 def level_foraging_uniform_estimation(env, just_finished_tasks):
-    adhoc_agent = env.get_adhoc_agent()
-    tmp_env = env.copy()
-    if env.visibility == 'partial':
-
-        for agent in env.components['agents']:
-            if agent != env.get_adhoc_agent() and \
-                    None in [agent.level, agent.radius, agent.angle, agent.type]:
-                process_oeata(agent, tmp_env, just_finished_tasks)
-                agent.level = rd.uniform(0, 1)
-                agent.radius = rd.uniform(0, 1)
-                agent.angle = rd.uniform(0, 1)
-                # Removed 'l4' for now
-                agent.type = rd.sample(['l1', 'l2', 'l3'], 1)[0]
-
-        for task in env.components['tasks']:
-            if task.level is None:
-                task.level = rd.uniform(0, 1)
-
-    else:
-        for agent in env.components['agents']:
-            if agent != env.get_adhoc_agent():
-                agent = process_oeata(agent, tmp_env, just_finished_tasks)
-
-    return env
-
+    raise NotImplemented
 
 def capture_uniform_estimation(env, just_finished_tasks):
-    adhoc_agent = env.get_adhoc_agent()
-    tmp_env = env.copy()
-    if env.visibility == 'partial':
-
-        for agent in env.components['agents']:
-            if agent != env.get_adhoc_agent() and \
-                    None in [agent.level, agent.radius, agent.angle, agent.type]:
-                process_oeata(agent, tmp_env, just_finished_tasks)
-                agent.level = rd.uniform(0, 1)
-                agent.radius = rd.uniform(0.1, 1)
-                agent.angle = rd.uniform(0.1, 1)
-                # Removed 'l4' for now
-                agent.type = rd.sample(['c1', 'c2', 'c3'], 1)[0]
-
-        for task in env.components['tasks']:
-            if task.level is None:
-                task.level = rd.uniform(0, 1)
-
-    else:
-        for agent in env.components['agents']:
-            if agent != env.get_adhoc_agent():
-                process_oeata(agent, env, just_finished_tasks)
-
-    return env
-
-
+    raise NotImplemented
 
 def truco_uniform_estimation(env):
     if env.visibility == 'partial':
