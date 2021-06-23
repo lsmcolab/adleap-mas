@@ -26,7 +26,7 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='AGA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 5, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=10,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
@@ -113,7 +113,7 @@ if args.estimation == 'AGA':
     estimation_method = aga_estimation
 elif  args.estimation == 'ABU':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), get_env_nparameters(args.env)
+     get_env_types(args.env), [(0,1),(0,1),(0,1)]
     estimation_method = abu_estimation
 elif args.estimation == 'OEATA':
     adhoc_agent.smart_parameters['estimation_args'] =\

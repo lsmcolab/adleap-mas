@@ -25,8 +25,26 @@ def aga_estimation(env, adhoc_agent,\
     #####
     return env, adhoc_agent.smart_parameters['estimation']
 
-def abu_estimation(env, adhoc_agent, template_types, nparameters, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
-    raise NotImplemented
+def abu_estimation(env, adhoc_agent, \
+ template_types, parameters_minmax, grid_size=4, reward_factor=0.04, degree=2):
+    #####
+    # ABU INITIALISATION
+    #####
+    # Initialising the aga method inside the adhoc agent
+    if 'estimation' not in adhoc_agent.smart_parameters:
+        from abu import ABU
+        adhoc_agent.smart_parameters['estimation'] = ABU(env,template_types,parameters_minmax,grid_size,\
+                                                        reward_factor,degree)
+        
+    #####    
+    # ABU PROCESS
+    #####
+    adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
+
+    #####
+    # ABU ESTIMATION
+    #####
+    return env, adhoc_agent.smart_parameters['estimation']
 
 def oeata_estimation(env, adhoc_agent,\
  template_types, nparameters, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
