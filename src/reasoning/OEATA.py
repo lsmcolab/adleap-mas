@@ -294,7 +294,7 @@ class OEATA_process:
                               parameter.angle, parameter.level)
 
             target = get_target_non_adhoc_agent(tmp_agent, old_state)
-
+            print(hist.target.position,target)
             if target == hist.target.index or target == hist.target.position:
                 # print target, hist['loaded_item']
                 success_count += 1

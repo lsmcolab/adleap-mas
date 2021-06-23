@@ -11,6 +11,7 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
     # 'Start process OEATA'
     for set_of_estimators in unknown_agent.smart_parameters['estimations'].learning_data.all_estimators:
         if unknown_agent.smart_parameters['last_completed_task'] != None:
+            print("Reached Evaluation and generation : ")
             if unknown_agent != current_state.get_adhoc_agent():
                 unknown_agent.smart_parameters['estimations'].learning_data.evaluation(set_of_estimators, cts_agent,
                                                                                        current_state)
@@ -18,6 +19,7 @@ def process_oeata(unknown_agent, current_state, just_finished_tasks):
                                                                                        current_state)
                                                                                        
         if just_finished_tasks:
+            print("Reached Update")
             if unknown_agent != current_state.get_adhoc_agent():
                 unknown_agent.smart_parameters['estimations'].learning_data.update_estimators(set_of_estimators,
                                                                                             cts_agent,
@@ -112,6 +114,7 @@ def level_foraging_uniform_estimation(env, just_finished_tasks):
                 task.level = rd.uniform(0, 1)
 
     else:
+        print("Just Finished : " , just_finished_tasks)
         for agent in env.components['agents']:
             if agent != env.get_adhoc_agent():
                 agent = process_oeata(agent, tmp_env, just_finished_tasks)
