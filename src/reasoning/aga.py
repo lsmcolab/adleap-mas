@@ -48,11 +48,11 @@ class AGA(object):
 
     # initialise the estimation grid
     def init_estimation_grid(self):
-        self.grid = []
-        linear_spaces = [np.linspace(self.parameters_minmax[n][0],self.parameters_minmax[n][0],self.grid_size) for n in range(self.nparameters)]
-        for j in range(self.grid_size):
-            self.grid.append([linear_spaces[i][j] for i in range(self.nparameters)])
-    
+        linear_spaces = [np.linspace(self.parameters_minmax[n][0],self.parameters_minmax[n][1],self.grid_size) for n in range(self.nparameters)]
+
+        import itertools
+        self.grid = list(itertools.product(*linear_spaces))
+
     # update the grid given the current environment
     def update(self,env):
         # AGA estimation requires, at least, one previous state in the history to start the estimation
@@ -68,61 +68,34 @@ class AGA(object):
         # for each agent in the simulation
         adhoc_agent = env.get_adhoc_agent()
         for agent in env.components['agents']:
-            pred_actions = []
-            probability_update = 1.0
             # - if the agent is not the adhoc agent and it was seen in the previous state
             if agent.index != adhoc_agent.index and self.is_in_the_previous_state(agent):
                 # a. pick its best type
-                type = self.get_type_with_highest_probability(agent.index)
+                best_type = self.get_type_with_highest_probability(agent.index)
 
-                # b. for each parameter in the estimation grid, predict the agent action
-                for parameters in self.grid:
-                    # - setting up an environment copy to evaluate the predictions
-                    env_copy = self.previous_state.copy()
-                    for copy_agent in env_copy.components['agents']:
-                        if copy_agent.index == agent.index:
-                            copy_agent.set_parameters(parameters)
-                            copy_agent.target = None
-                            copy_agent.type = type
+                # b. predict the action given a test parameter/best type
+                pred_actions, probability_update = self.simulate(env, agent, best_type)
 
-                            ag_vector_index = env_copy.components['agents'].index(copy_agent)
-
-                        elif copy_agent.index != adhoc_agent.index:
-                            random_parameters = [rd.uniform(self.parameters_minmax[n][0], self.parameters_minmax[n][1]) for n in range(self.nparameters)]
-                            copy_agent.set_parameters(random_parameters)
-                            copy_agent.target = None
-                            copy_agent.type = self.weighted_sample_type(copy_agent.index)
-
-                    # - stepping the simulation to get the teammate action
-                    env_copy.step(env.action_space.sample())
-                    pred_actions.append(env_copy.components['agents'][ag_vector_index].next_action)
-
-                    # - increase the update factor given correct predictions
-                    if (env_copy.components["agents"][ag_vector_index].next_action == agent.next_action):
-                        probability_update *=  (1 + self.reward_factor)
-                    else:
-                        probability_update *=  (1 - self.reward_factor)
-
-                # d. defining the probability update vector
+                # c. performing the regression update
                 y = [0.96 if (pred_actions[i] == agent.next_action) else 0.04 for i in range(0, len(pred_actions))]
-                current_estimation = self.get_parameters_for_selected_type(agent.index,type)
+                current_estimation = self.get_parameters_for_selected_type(agent.index,best_type)
                 new_estimation = self.regression_update(y, current_estimation)
 
-                # e. updating type probabilities 
-                current_type_prob = self.teammate[agent.index][type]['probability_history'][-1]
+                # d. updating type probabilities 
+                current_type_prob = self.teammate[agent.index][best_type]['probability_history'][-1]
                 new_type_probability = (current_type_prob*probability_update)
 
                 last_types_probabilities = np.array([self.teammate[agent.index][t]['probability_history'][-1] for t in self.template_types])
-                last_types_probabilities[self.template_types.index(type)] = new_type_probability
+                last_types_probabilities[self.template_types.index(best_type)] = new_type_probability
                 last_types_probabilities /= sum(last_types_probabilities)
                 
                 for i in range(len(last_types_probabilities)): 
                     self.teammate[agent.index][self.template_types[i]]['probability_history'].append(last_types_probabilities[i])
 
-                # f. adding the new parameter estimation to the history
-                self.teammate[agent.index][type]['parameter_estimation_history'].append(new_estimation)
+                # e. adding the new parameter estimation to the history
+                self.teammate[agent.index][best_type]['parameter_estimation_history'].append(new_estimation)
 
-                # g. updating step size
+                # f. updating step size
                 self.step_size *= self.decay_step
         #####
         # END OF AGA ESTIMATION
@@ -131,6 +104,43 @@ class AGA(object):
         self.previous_state = env
 
         return self
+
+    # predict the agent actions given the current estimation grid
+    def simulate(self, env, agent, best_type):
+        # For each parameter in the estimation grid, predict the agent action
+        pred_actions, probability_update = [], 1.0
+        for parameters in self.grid:
+            # - setting up an environment copy to evaluate the predictions
+            env_copy = self.previous_state.copy()
+            adhoc_agent = env_copy.get_adhoc_agent()
+            ag_counter = 0
+            for copy_agent in env_copy.components['agents']:
+                if copy_agent.index == agent.index:
+                    copy_agent.set_parameters(parameters)
+                    copy_agent.target = None
+                    copy_agent.type = best_type
+
+                    ag_vector_index = ag_counter
+
+                elif copy_agent.index != adhoc_agent.index:
+                    random_parameters = [rd.uniform(self.parameters_minmax[n][0], self.parameters_minmax[n][1]) for n in range(self.nparameters)]
+                    copy_agent.set_parameters(random_parameters)
+                    copy_agent.target = None
+                    copy_agent.type = self.weighted_sample_type(copy_agent.index)
+                
+                ag_counter += 1
+
+            # - stepping the simulation to get the teammate action
+            env_copy.step(env.action_space.sample())
+            pred_actions.append(env_copy.components['agents'][ag_vector_index].next_action)
+
+            # - increase the update factor given correct predictions
+            if (env_copy.components["agents"][ag_vector_index].next_action == agent.next_action):
+                probability_update *=  (1 + self.reward_factor)
+            else:
+                probability_update *=  (1 - self.reward_factor)
+
+        return pred_actions, probability_update
 
     # checks if an agent is in the previous state
     def is_in_the_previous_state(self, agent):
@@ -195,10 +205,9 @@ class AGA(object):
                 delta = f_poly_deriv(current_estimation[i])
 
                 # update parameter
-                new_estimation = current_estimation + (self.step_size * delta)
-                new_estimation[i] = np.clip(new_estimation[i], self.parameters_minmax[i][0],self.parameters_minmax[i][1])
+                new_estimation = current_estimation[i] + (self.step_size * delta)
+                new_estimation = np.clip(new_estimation, p_min, p_max)
 
-                print(new_estimation)
                 parameter_estimate.append(new_estimation)
             return parameter_estimate
 
