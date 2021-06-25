@@ -1,4 +1,6 @@
+import itertools
 import numpy as np
+import pickle
 import random
 
 def get_initial_positions(env_name, dim, nagents, ntasks):
@@ -48,8 +50,18 @@ def get_env_nparameters(env_name):
 	else:
 		raise NotImplemented
 	
+def save_LevelForagingEnv(env, dim, num_agents, num_tasks, num_exp):
+	file = open('./src/envs/maps/LevelForagingEnv/'+str(dim)+str(num_agents)+str(num_tasks)+str(num_exp)+'.pickle','wb')
+	env = pickle.dump(env,file)
+	file.close()
+	return env
 
-def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False, display=False):
+def load_LevelForagingEnv(dim, num_agents, num_tasks, num_exp):
+	with open('./src/envs/maps/LevelForagingEnv/'+str(dim)+str(num_agents)+str(num_tasks)+str(num_exp)+'.pickle','rb') as map:
+		env = pickle.load(map)
+	return env
+
+def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False, display=False, num_exp=0):
     # 1. Importing the environment and its necessary components
 	from src.envs.LevelForagingEnv import LevelForagingEnv, Agent, Task
 
@@ -69,22 +81,36 @@ def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False
 			Agent(index=str(0), atype='mcts',
 			 position=(random_pos[0][0],random_pos[0][1]),
 			 direction=random.sample(direction, 1)[0], radius=1.0, angle=1.0,
-			 level=random.uniform(0.5, 1)))
+			 level=round(random.uniform(0.1,1),3)))
 	else:
 		agents.append(
 			Agent(index=str(0), atype='pomcp',
 			 position=(random_pos[0][0],random_pos[0][1]),
 			 direction=random.sample(direction, 1)[0], radius=random.uniform(0.5,1), angle=random.uniform(0.5,1),
-			 level=random.uniform(0.5, 1)))
+			 level=round(random.uniform(0.1,1),3)))
 
 	# b. teammates and tasks
+	LEVELS, MIN_COMBINATION = [], None
 	for i in range(1, num_agents + num_tasks):
 		if (i < num_agents):
+			LEVELS.append(round(random.uniform(0.1,1),3))
 			agents.append(\
 				Agent(index=str(i), atype=random.sample(types,1)[0], position=(random_pos[i][0],random_pos[i][1]),
-					direction=random.sample(direction,1)[0],radius=random.uniform(0.1,1), angle=random.uniform(0.1,1), level=random.uniform(0,1)))
+					direction=random.sample(direction,1)[0],radius=random.uniform(0.5,1), angle=random.uniform(0.5,1), level=LEVELS[-1]))
 		else:
-			tasks.append(Task(str(i), position=(random_pos[i][0],random_pos[i][1]), level=random.uniform(0,1)))
+			if MIN_COMBINATION is None:
+				if num_agents >= 4:
+					min_combination = [list(c) for c in list(itertools.combinations(LEVELS, 4))]
+					for j in range(len(min_combination)):
+						min_combination[j] = sum(min_combination[j])
+					min_combination = min(min_combination) if min(min_combination) <= 1 else 1.0
+				else:
+					min_combination = 1.0
+			
+			sampleLevels = random.sample(LEVELS,2)
+			task_level = round(random.uniform(max(sampleLevels),sum(sampleLevels)),3)\
+				if sum(sampleLevels) <= 1 else round(random.uniform(max(sampleLevels),min_combination),3)
+			tasks.append(Task(str(i), position=(random_pos[i][0],random_pos[i][1]), level=task_level))
 
 	# c. adding to components dict
 	components = {
@@ -97,9 +123,22 @@ def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False
 		env = LevelForagingEnv((dim, dim), components,visibility='partial',display=display)
 	else:
 		env = LevelForagingEnv((dim, dim), components,visibility='full',display=display)
+
+	save_LevelForagingEnv(env,dim,num_agents,num_tasks,num_exp)
 	return env
 
-def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, display=False):
+def save_CaptureEnv(env, dim, num_agents, num_tasks, num_exp):
+	file = open('./src/envs/maps/CaptureEnv/'+str(dim)+str(num_agents)+str(num_tasks)+str(num_exp)+'.pickle','wb')
+	env = pickle.dump(env,file)
+	file.close()
+	return env
+
+def load_CaptureEnv(dim, num_agents, num_tasks, num_exp):
+	with open('./src/envs/maps/CaptureEnv/'+str(dim)+str(num_agents)+str(num_tasks)+str(num_exp)+'.pickle','rb') as map:
+		env = pickle.load(map)
+	return env
+
+def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, display=False, num_exp=0):
     # 1. Importing the environment and its necessary components
 	from src.envs.CaptureEnv import CaptureEnv, Agent, Task
 
@@ -147,4 +186,18 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
 		env = CaptureEnv((dim, dim), components,visibility='partial',display=display)
 	else:
 		env = CaptureEnv((dim, dim), components,visibility='full',display=display)
+
+	save_CaptureEnv(env,dim,num_agents,num_tasks,num_exp)
 	return env
+
+"""
+	SCENARIO GENERATOR - CREATION ROUTINE
+"""
+def creation_routine():
+	for dim in [20]:
+		for num_agents in [7]:
+			for num_tasks in [20]:
+				for num_exp in range(100):
+					create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
+					create_CaptureEnv(dim, num_agents, num_tasks, num_exp=num_exp)
+creation_routine()

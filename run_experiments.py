@@ -24,7 +24,7 @@ for experiment_id in range(num_exp):
             for dim in [20]:#20,25,30
                 for estimation in ['AGA','ABU',"OEATA"]:
                         # defining the experiment parameters
-                        python_cmd = get_python_cmd('CaptureEnv',estimation,num_agents,
+                        python_cmd = get_python_cmd('LevelForagingEnv',estimation,num_agents,
                                     num_tasks,dim,experiment_id,num_episodes)
 
                         # writing the bash file                     

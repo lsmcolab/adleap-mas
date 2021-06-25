@@ -21,20 +21,32 @@ from src.log import LogFile
 # B. ARGS PARSE
 ###
 # Getting the experiment setup via argument parsing
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise ArgumentTypeError('Boolean value expected.')
 
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
-parser.add_argument('--num_agents',dest='agents', default = 5, type = int, help = "Number of agents")
-parser.add_argument('--num_tasks',dest='tasks',default=10,type=int,help = "Number of Tasks")
-parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
+parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
+parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
+parser.add_argument('--dim',dest='dim',default=20,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
 parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=200,help="number of episodes")
-parser.add_argument('--po',dest='po',type=bool,default=False,help="Partial Observability (True/False) ")
-parser.add_argument('--display',dest='display',type=bool,default=False,help="Display (True/False) ")
+parser.add_argument('--po',dest='po',type=str2bool,default=False,help="Partial Observability (True/False) ")
+parser.add_argument('--display',dest='display',type=str2bool,nargs='?',const=True,default=False,help="Display (True/False) ")
 args = parser.parse_args()
+
+print(args)
 
 ###
 # C. AUX FUNCTIONS
@@ -95,12 +107,20 @@ fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,ar
 log_file = LogFile(None,fname,header)
 
 # 2. Creating the environment
-if args.env == 'LevelForagingEnv':
-    env = create_LevelForagingEnv(args.dim,args.agents,args.tasks,args.po,args.display)
-elif args.env == 'CaptureEnv':
-    env = create_CaptureEnv(args.dim,args.agents,args.tasks,args.po,args.display)
+if args.num_exp >= 100:
+    if args.env == 'LevelForagingEnv':
+        env = create_LevelForagingEnv(args.dim,args.agents,args.tasks,args.po,args.display, args.num_exp)
+    elif args.env == 'CaptureEnv':
+        env = create_CaptureEnv(args.dim,args.agents,args.tasks,args.po,args.display, args.num_exp)
+    else:
+        raise NotImplemented
 else:
-    raise NotImplemented
+    if args.env == 'LevelForagingEnv':
+        env = load_LevelForagingEnv(args.dim,args.agents,args.tasks,args.num_exp)
+    elif args.env == 'CaptureEnv':
+        env = load_CaptureEnv(args.dim,args.agents,args.tasks,args.num_exp)
+    else:
+        raise NotImplemented
 state = env.reset()
 
 # 3. Estimation algorithm's settings
@@ -135,6 +155,10 @@ while not done and env.episode < args.num_episodes:
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
     adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
+
+    if env.episode == 0:
+        stats = list_stats(env)
+        log_file.write(None, stats)
 
     for ag in env.components['agents']:
         print(ag.index,ag.target)
