@@ -339,6 +339,7 @@ def do_action(env):
                 just_finished_tasks.append(task)
 
         for ag in env.components['agents']:
+            ag.smart_parameters['last_completed_task'] = None
             if task.completed and (ag.target == task.index or ag.target==task.position):
                 if(not env.simulation):
                     ag.smart_parameters['last_completed_task'] = task

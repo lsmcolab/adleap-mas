@@ -171,11 +171,11 @@ class AGA(object):
             # 2. Fit it to your data
             reg.fit(np.array(self.grid), y)
 
-            # 3. Get the regression coeficient
+            # 3. Get the regression coefficient
             gradient = reg.coef_
 
             # 4. Updating the parameters
-            current_estimation += (self.config.step_size * gradient)
+            current_estimation += (self.step_size * gradient)
             for n in range(self.nparameters):
                 current_estimation[n] = np.clip(current_estimation[n], self.parameters_minmax[n][0],self.parameters_minmax[n][1])
 

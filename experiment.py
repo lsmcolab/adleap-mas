@@ -20,82 +20,13 @@ from src.log import LogFile
 ###
 # B. ARGS PARSE
 ###
-<<<<<<< HEAD
-def get_initial_positions(env, dim, npos):
-    pos = []
-    while len(pos) < npos:
-        x = random.randint(1,dim-1)
-        y = random.randint(1,dim-1)
-        
-        if(env=="LevelForagingEnv"):
-            if (x,y) not in pos and (x+1,y) not in pos and\
-            (x+1,y+1) not in pos and (x,y+1) not in pos and\
-            (x-1,y+1) not in pos and (x-1,y) not in pos and\
-            (x-1,y-1) not in pos and (x,y-1) not in pos and\
-            (x+1,y-1) not in pos:
-                pos.append((x,y))
-        else:
-            if (x,y) not in pos:
-                pos.append((x,y))
-
-    return pos
-
-def create_env(env,dim,num_agents,num_tasks,display=True):
-    # 1. Importing the environment and its necessary components
-    if(env=="LevelForagingEnv"):
-        from src.envs.LevelForagingEnv import LevelForagingEnv, Agent, Task
-    elif(env=="CaptureEnv"):
-        from src.envs.CaptureEnv import CaptureEnv, Agent, Task
-    else:
-        raise ImportError
-
-
-    agents = []
-    tasks = []
-    if(args.env=="LevelForagingEnv"):
-        types = ["l1","l2","l3"]
-    else:
-        types = ["c1","c2","c3"]
-    direction = [0,np.pi/2,np.pi,3*np.pi/2]
-
-
-    random_pos = get_initial_positions(args.env, dim, num_agents + num_tasks)
-
-    agents, tasks = [], []
-    angle_adhoc = random.uniform(0.25, 1) if args.po else 1
-    radius_adhoc = random.uniform(0.25,1) if args.po else 1
-
-    agents.append(
-        Agent(index=str(0), atype='l1',
-              position=(random_pos[0][0],random_pos[0][1]),
-                direction=random.sample(direction, 1)[0], radius=radius_adhoc, angle=angle_adhoc,
-                level=random.uniform(0.5, 1)))
-
-    for i in range(1, num_agents + num_tasks):
-        if (i < num_agents):
-            if(args.env=="LevelForagingEnv"):
-                agents.append(
-                    Agent(index=str(i), atype=random.sample(types,1)[0], position=(random_pos[i][0],random_pos[i][1]),
-                        direction=random.sample(direction,1)[0],radius=random.uniform(0.1,1), angle=random.uniform(0.1,1), level=random.uniform(0.1,1)))                        
-            else:
-                agents.append(
-                    Agent(index=str(i), atype=random.sample(types,1)[0], position=(random_pos[i][0],random_pos[i][1]),
-                        direction=random.sample(direction,1)[0],radius=random.uniform(0.1,1), angle=random.uniform(0.1,1), level=1))
-        else:
-            if(args.env=="LevelForagingEnv"):
-                tasks.append(Task(str(i), position=(random_pos[i][0],random_pos[i][1]), level=random.uniform(0.5,1)))
-            else:
-                tasks.append(Task(str(i), position=(random_pos[i][0],random_pos[i][1]), level=0))
-
-=======
 # Getting the experiment setup via argument parsing
 from argparse import ArgumentParser
->>>>>>> 378d8f7b4e30c864fc0c71edeb91f0b19755e315
 
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='AGA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 5, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=10,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
@@ -157,28 +88,7 @@ def list_stats(env):
 
 ###
 # D. MAIN SCRIPT
-###
-<<<<<<< HEAD
-# 1. Getting the experiment setup via argument parsing
-from argparse import ArgumentParser
-
-parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
-                    help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
-parser.add_argument('--num_agents',dest='agents', default = 10, type = int, help = "Number of agents")
-parser.add_argument('--num_tasks',dest='tasks',default=5,type=int,help = "Number of Tasks")
-parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
-parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
-parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=5,help="number of episodes")
-parser.add_argument('--po',dest='po',type=bool,default=False,help="Partial Observability (True/False) ")
-parser.add_argument('--display',dest='display',type=bool,default=False,help="Display (True/False) ")
-args = parser.parse_args()
-
-# 2. Initialising the log file
-=======
-# 1. Initialising the log file
->>>>>>> 378d8f7b4e30c864fc0c71edeb91f0b19755e315
+###1. Initialising the log file
 header = ["Iterations","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
 fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
 log_file = LogFile(None,fname,header)
@@ -213,36 +123,20 @@ else:
 
 # 4. Starting the experiment
 done = False
-<<<<<<< HEAD
-print(args.env," Visibility:",env.visibility)
-stats = list_stats(env)
-print(stats)
-=======
 print(args.env," Visibility:",env.visibility, " Display:",env.display)
->>>>>>> 378d8f7b4e30c864fc0c71edeb91f0b19755e315
 while not done and env.episode < args.num_episodes:
     # Rendering the environment
     if env.display:
         env.render()
     print("Episode : ", env.episode)
-    
+
     # Main Agent taking an action
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
     adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
 
-<<<<<<< HEAD
-    # -- Estimation via AGA or ABU
-    if (estimation_mode == 'AGA'):
-        aga.update(state)
-    elif (estimation_mode == 'ABU'):
-        abu.update(state)
-    for t in env.components['tasks']:
-        print(t.index,t.completed)
-=======
     for ag in env.components['agents']:
         print(ag.index,ag.target)
->>>>>>> 378d8f7b4e30c864fc0c71edeb91f0b19755e315
 
     # Step on environment
     state, reward, done, info = env.step(adhoc_agent.next_action)

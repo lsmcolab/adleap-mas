@@ -50,7 +50,7 @@ def get_env_nparameters(env_name):
 	
 
 def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False, display=False):
-    # 1. Importing the environment and its necessary components
+	# 1. Importing the environment and its necessary components
 	from src.envs.LevelForagingEnv import LevelForagingEnv, Agent, Task
 
 	# 2. Defining the types and directions of the environment
