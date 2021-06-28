@@ -76,7 +76,7 @@ class OEATA(object):
         just_finished_tasks = set([teammate.smart_parameters['last_completed_task'] \
             for teammate in env.components['agents'] if teammate.smart_parameters['last_completed_task'] != None])
         print([t.index for t in just_finished_tasks])
-        print([(t.index,t.completed) for t in env.components['tasks']])
+        print("Number of tasks left : ", len([(t.index,t.completed) for t in env.components['tasks']]))
 
         # running the oeata procedure
         adhoc_agent = env.get_adhoc_agent()

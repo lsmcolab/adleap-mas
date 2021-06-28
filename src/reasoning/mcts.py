@@ -107,7 +107,7 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
         root_node = QNode(action=None,
                             state=state,depth=0,parent=None)
 
-    # - estimating enviroment parameters
+    # - estimating environment parameters
     if estimation_algorithm is not None:
         if 'estimation_args' in agent.smart_parameters:
             root_node.state, agent.smart_parameters['estimation'] = \

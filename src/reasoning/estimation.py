@@ -93,7 +93,7 @@ def process_pomcp_estimation(env):
                 estimation_history.type_probability = 1
 
 def level_foraging_uniform_estimation(env, just_finished_tasks):
-    raise NotImplemented
+   raise NotImplemented
 
 def capture_uniform_estimation(env, just_finished_tasks):
     raise NotImplemented

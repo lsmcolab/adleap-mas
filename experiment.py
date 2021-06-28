@@ -34,7 +34,7 @@ def str2bool(v):
         raise ArgumentTypeError('Boolean value expected.')
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
+parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
@@ -75,7 +75,8 @@ def list_stats(env):
             type_probabilities.append(type_probs[teammate.index])
             est_radius.append(param_est[teammate.index][0])
             est_angle.append(param_est[teammate.index][1])
-            est_level.append(param_est[teammate.index][2])
+            if(environment=="LevelForagingEnv"):
+                est_level.append(param_est[teammate.index][2])
         
     print("| Act.Type:",actual_type)
     for agent_type_prob in type_probabilities:
@@ -100,8 +101,7 @@ def list_stats(env):
 
 ###
 # D. MAIN SCRIPT
-###
-# 1. Initialising the log file
+###1. Initialising the log file
 header = ["Iterations","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
 fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
 log_file = LogFile(None,fname,header)
@@ -144,13 +144,16 @@ else:
 
 # 4. Starting the experiment
 done = False
+env.display = args.display
 print(args.env," Visibility:",env.visibility, " Display:",env.display)
 while not done and env.episode < args.num_episodes:
     # Rendering the environment
     if env.display:
         env.render()
     print("Episode : ", env.episode)
-    
+
+
+
     # Main Agent taking an action
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
@@ -161,7 +164,7 @@ while not done and env.episode < args.num_episodes:
         log_file.write(None, stats)
 
     for ag in env.components['agents']:
-        print(ag.index,ag.target)
+        print(ag.index,ag.target,ag.type,ag.smart_parameters['last_completed_task'])
 
     # Step on environment
     state, reward, done, info = env.step(adhoc_agent.next_action)

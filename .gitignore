@@ -4,3 +4,5 @@
 *results/*
 *.idea
 *.log
+*.pickle
+*/*.pickle
