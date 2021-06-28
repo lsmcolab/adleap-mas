@@ -78,7 +78,7 @@ def list_stats(env):
 ###
 # D. MAIN SCRIPT
 ###1. Initialising the log file
-header = ["Iterations","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
+header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
 fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
 log_file = LogFile(None,fname,header)
 
