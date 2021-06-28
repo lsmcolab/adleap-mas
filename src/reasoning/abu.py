@@ -303,7 +303,7 @@ class ABU(object):
 
 
     def get_estimation(self,env):
-        types, type_probabilities, parameter_estimation = {}, {}, {}
+        type_probabilities, estimated_parameters = [], []
     
         adhoc_agent = env.get_adhoc_agent()
         for teammate in env.components['agents']:
@@ -312,15 +312,25 @@ class ABU(object):
                 type_prob = []
                 for type in self.template_types:
                     type_prob.append(self.teammate[teammate.index][type]['probability_history'][-1])
+                type_probabilities.append(list(type_prob))
 
-                # parameter result (best type)
-                best_type_index = list(type_prob).index(np.max(type_prob))
-                best_type = self.template_types[best_type_index]
-                parameter_est = self.teammate[teammate.index][best_type]['parameter_estimation_history'][-1]
+                # parameter result
+                parameter_est = []
+                for type in self.template_types:
+                    parameter_est.append(self.teammate[teammate.index][type]['parameter_estimation_history'][-1])
+                estimated_parameters.append(list(parameter_est))
 
-                # setting the result
-                types[teammate.index] = type
-                type_probabilities[teammate.index] = list(type_prob)
-                parameter_estimation[teammate.index] = parameter_est
+        return type_probabilities, estimated_parameters
 
-        return types, type_probabilities, parameter_estimation
+    def sample_type_for_agent(self, teammate):
+        type_prob = np.zeros(len(self.template_types))
+        for i in range(len(self.template_types)):
+            type = self.template_types[i]
+            type_prob[i] = self.teammate[teammate.index][type]['probability_history'][i]
+        
+        sampled_type = rd.choices(self.template_types,type_prob,k=1)
+        return sampled_type[0]
+
+    def get_parameter_for_selected_type(self, teammate, selected_type):
+        parameter_est = self.teammate[teammate.index][selected_type]['parameter_estimation_history'][-1]
+        return parameter_est
