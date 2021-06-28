@@ -6,3 +6,4 @@
 *.log
 *.pickle
 */*.pickle
+qsub*
