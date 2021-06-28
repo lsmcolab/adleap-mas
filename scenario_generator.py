@@ -220,5 +220,9 @@ def creation_routine():
                     create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
                     create_CaptureEnv(dim, num_agents, num_tasks, num_exp=num_exp)
 
-
+import os
+if not os.path.isdir("./src/envs/maps"):
+    os.mkdir("./src/envs/maps")
+    os.mkdir("./src/envs/maps/CaptureEnv")
+    os.mkdir("./src/envs/maps/LevelForagingEnv")
 creation_routine()

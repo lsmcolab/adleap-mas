@@ -37,7 +37,7 @@ parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
-parser.add_argument('--num_agents',dest='agents', default = 20, type = int, help = "Number of agents")
+parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=20,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
