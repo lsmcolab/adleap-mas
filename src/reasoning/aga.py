@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import random as rd
 from sklearn.linear_model import LinearRegression
@@ -44,13 +45,11 @@ class AGA(object):
                     self.teammate[teammate.index][type] = {}
                     self.teammate[teammate.index][type]['probability_history'] = [1/len(self.template_types)]
                     self.teammate[teammate.index][type]['parameter_estimation_history'] = \
-                        [[rd.uniform(self.parameters_minmax[n][0],self.parameters_minmax[n][1]) for n in range(self.nparameters)]]
+                        [np.array([rd.uniform(self.parameters_minmax[n][0],self.parameters_minmax[n][1]) for n in range(self.nparameters)])]
 
     # initialise the estimation grid
     def init_estimation_grid(self):
         linear_spaces = [np.linspace(self.parameters_minmax[n][0],self.parameters_minmax[n][1],self.grid_size) for n in range(self.nparameters)]
-
-        import itertools
         self.grid = list(itertools.product(*linear_spaces))
 
     # update the grid given the current environment

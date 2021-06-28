@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import random as rd
 
@@ -47,8 +48,6 @@ class ABU(object):
     # initialise the estimation grid
     def init_estimation_grid(self):
         linear_spaces = [np.linspace(self.parameters_minmax[n][0],self.parameters_minmax[n][1],self.grid_size) for n in range(self.nparameters)]
-
-        import itertools
         self.grid = list(itertools.product(*linear_spaces))
 
     # update the grid given the current environment

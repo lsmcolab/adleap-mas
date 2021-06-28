@@ -34,7 +34,7 @@ def str2bool(v):
         raise ArgumentTypeError('Boolean value expected.')
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
+parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
@@ -52,50 +52,26 @@ print(args)
 # C. AUX FUNCTIONS
 ###
 def list_stats(env):
-    stats = []
-    iteration = env.episode
-    environment = args.env
-    estimation = args.estimation
-
-    actual_radius = [a.radius for a in env.components['agents'] if a.index != '0']
-    actual_angle = [a.angle for a in env.components['agents'] if a.index != '0']
-    actual_level = [a.level for a in env.components['agents'] if a.index != '0']
-    actual_type = [a.type for a in env.components['agents'] if a.index != '0']
+    stats = {}
+    stats['iteration'] = env.episode
+    stats['completion'] = sum([t.completed for t in env.components['tasks']])/len(env.components['tasks'])
+    stats['environment'] = args.env
+    stats['estimation'] = args.estimation
+    stats['actual_radius'] = [a.radius for a in env.components['agents'] if a.index != '0']
+    stats['actual_angle'] = [a.angle for a in env.components['agents'] if a.index != '0']
+    stats['actual_level'] = [a.level for a in env.components['agents'] if a.index != '0']
+    stats['actual_type'] = [a.type for a in env.components['agents'] if a.index != '0']
 
     adhoc_agent = env.get_adhoc_agent()
-    _, type_probs, param_est =\
+    type_probabilities, estimated_parameters =\
         adhoc_agent.smart_parameters['estimation'].get_estimation(env)
-        
-    completion = sum([t.completed for t in env.components['tasks']])/len(env.components['tasks'])
-    print(iteration,'-',environment,'-',estimation,'-',completion,'%')
-    
-    type_probabilities, est_radius, est_angle, est_level = [], [], [], []
-    for teammate in env.components['agents']:
-        if teammate.index != adhoc_agent.index:
-            type_probabilities.append(type_probs[teammate.index])
-            est_radius.append(param_est[teammate.index][0])
-            est_angle.append(param_est[teammate.index][1])
-            if(environment=="LevelForagingEnv"):
-                est_level.append(param_est[teammate.index][2])
-        
-    print("| Act.Type:",actual_type)
-    for agent_type_prob in type_probabilities:
-        print("| ",agent_type_prob)
-    print("| Act.Radius:\n| ", actual_radius,"\n| ",est_radius)
-    print("| Act.Angle:\n| ",actual_angle,"\n| ",est_angle)
-    print("| Act.Level:\n| ",actual_level,"\n| ",est_level)
 
-    stats.append(iteration)
-    stats.append(environment)
-    stats.append(estimation)
-    stats.append(actual_radius)
-    stats.append(actual_angle)
-    stats.append(actual_level)
-    stats.append(actual_type)
-    stats.append(est_radius)
-    stats.append(est_angle)
-    stats.append(est_level)
-    stats.append(type_probabilities)
+    stats['est_radius'], stats['est_angle'], stats['est_level'] = [], [], []
+    for i in range(len(env.components['agents'])-1):
+        stats['est_radius'].append([estimated_parameters[i][j][0] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+        stats['est_angle'].append([estimated_parameters[i][j][1] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+        stats['est_level'].append([estimated_parameters[i][j][2] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+    stats['type_probabilities'] = type_probabilities
 
     return stats
 
@@ -140,7 +116,7 @@ elif args.estimation == 'OEATA':
      get_env_types(args.env), get_env_nparameters(args.env), 100, 2, 0.2, 100, np.mean
     estimation_method = oeata_estimation
 else:
-    raise NotImplemented
+    estimation_method = None
 
 # 4. Starting the experiment
 done = False

@@ -74,20 +74,6 @@ def simulate(node, agent, max_depth,discount_factor=0.9):
     node.update(action, R)
     return R
 
-def get_state_with_estimated_values(state):
-    adhoc_agent = state.get_adhoc_agent()
-    for agent in state.components['agents']:
-        if agent.index != adhoc_agent.index:
-            selected_type = agent.smart_parameters['estimations'].get_highest_type_probability()
-            selected_parameter = agent.smart_parameters['estimations'].get_parameters_for_selected_type(selected_type)
-
-            agent.type= selected_type
-            agent.angle= selected_parameter.angle
-            agent.radius = selected_parameter.radius
-            agent.level= selected_parameter.level
-
-    return state
-
 def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm):
     # 1. Defining the root node
     root_node = None
@@ -117,8 +103,9 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
         root_adhoc_agent = root_node.state.get_adhoc_agent()
         root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
     else:
-        root_node.state = get_state_with_estimated_values(root_node.state)
-
+        from estimation import level_foraging_uniform_estimation
+        root_node.state = level_foraging_uniform_estimation(root_node.state)
+        
     # - cleaning the memory cache
     import gc
     gc.collect()

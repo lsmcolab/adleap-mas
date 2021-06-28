@@ -5,7 +5,7 @@ import random as rd
 class Estimator(object):
 
     def __init__(self, nparameters, type, d):
-        self.parameters = np.array(rd.sample(range(0, d+1), nparameters))/d
+        self.parameters = np.random.randint(0,d+1,nparameters)/d
         self.type = type
         self.d = d
         self.success_counter = 0
@@ -175,7 +175,7 @@ class OEATA(object):
                     self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
 
     def get_estimation(self, env):
-        types, type_probabilities, parameter_estimation = {}, {}, {}
+        type_probabilities, estimated_parameters = [], []
     
         adhoc_agent = env.get_adhoc_agent()
         for teammate in env.components['agents']:
@@ -194,14 +194,34 @@ class OEATA(object):
                     type_prob += 1
                     type_prob /= len(self.template_types)
 
-                # parameter result (best type)
-                best_type_index = list(type_prob).index(np.max(type_prob))
-                best_type = self.template_types[best_type_index]
-                parameter_est = self.normalise([e.parameters for e in self.teammate[teammate.index][best_type]['estimation_set']],axis=0)
+                type_probabilities.append(list(type_prob))
 
-                # setting the result
-                types[teammate.index] = type
-                type_probabilities[teammate.index] = list(type_prob)
-                parameter_estimation[teammate.index] = parameter_est
+                # parameter result
+                parameter_est = []
+                for i in range(len(self.template_types)):
+                    type = self.template_types[i]
+                    parameter_est.append(list(self.normalise([e.parameters for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)))
+                estimated_parameters.append(parameter_est)
 
-        return types, type_probabilities, parameter_estimation
+        return type_probabilities, estimated_parameters
+
+    def sample_type_for_agent(self, teammate):
+        type_prob = np.zeros(len(self.template_types))
+        for i in range(len(self.template_types)):
+            type = self.template_types[i]
+            type_prob[i] = np.sum([self.teammate[teammate.index][type]['estimation_set'][i].c_e \
+                                if self.teammate[teammate.index][type]['estimation_set'][i].c_e > 0 else 0 for i in range(self.N)])
+
+        sum_type_prob = np.sum(type_prob)
+        if sum_type_prob != 0:
+            type_prob /= sum_type_prob
+        else:
+            type_prob += 1
+            type_prob /= len(self.template_types)
+        
+        sampled_type = rd.choices(self.template_types,type_prob,k=1)
+        return sampled_type[0]
+
+    def get_parameter_for_selected_type(self, teammate, selected_type):
+        parameter_est = self.normalise([e.parameters for e in self.teammate[teammate.index][selected_type]['estimation_set']],axis=0)
+        return parameter_est

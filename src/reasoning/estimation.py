@@ -62,15 +62,15 @@ def oeata_estimation(env, adhoc_agent,\
     adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].run(env)
 
     #####
-    # OEATA ESTIMATION
+    # OEATA - SET ESTIMATION
     #####
-    types, _, param_est =\
-        adhoc_agent.smart_parameters['estimation'].get_estimation(env)
-
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
-            teammate.type = types[teammate.index]
-            teammate.set_parameters(param_est[teammate.index])
+            selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
+            selected_parameter = adhoc_agent.smart_parameters['estimation'].get_parameter_for_selected_type(teammate,selected_type)
+
+            teammate.type = selected_type
+            teammate.set_parameters(selected_parameter)
 
     return env, adhoc_agent.smart_parameters['estimation']
 
@@ -92,10 +92,15 @@ def process_pomcp_estimation(env):
                     estimation_history.estimation_history.append(estimated_parameter)
                 estimation_history.type_probability = 1
 
-def level_foraging_uniform_estimation(env, just_finished_tasks):
-   raise NotImplemented
+def level_foraging_uniform_estimation(env, template_types=['l1','l2','l3']):
+    adhoc_agent = env.get_adhoc_agent()
+    for teammate in env.components['agents']:
+        if teammate.index != adhoc_agent.index:
+            teammate.type = rd.sample(template_types,1)[0]
+            teammate.set_parameters(np.random.uniform(0,1,3))
+    return env
 
-def capture_uniform_estimation(env, just_finished_tasks):
+def capture_uniform_estimation(env):
     raise NotImplemented
 
 def truco_uniform_estimation(env):

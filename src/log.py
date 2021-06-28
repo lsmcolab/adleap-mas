@@ -41,18 +41,11 @@ class LogFile:
             logfile.write('\n')
 
     def write(self,env=None,*args):
-
         with open(self.filename, 'a') as logfile:
-            #logfile.write(str(env.episode) + ';')
-            #logfile.write(str(psutil.cpu_percent())+";")
-            #logfile.write(str(psutil.virtual_memory()[2])+";")
-            #logfile.write(str(env)+";")
             if(not len(args) ==len(self.header)):
                 warnings.warn("Initialisation and writing have different sizes .")
 
-            for val in args[0]:
-
-                logfile.write(str(val)+";")
-
+            for key in args[0]:
+                logfile.write(str(args[0][key])+";")
 
             logfile.write('\n')
