@@ -27,11 +27,13 @@ for experiment_id in range(num_exp):
                     python_cmd = get_python_cmd('CaptureEnv',estimation,num_agents,
                                 num_tasks,dim,experiment_id,num_episodes)
 
-                    # writing the bash file                     
+                    # writing the bash file
+                    fname = estimation+"_a"+str(num_agents)+"_i"+str(num_tasks)+"_d"+str(dim)+"_exp"+str(experiment_id)
                     with open("run.sh", "w") as bashfile:           
-                        bashfile.write("#$ -S /bin/bash\n\n")      
-                        bashfile.write("#$ -l h_vmem=4G\n")         
-                        bashfile.write("#$ -l h_rt=00:10:00\n\n")  
+                        bashfile.write("#$ -S /bin/bash\n\n")   
+                        bashfile.write("#$ -N "+fname+"\n")   
+                        bashfile.write("#$ -l h_vmem=6G\n")         
+                        bashfile.write("#$ -l h_rt=02:00:00\n\n")  
                         bashfile.write("source /etc/profile\n")     
                         bashfile.write("module add anaconda3/wmlce\n")                              
                         bashfile.write("source activate wmlce_env\n\n")                             
@@ -40,8 +42,5 @@ for experiment_id in range(num_exp):
                     time.sleep(0.25)
 
                     # submiting the job
-                    subprocess.run(["qsub",
-                        "-o","qsuboutput/"+ str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+"d"+str(dim)+"e"+str(experiment_id)+"output.txt",
-                        "-e","qsuberror/"+str(estimation)+"a"+str(num_agents)+"i"+str(num_tasks)+"d"+str(dim)+"e"+str(experiment_id)+"error.txt",
-                        "run.sh"])
+                    subprocess.run(["qsub","-o","qsuboutput/","-e","qsuberror/","run.sh"])
                     time.sleep(0.25)
