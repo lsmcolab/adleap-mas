@@ -34,7 +34,7 @@ def str2bool(v):
         raise ArgumentTypeError('Boolean value expected.')
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
+parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
@@ -70,7 +70,10 @@ def list_stats(env):
     for i in range(len(env.components['agents'])-1):
         stats['est_radius'].append([estimated_parameters[i][j][0] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
         stats['est_angle'].append([estimated_parameters[i][j][1] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
-        stats['est_level'].append([estimated_parameters[i][j][2] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+        if args.env == 'LevelForagingEnv':
+            stats['est_level'].append([estimated_parameters[i][j][2] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+        else:
+            stats['est_level'].append(list(np.zeros(len(adhoc_agent.smart_parameters['estimation'].template_types))))
     stats['type_probabilities'] = type_probabilities
 
     return stats
