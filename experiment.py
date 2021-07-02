@@ -59,7 +59,10 @@ def list_stats(env):
     stats['estimation'] = args.estimation
     stats['actual_radius'] = [a.radius for a in env.components['agents'] if a.index != '0']
     stats['actual_angle'] = [a.angle for a in env.components['agents'] if a.index != '0']
-    stats['actual_level'] = [a.level for a in env.components['agents'] if a.index != '0']
+    if args.env == "LevelForagingEnv":
+        stats['actual_level'] = [a.level for a in env.components['agents'] if a.index != '0']
+    else:
+        stats['actual_level'] = np.zeros(len(env.components['agents'])-1)
     stats['actual_type'] = [a.type for a in env.components['agents'] if a.index != '0']
 
     adhoc_agent = env.get_adhoc_agent()
