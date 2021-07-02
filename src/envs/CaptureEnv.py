@@ -1,25 +1,18 @@
-from datetime import datetime
-import gym
 import random
-from gym import error, spaces
+from gym import spaces
 import numpy as np
 import random as rd
 from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
-"""
-    Rendering 
-"""
 
 """
     Ad-hoc 
 """
-
-
 class Agent(AdhocAgent):
     """Agent : Main reasoning Component of the Environment. Derives from AdhocAgent Class
     """
 
-    def __init__(self, index, atype, position, direction, radius, angle, level):
+    def __init__(self, index, atype, position, direction, radius, angle):
         super(Agent, self).__init__(index, atype)
 
         # agent parameters
@@ -27,7 +20,6 @@ class Agent(AdhocAgent):
         self.direction = direction
         self.radius = radius
         self.angle = angle
-        self.level = level
         self.target_position = None
 
         self.smart_parameters['last_completed_task'] = None
@@ -37,7 +29,7 @@ class Agent(AdhocAgent):
     def copy(self):
         # 1. Initialising the agent
         copy_agent = Agent(self.index, self.type, self.position, \
-                           self.direction, self.radius, self.angle, self.level)
+                           self.direction, self.radius, self.angle)
 
         # 2. Copying the parameters
         copy_agent.next_action = self.next_action
@@ -60,25 +52,23 @@ class Task():
     """Task : These are parts of the 'components' of the environemnt.
     """
 
-    def __init__(self, index, position, level):
+    def __init__(self, index, position):
         # task parameters
         self.index = index
         self.position = position
-        self.level = level
 
         # task simulation parameters
         self.completed = False
-        self.trying = []
 
     def copy(self):
         # 1. Initialising the copy task
-        copy_task = Task(self.index, self.position, self.level)
+        copy_task = Task(self.index, self.position)
 
         # 2. Copying the parameters
         copy_task.completed = self.completed
-        copy_task.trying = [a for a in self.trying]
 
         return copy_task
+
     # Random Move
     def move_2(self,env):
         step = random.sample([(-1,0),(0,1),(1,0),(0,-1)],1)[0]
@@ -119,26 +109,19 @@ class Task():
             return
 
 
-
-
 """
     Customising the Level-Foraging Env
 """
-
-
 def end_condition(state):
     return (sum(sum(state == np.inf)) == 0)
 
 def is_empty(env,pos):
-    state = env.state
-
     for agents in env.components['agents']:
         if(pos == agents.position):
             return False
     for task in env.components['tasks']:
         if(pos == task.position):
             return False
-
     return True
 
 def who_see(env, position):
@@ -319,17 +302,6 @@ def do_action(env):
         agent.position = positions[agent.index]
         agent.direction = directions[agent.index]
 
-    # 2. Tasks
-    # a. verifying the tasks to be completed
-    # for agent in components['agents']:
-    #     if agent.next_action == 4:
-    #         task = there_is_task(env, agent.position, agent.direction)
-    #         if task is not None:
-    #             if agent.level is not None:
-    #                 task.trying.append(agent.level)
-    #             else:
-    #                 task.trying.append(rd.uniform(0, 1))
-
     update(env)
 
     for ag in env.components['agents']:
@@ -345,7 +317,6 @@ def do_action(env):
         surround_agents = who_surround(env,task.position)
         see_index = [a.index for a in who_see(env,task.position)]
         check = [1 if a.index in see_index else 0 for a in surround_agents]
-
 
         if(surround(task,env) and agents_are_facing(task,surround_agents)):
 
@@ -383,7 +354,6 @@ def surround(task,env):
         new_pos = ((pos[0]+step[0]),(pos[1]+step[1]))
         if( 0<=new_pos[0]<w and 0<=new_pos[1]<h  and env.state[new_pos[0]][new_pos[1]]==0):
             return False
-
     return True
 
 def agents_are_facing(task,agents):
@@ -409,15 +379,12 @@ def agents_are_facing(task,agents):
 
 # Agents that see task and are surrounding it
 def who_surround(env,position):
-    (w,h) = env.state.shape
     who_surr = []
     for step in [(-1,0),(0,1),(1,0),(0,-1)] :
         new_pos = ((position[0]+step[0]),(position[1]+step[1]))
         for agent in env.components['agents']:
-
             if(agent.position == new_pos ):
                 who_surr.append(agent)
-
     return who_surr
 
 def capture_transition(action, real_env):
@@ -457,9 +424,6 @@ def capture_transition(action, real_env):
 
 
 def get_target_non_adhoc_agent(agent, real_env):
-    # agent planning
-    adhoc_agent_index = real_env.components['agents'].index(real_env.get_adhoc_agent())
-
     # changing the perspective
     copied_env = real_env.copy()
 
@@ -732,7 +696,7 @@ class CaptureEnv(AdhocReasoningEnv):
 
         # retuning the results
         for task in self.components['tasks']:
-            if task.position == target or task.index==target:
+            if task.index==target:
                 return task
         return None
 

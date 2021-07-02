@@ -38,9 +38,9 @@ def get_initial_positions(env_name, dim, nagents, ntasks):
 
 def get_env_types(env_name):
     if env_name == "LevelForagingEnv":
-        return ['l1', 'l2', 'l3']
+        return ['l1', 'l2'] # , 'l3'
     elif env_name == "CaptureEnv":
-        return ['c1', 'c2', 'c3']
+        return ['c1', 'c2'] # , 'c3'
     else:
         raise NotImplemented
 
@@ -172,14 +172,12 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
         agents.append(
             Agent(index=str(0), atype='mcts',
                   position=(random_pos[0][0], random_pos[0][1]),
-                  direction=random.sample(direction, 1)[0], radius=1.0, angle=1.0,
-                  level=random.uniform(0.5, 1)))
+                  direction=random.sample(direction, 1)[0], radius=1.0, angle=1.0))
     else:
         agents.append(
             Agent(index=str(0), atype='pomcp',
                   position=(random_pos[0][0], random_pos[0][1]),
-                  direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1), angle=random.uniform(0.5, 1),
-                  level=None))
+                  direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1), angle=random.uniform(0.5, 1)))
 
     # b. teammates and tasks
     for i in range(1, num_agents + num_tasks):
@@ -187,9 +185,9 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
             agents.append( \
                 Agent(index=str(i), atype=random.sample(types, 1)[0], position=(random_pos[i][0], random_pos[i][1]),
                       direction=random.sample(direction, 1)[0], radius=random.uniform(0.1, 1),
-                      angle=random.uniform(0.1, 1), level=None))
+                      angle=random.uniform(0.1, 1)))
         else:
-            tasks.append(Task(str(i), position=(random_pos[i][0], random_pos[i][1]), level=None))
+            tasks.append(Task(str(i), position=(random_pos[i][0], random_pos[i][1])))
 
     # c. adding to components dict
     components = {
@@ -210,8 +208,6 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
 """
 	SCENARIO GENERATOR - CREATION ROUTINE
 """
-
-
 def creation_routine():
     for dim in [20]:
         for num_agents in [7]:
