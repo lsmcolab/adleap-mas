@@ -214,12 +214,12 @@ def creation_routine():
             for num_tasks in [20,25,30]:
                 for num_exp in range(100):
                     print('creating LFBEnv',num_agents,num_tasks,dim,num_exp)
-                    #create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
+                    create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
     
     for setting in [[5,5,10],[7,7,10],[10,10,10]]:
         for num_exp in range(100):
             print('creating CaptureEnv',setting[0],setting[1],setting[2],num_exp)
-            #create_CaptureEnv(setting[2], setting[0], setting[1], num_exp=num_exp)
+            create_CaptureEnv(setting[2], setting[0], setting[1], num_exp=num_exp)
 
 import os
 if not os.path.isdir("./src/envs/maps"):
@@ -240,10 +240,11 @@ def str2bool(v):
         raise ArgumentTypeError('Boolean value expected.')
 
 parser = ArgumentParser()
-parser.add_argument('--fixed', dest='fixed', default=False, type=str2bool,
-                    help='Fixed maps: True or False')
-args = parser.parse_args()
-print(args)
+if parser.prog == 'scenario_generator.py':
+    parser.add_argument('--fixed', dest='fixed', default=False, type=str2bool,
+                        help='Fixed maps: True or False')
+    args = parser.parse_args()
+    print(args)
 
-if args.fixed:
-    creation_routine()
+    if args.fixed:
+        creation_routine()
