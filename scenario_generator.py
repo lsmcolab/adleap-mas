@@ -209,16 +209,41 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
 	SCENARIO GENERATOR - CREATION ROUTINE
 """
 def creation_routine():
-    for dim in [20]:
-        for num_agents in [7]:
-            for num_tasks in [20]:
+    for dim in [20,25,30]:
+        for num_agents in [5,7,10]:
+            for num_tasks in [20,25,30]:
                 for num_exp in range(100):
-                    create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
-                    create_CaptureEnv(dim, num_agents, num_tasks, num_exp=num_exp)
+                    print('creating LFBEnv',num_agents,num_tasks,dim,num_exp)
+                    #create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
+    
+    for setting in [[5,5,10],[7,7,10],[10,10,10]]:
+        for num_exp in range(100):
+            print('creating CaptureEnv',setting[0],setting[1],setting[2],num_exp)
+            #create_CaptureEnv(setting[2], setting[0], setting[1], num_exp=num_exp)
 
 import os
 if not os.path.isdir("./src/envs/maps"):
     os.mkdir("./src/envs/maps")
     os.mkdir("./src/envs/maps/CaptureEnv")
     os.mkdir("./src/envs/maps/LevelForagingEnv")
-creation_routine()
+
+from argparse import ArgumentParser, ArgumentTypeError
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0',''):
+        return False
+    else:
+        raise ArgumentTypeError('Boolean value expected.')
+
+parser = ArgumentParser()
+parser.add_argument('--fixed', dest='fixed', default=False, type=str2bool,
+                    help='Fixed maps: True or False')
+args = parser.parse_args()
+print(args)
+
+if args.fixed:
+    creation_routine()
