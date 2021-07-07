@@ -5,7 +5,7 @@ from copy import *
 from src.reasoning.pomcp_estimation import *
 
 def aga_estimation(env, adhoc_agent,\
- template_types, parameters_minmax, grid_size=4, reward_factor=0.04, step_size=0.01, decay_step=0.999, degree=2, univariate=True):
+ template_types, parameters_minmax, grid_size=100, reward_factor=0.04, step_size=0.01, decay_step=0.999, degree=2, univariate=True):
     #####
     # AGA INITIALISATION
     #####
@@ -34,7 +34,7 @@ def aga_estimation(env, adhoc_agent,\
     return env, adhoc_agent.smart_parameters['estimation']
 
 def abu_estimation(env, adhoc_agent, \
- template_types, parameters_minmax, grid_size=4, reward_factor=0.04, degree=2):
+ template_types, parameters_minmax, grid_size=100, reward_factor=0.04, degree=2):
     #####
     # ABU INITIALISATION
     #####
