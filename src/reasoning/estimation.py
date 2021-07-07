@@ -19,6 +19,10 @@ def aga_estimation(env, adhoc_agent,\
     # AGA PROCESS
     #####
     adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
+
+    #####
+    # AGA - SET ESTIMATION
+    #####
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
             selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
@@ -27,10 +31,6 @@ def aga_estimation(env, adhoc_agent,\
             teammate.type = selected_type
             teammate.set_parameters(selected_parameter)
 
-
-    #####
-    # AGA ESTIMATION
-    #####
     return env, adhoc_agent.smart_parameters['estimation']
 
 def abu_estimation(env, adhoc_agent, \
@@ -49,6 +49,9 @@ def abu_estimation(env, adhoc_agent, \
     #####
     adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
 
+    #####
+    # ABU - SET ESTIMATION
+    #####
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
             selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
@@ -57,11 +60,6 @@ def abu_estimation(env, adhoc_agent, \
             teammate.type = selected_type
             teammate.set_parameters(selected_parameter)
 
-    
-
-    #####
-    # ABU ESTIMATION
-    #####
     return env, adhoc_agent.smart_parameters['estimation']
 
 def oeata_estimation(env, adhoc_agent,\
@@ -107,7 +105,9 @@ def pomcp_estimation(env, adhoc_agent, \
     #####
     adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
 
-
+    #####
+    # POMCP - SET ESTIMATION
+    #####
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
             selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
@@ -116,10 +116,6 @@ def pomcp_estimation(env, adhoc_agent, \
             teammate.type = selected_type
             teammate.set_parameters(selected_parameter)
   
-
-    #####
-    # POMCP ESTIMATION
-    #####
     return env, adhoc_agent.smart_parameters['estimation']
 
 
@@ -132,8 +128,13 @@ def level_foraging_uniform_estimation(env, template_types=['l1','l2','l3']):
             teammate.set_parameters(np.random.uniform(0,1,3))
     return env
 
-def capture_uniform_estimation(env):
-    raise NotImplemented
+def capture_uniform_estimation(env, template_types=['c1','c2','c3']):
+    adhoc_agent = env.get_adhoc_agent()
+    for teammate in env.components['agents']:
+        if teammate.index != adhoc_agent.index:
+            teammate.type = rd.sample(template_types,1)[0]
+            teammate.set_parameters(np.random.uniform(0,1,2))
+    return env
 
 def truco_uniform_estimation(env):
     if env.visibility == 'partial':
