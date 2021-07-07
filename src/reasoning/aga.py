@@ -1,4 +1,5 @@
 import itertools
+import math
 import numpy as np
 import random as rd
 from sklearn.linear_model import LinearRegression
@@ -8,7 +9,7 @@ warnings.filterwarnings("ignore")
 
 class AGA(object):
 
-    def __init__(self, env, template_types, parameters_minmax, grid_size=4, reward_factor=0.04, step_size=0.01, decay_step=0.999, degree=2, univariate=True):
+    def __init__(self, env, template_types, parameters_minmax, grid_size=100, reward_factor=0.04, step_size=0.01, decay_step=0.999, degree=2, univariate=True):
         # initialising the AGA parameters
         self.template_types = template_types
         self.nparameters = len(parameters_minmax)
@@ -48,9 +49,22 @@ class AGA(object):
                         [np.array([rd.uniform(self.parameters_minmax[n][0],self.parameters_minmax[n][1]) for n in range(self.nparameters)])]
 
     # initialise the estimation grid
-    def init_estimation_grid(self):
-        linear_spaces = [np.linspace(self.parameters_minmax[n][0],self.parameters_minmax[n][1],self.grid_size) for n in range(self.nparameters)]
-        self.grid = list(itertools.product(*linear_spaces))
+    def init_estimation_grid(self, mode='random'):
+        # linear init
+        if mode == 'linear':
+            mult = 1
+            while math.factorial(mult+1) < self.grid_size:
+                mult += 1
+                
+            linear_spaces = [np.linspace(self.parameters_minmax[n][0],self.parameters_minmax[n][1],mult) for n in range(self.nparameters)]
+            self.grid = list(itertools.product(*linear_spaces))
+
+        # random uniform init
+        elif mode == 'random':
+            self.grid = np.random.uniform(0, 1, (self.grid_size, self.nparameters))
+        
+        else:
+            raise NotImplemented
 
     # update the grid given the current environment
     def update(self,env):
