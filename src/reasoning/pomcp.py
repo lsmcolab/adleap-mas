@@ -1,6 +1,7 @@
 from node import ANode, ONode
 import numpy as np
 import random
+from estimation import uniform_estimation
 
 def simulate_action(node, agent, action):
     # 1. Copying the current state for simulation
@@ -126,7 +127,8 @@ def black_box_update(env,agent,root,k=100):
     
     # 3. Sampling new particles while don't get k particles into the filter
     while(len(root.particle_filter) < k):
-        root.particle_filter.append(env.sample_state(agent))
+        sampled_env = env.sample_state(agent)
+        root.particle_filter.append(sampled_env)
 
 def find_new_root(current_state,previous_action,current_observation,previous_root):
     # 1. If the root doesn't exist yet, create it
@@ -193,8 +195,8 @@ def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimatio
             root_adhoc_agent = root_node.state.get_adhoc_agent()
             root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
     else:
-        from estimation import level_foraging_uniform_estimation
-        root_node.state = level_foraging_uniform_estimation(root_node.state)
+        from estimation import uniform_estimation
+        root_node.state = uniform_estimation(root_node.state)
     
     # 3. Black-box updating
     black_box_update(state,agent,root_node)

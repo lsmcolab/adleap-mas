@@ -49,7 +49,7 @@ for i in range(rounds):
     if estimation == 'OEATA':
         adhoc_agent.smart_parameters['estimation_args'] =\
         get_env_types("CaptureEnv"), [(0,1),(0,1)]
-        estimation_method = aga_estimation
+        estimation_method = pomcp_estimation
 
 
     while not done and env.episode < 15:
@@ -74,6 +74,8 @@ for i in range(rounds):
 
 
         # Verifying the end condition
+        prob, param = adhoc_agent.smart_parameters['estimation'].get_estimation(env)
+        
 
         print(adhoc_agent.smart_parameters['estimation'].get_estimation(env))
 

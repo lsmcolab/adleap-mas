@@ -103,8 +103,8 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
         root_adhoc_agent = root_node.state.get_adhoc_agent()
         root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
     else:
-        from estimation import level_foraging_uniform_estimation
-        root_node.state = level_foraging_uniform_estimation(root_node.state)
+        from estimation import uniform_estimation
+        root_node.state = uniform_estimation(root_node.state)
         
     # - cleaning the memory cache
     import gc

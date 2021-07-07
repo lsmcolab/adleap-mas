@@ -1,7 +1,8 @@
 import random as rd
 import numpy as np
 from copy import *
-
+from src.envs.CaptureEnv import CaptureEnv
+from src.envs.LevelForagingEnv import LevelForagingEnv
 from src.reasoning.pomcp_estimation import *
 
 def aga_estimation(env, adhoc_agent,\
@@ -124,12 +125,17 @@ def pomcp_estimation(env, adhoc_agent, \
 
 
 
-def level_foraging_uniform_estimation(env, template_types=['l1','l2','l3']):
+def uniform_estimation(env, template_types=['l1','l2']):
+    if isinstance(env,CaptureEnv):
+        template_types = ['c1','c2']
     adhoc_agent = env.get_adhoc_agent()
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
             teammate.type = rd.sample(template_types,1)[0]
-            teammate.set_parameters(np.random.uniform(0,1,3))
+            if isinstance(env,CaptureEnv):
+                teammate.set_parameters(np.random.uniform(0,1,2))
+            else:
+                teammate.set_parameters(np.random.uniform(0,1,3))
     return env
 
 def capture_uniform_estimation(env):

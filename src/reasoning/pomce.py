@@ -4,7 +4,7 @@ import numpy as np
 from node import ANode,ONode
 import warnings
 import random as rd
-
+from estimation import uniform_estimation
 warnings.filterwarnings("ignore")
 
 # POMCP helper functions
@@ -106,7 +106,7 @@ def search(node, agent, max_it, max_depth):
     while it < max_it:
         # a. Sampling the belief state for simulation
         if len(node.particle_filter) == 0:
-            beliefState = node.state.sample_state(agent)
+            beliefState = uniform_estimation(node.state.sample_state(agent))
         else:
             beliefState = rd.sample(node.particle_filter,1)[0]
 
@@ -132,8 +132,9 @@ def black_box_update(env,agent,root,k=100):
     
     # 3. Sampling new particles while don't get k particles into the filter
     while(len(root.particle_filter) < k):
-        
-        root.particle_filter.append(env.sample_state(agent))
+        sampled_env = env.sample_state(agent)
+        sampled_env = uniform_estimation(sampled_env,agent)
+        root.particle_filter.append(sampled_env)
 
 def find_new_root(current_state,previous_action,current_observation,previous_root):
     # 1. If the root doesn't exist yet, create it
@@ -187,17 +188,16 @@ def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimatio
         root_node = find_new_root(state, previous_action, current_observation, agent.smart_parameters['est_search_tree'])
 
     # 2. Checking if the root_node was defined
-    if root_node is not None:
+    if root_node is None:
         root_node = ONode(observation=None,state=state,depth=0,parent=None)
 
     # - and estimating enviroment parameters
-    if estimation_algorithm is not None:
-        root_node.state = sample_estimate(root_node.state,agent)
-        root_adhoc_agent = root_node.state.get_adhoc_agent()
-        root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
+
+    from estimation import uniform_estimation
+    if estimation_algorithm is None:
+        root_node.state = uniform_estimation(root_node.state)
     else:
-        from estimation import level_foraging_uniform_estimation
-        root_node.state = level_foraging_uniform_estimation(root_node.state)
+        root_node.state = estimation_algorithm(root_node.state)
 
     # 3. Black-box updating
     black_box_update(state,agent,root_node,particles)
@@ -209,7 +209,7 @@ def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimatio
     # 4. Returning the best action
     return best_action, root_node
 
-def sample_estimate(env,agent):
+def sample_estimate(env,agent=None):
     adhoc_agent = env.get_adhoc_agent()
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
@@ -218,7 +218,7 @@ def sample_estimate(env,agent):
 
             teammate.type = selected_type
             teammate.set_parameters(selected_parameter)
-    print("10")
+    
     return env
 
 # Estimation Class 
@@ -311,6 +311,7 @@ class POMCE(object):
                         parameter += sampled_ag.get_parameters()
                 
                 parameter = parameter/type_dict[t]
+                
                 
                 self.teammate[agent.index][t]['parameter_estimation_history'].append(parameter)
                 self.teammate[agent.index][t]["probability_history"].append(type_dict[t]/total_occurence)

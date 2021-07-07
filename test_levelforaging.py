@@ -118,7 +118,7 @@ for i in range(rounds):
         print (len(just_finished_tasks))
 
         if(estimation_mode == 'OEATA'):
-            level_foraging_uniform_estimation(env, just_finished_tasks)
+            uniform_estimation(env, just_finished_tasks)
         elif (estimation_mode == 'POMCP'):
             process_pomcp_estimation(env)
 
