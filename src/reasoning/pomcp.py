@@ -185,13 +185,23 @@ def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimatio
 
     # - and estimating enviroment parameters
     if estimation_algorithm is not None:
-        state = estimation_algorithm(root_node.state)
-
+            if 'estimation_args' in agent.smart_parameters:
+                root_node.state, agent.smart_parameters['estimation'] = \
+                    estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
+            else:
+                root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
+            root_adhoc_agent = root_node.state.get_adhoc_agent()
+            root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
+    else:
+        from estimation import level_foraging_uniform_estimation
+        root_node.state = level_foraging_uniform_estimation(root_node.state)
+    
     # 3. Black-box updating
     black_box_update(state,agent,root_node)
 
     # 3. Searching for the best action within the tree
     best_action = search(root_node, agent, max_it, max_depth)
+    #print("Particle : ", root_node.particle_filter)
 
     # 4. Returning the best action
     return best_action, root_node

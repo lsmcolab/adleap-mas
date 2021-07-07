@@ -1,19 +1,13 @@
 from gym import spaces
 import matplotlib.pyplot as plt
-from src.reasoning.fundamentals import FundamentalValues
-from src.reasoning.OEATA import *
-from src.reasoning.parameter_estimation import *
 
 import sys
 sys.path.append('src/reasoning')
-
+from scenario_generator import *
 from src.reasoning.estimation import *
 from src.envs.CaptureEnv import CaptureEnv, Agent, Task
 from src.log import LogFile
-
-from src.reasoning.AGA import *
-from src.reasoning.ABU import *
-
+from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estimation, pomcp_estimation
 
 ###
 # Main
@@ -21,16 +15,16 @@ from src.reasoning.ABU import *
 # TODO : fix pomcp black box .
 components = {
     'agents':[
-        Agent(index='A',atype="c1",position=(1,0),direction=3*np.pi/2,radius=1,angle=1,level=0.9),
-        Agent(index='B',atype='c1',position=(8,2),direction=3*np.pi/2,radius=0.40,angle=0.19,level=0.58),
-       Agent(index='C',atype='c1',position=(6,4),direction=3*np.pi/2,radius=0.15,angle=0.4,level=0.7),
-        Agent(index='D',atype='c1',position=(2,7),direction=np.pi,radius=0.11,angle=0.41,level=0.57),
+        Agent(index='A',atype="pomcp",position=(1,0),direction=3*np.pi/2,radius=1,angle=1),
+        Agent(index='B',atype='c1',position=(8,2),direction=3*np.pi/2,radius=0.40,angle=0.19),
+       Agent(index='C',atype='c1',position=(6,4),direction=3*np.pi/2,radius=0.15,angle=0.4),
+        Agent(index='D',atype='c1',position=(2,7),direction=np.pi,radius=0.11,angle=0.41),
     ],
     'adhoc_agent_index': 'A',
-    'tasks':[Task('1',(7,0),1.0),
-            Task('2',(8,1),1.0),
-            Task('3',(7,4),1.0),
-            Task('4',(5,6),1.0)]}
+    'tasks':[Task('1',(7,0)),
+            Task('2',(8,1)),
+            Task('3',(7,4)),
+            Task('4',(5,6))]}
 
 env = CaptureEnv((10,10),components,visibility='full',display=True)
 # env = LevelForagingEnv((10,10),components,visibility='full')
@@ -39,31 +33,11 @@ env.agents_color = {'l1':'lightgrey','l2':'darkred','l3':'darkgreen','l4':'darkb
 state = env.reset()
 #log_file = LogFile(env)
 
-# Estimator Configuration
-estimation_mode = 'AGA'
-oeata_parameter_calculation_mode = 'MEAN'   #  It can be MEAN, MODE, MEDIAN
-agent_types = ['c1','c2','c3']
-estimators_length = 100
-mutation_rate = 0.2
-aga,abu = None,None
-
-fundamental_values = FundamentalValues(radius_max=1, radius_min=0.1, angle_max=1, angle_min=0.1, level_max=1,
-                                       level_min=0, agent_types=agent_types, env_dim=[10, 10],
-                                       estimation_mode=estimation_mode)
-
-
-if estimation_mode == 'AGA':
-    estimation_config = AGAConfig(fundamental_values, 4, 0.01, 0.999)
-    aga = AGAprocess(estimation_config, env)
-
-elif estimation_mode == "ABU":
-    estimation_config = ABUConfig(fundamental_values, 4)
-    abu = ABUprocess(estimation_config, env)
 
 #################################################
 
 
-
+estimation = "OEATA"
 rounds = 1
 loss = []
 time_step = 0
@@ -72,41 +46,26 @@ for i in range(rounds):
     done = False
     adhoc_agent = env.get_adhoc_agent()
 
-
-    if estimation_mode == 'OEATA':
-        estimation_config = OeataConfig(estimators_length, oeata_parameter_calculation_mode, mutation_rate,
-                                                 fundamental_values)
-
-        for a in env.components['agents']:
-            a.smart_parameters['last_completed_task'] = None
-            a.smart_parameters['choose_task_state'] = env.copy()
-            if a.index != adhoc_agent.index:
-                param_estim = ParameterEstimation(estimation_config)
-                param_estim.estimation_initialisation()
-                oeata = OEATA_process(estimation_config, a)
-                oeata.initialisation(a.position, a.direction, a.radius,a.angle,a.level, env)
-                param_estim.learning_data = oeata
-                a.smart_parameters['estimations'] = param_estim
+    if estimation == 'OEATA':
+        adhoc_agent.smart_parameters['estimation_args'] =\
+        get_env_types("CaptureEnv"), [(0,1),(0,1)]
+        estimation_method = aga_estimation
 
 
-    while not done and env.episode < 100:
+    while not done and env.episode < 15:
         # Rendering the environment
 
-        env.render()
+        #env.render()
         print("Episode : ", env.episode)
         # Main Agent taking an action
         module = __import__(adhoc_agent.type)
         method = getattr(module, adhoc_agent.type+'_planning')
 
         if(adhoc_agent.type == "mcts" or adhoc_agent.type=="pomcp"):
-            adhoc_agent.next_action, adhoc_agent.target = method(state,adhoc_agent)
+            adhoc_agent.next_action, adhoc_agent.target = method(state,adhoc_agent,estimation_algorithm=estimation_method)
         else:
             adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
 
-        if (estimation_mode == 'AGA'):
-            aga.update(state)
-        elif (estimation_mode == 'ABU'):
-            abu.update(state)
 
 
         # Step on environment
@@ -116,13 +75,7 @@ for i in range(rounds):
 
         # Verifying the end condition
 
-        if (estimation_mode == 'OEATA'):
-            capture_uniform_estimation(env, just_finished_tasks)
-
-
-        for agent in env.components['agents']:
-            print(agent.index,agent.target)
-
+        print(adhoc_agent.smart_parameters['estimation'].get_estimation(env))
 
 
         if done:

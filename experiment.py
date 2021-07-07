@@ -36,7 +36,7 @@ def str2bool(v):
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='AGA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=20,type=int,help="Dimension")
@@ -111,11 +111,11 @@ adhoc_agent = env.get_adhoc_agent()
 
 if args.estimation == 'AGA':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)]
+     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForaginEnv" else [(0,1),(0,1)]
     estimation_method = aga_estimation
 elif  args.estimation == 'ABU':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)]
+     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForaginEnv" else [(0,1),(0,1)]
     estimation_method = abu_estimation
 elif args.estimation == 'OEATA':
     adhoc_agent.smart_parameters['estimation_args'] =\
@@ -139,7 +139,7 @@ while not done and env.episode < args.num_episodes:
     # Main Agent taking an action
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
-    adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
+    adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=)
 
     if env.episode == 0:
         stats = list_stats(env)

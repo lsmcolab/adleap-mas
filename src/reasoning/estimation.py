@@ -19,6 +19,14 @@ def aga_estimation(env, adhoc_agent,\
     # AGA PROCESS
     #####
     adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
+    for teammate in env.components['agents']:
+        if teammate.index != adhoc_agent.index:
+            selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
+            selected_parameter = adhoc_agent.smart_parameters['estimation'].get_parameter_for_selected_type(teammate,selected_type)
+
+            teammate.type = selected_type
+            teammate.set_parameters(selected_parameter)
+
 
     #####
     # AGA ESTIMATION
@@ -40,6 +48,16 @@ def abu_estimation(env, adhoc_agent, \
     # ABU PROCESS
     #####
     adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
+
+    for teammate in env.components['agents']:
+        if teammate.index != adhoc_agent.index:
+            selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
+            selected_parameter = adhoc_agent.smart_parameters['estimation'].get_parameter_for_selected_type(teammate,selected_type)
+
+            teammate.type = selected_type
+            teammate.set_parameters(selected_parameter)
+
+    
 
     #####
     # ABU ESTIMATION
@@ -74,23 +92,37 @@ def oeata_estimation(env, adhoc_agent,\
 
     return env, adhoc_agent.smart_parameters['estimation']
 
-def process_pomcp_estimation(env):
-    iteration_max = 100
-    max_depth = 100
-    particle_filter_numbers = 100
+def pomcp_estimation(env, adhoc_agent, \
+ template_types, parameters_minmax, discount_factor=0.9, max_iter=10, max_depth=10,min_particles=100):
+    #####
+    # POMCE INITIALISATION
+    ##### discount_factor=0.9,max_iter=10,max_depth=10,min_particles=100
+    # Initialising the aga method inside the adhoc agent
+    if 'estimation' not in adhoc_agent.smart_parameters:
+        from pomce import POMCE
+        adhoc_agent.smart_parameters['estimation'] = POMCE(env,template_types,parameters_minmax,discount_factor,max_iter,max_depth,min_particles)
+        
+    #####    
+    # POMCE PROCESS
+    #####
+    adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].update(env)
 
-    for unknown_agent in env.components['agents']:
-        if unknown_agent != env.get_adhoc_agent():
 
-            pomcpe = POMCP(iteration_max, max_depth, particle_filter_numbers)
-            estimated_parameter, estimated_type = pomcpe.start_estimation(None, env)
+    for teammate in env.components['agents']:
+        if teammate.index != adhoc_agent.index:
+            selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
+            selected_parameter = adhoc_agent.smart_parameters['estimation'].get_parameter_for_selected_type(teammate,selected_type)
 
-            for estimation_history in unknown_agent.smart_parameters['estimations'].estimation_histories:
-                if estimated_parameter is None:
-                    estimation_history.estimation_history.append(estimation_history.estimation_history[-1])
-                else:
-                    estimation_history.estimation_history.append(estimated_parameter)
-                estimation_history.type_probability = 1
+            teammate.type = selected_type
+            teammate.set_parameters(selected_parameter)
+  
+
+    #####
+    # POMCP ESTIMATION
+    #####
+    return env, adhoc_agent.smart_parameters['estimation']
+
+
 
 def level_foraging_uniform_estimation(env, template_types=['l1','l2','l3']):
     adhoc_agent = env.get_adhoc_agent()

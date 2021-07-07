@@ -49,6 +49,9 @@ class Agent(AdhocAgent):
         self.angle = parameters[1]
         self.level = parameters[2]
 
+    def get_parameters(self):
+        return np.array([self.radius,self.angle,self.level])
+
     def show(self):
         print(self.index, self.type, ':', self.position, self.direction, self.radius, self.angle, self.level)
 

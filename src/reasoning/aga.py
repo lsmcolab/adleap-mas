@@ -234,7 +234,7 @@ class AGA(object):
         type_prob = np.zeros(len(self.template_types))
         for i in range(len(self.template_types)):
             type = self.template_types[i]
-            type_prob[i] = self.teammate[teammate.index][type]['probability_history'][i]
+            type_prob[i] = self.teammate[teammate.index][type]['probability_history'][-1]
         
         sampled_type = rd.choices(self.template_types,type_prob,k=1)
         return sampled_type[0]
