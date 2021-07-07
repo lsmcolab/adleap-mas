@@ -1,9 +1,7 @@
 from node import ANode, ONode
-import numpy as np
 import random
-from estimation import uniform_estimation
 
-def simulate_action(node, agent, action):
+def simulate_action(node, action):
     # 1. Copying the current state for simulation
     tmp_state = node.state.copy()
 
@@ -17,7 +15,7 @@ def simulate_action(node, agent, action):
 def rollout_policy(state):
     return state.action_space.sample()
 
-def rollout(node,agent,max_depth,discount_factor):
+def rollout(node,max_depth,discount_factor):
     # 1. Checking if it is an end state or leaf node
     if is_terminal(node) or is_leaf(node,max_depth):
         return 0
@@ -33,9 +31,8 @@ def rollout(node,agent,max_depth,discount_factor):
     observation_node = action_node.add_child(action_node.state,observation)
 
     # 4. Rolling out
-    sim_agent = observation_node.state.get_adhoc_agent()
     return reward +\
-     discount_factor*rollout(observation_node,sim_agent,max_depth,discount_factor)
+     discount_factor*rollout(observation_node,max_depth,discount_factor)
 
 def is_leaf(node, max_depth):
     if node.depth >= max_depth + 1:
@@ -45,7 +42,7 @@ def is_leaf(node, max_depth):
 def is_terminal(node):
     return node.state.state_set.is_final_state(node.state.state)
 
-def simulate(node, agent, max_depth,discount_factor=0.9):
+def simulate(node, max_depth,discount_factor=0.9):
     # 1. Checking the stop condition
     node.particle_filter.append(node.state)
     if is_terminal(node) or is_leaf(node,max_depth):
@@ -55,15 +52,15 @@ def simulate(node, agent, max_depth,discount_factor=0.9):
     if node.children == []:
         # a. adding the children
         for action in node.actions:
-            (next_node, reward) = simulate_action(node, agent, action)
+            (next_node, reward) = simulate_action(node, action)
             node.children.append(next_node)
-        return rollout(node,agent,max_depth,discount_factor)
+        return rollout(node,max_depth,discount_factor)
 
     # 3. Selecting the best action
     action = node.select_action()
 
     # 4. Simulating the action
-    (action_node, reward) = simulate_action(node, agent, action)
+    (action_node, reward) = simulate_action(node, action)
 
     # 5. Adding the action child on the tree
     if action_node.action in [c.action for c in node.children]:
@@ -89,8 +86,7 @@ def simulate(node, agent, max_depth,discount_factor=0.9):
         observation_node.particle_filter.append(observation_node.state)
 
     # 7. Calculating the reward, quality and updating the node
-    sim_agent = observation_node.state.get_adhoc_agent()
-    R = reward + float(discount_factor * simulate(observation_node,sim_agent,max_depth,discount_factor))
+    R = reward + float(discount_factor * simulate(observation_node,max_depth,discount_factor))
     node.visits += 1
     node.update(action, R)
     return R
@@ -109,7 +105,7 @@ def search(node, agent, max_it, max_depth):
         node.state = beliefState
 
         # b. simulating
-        simulate(node, agent, max_depth)
+        simulate(node, max_depth)
 
         it += 1
     return node.get_best_action()
@@ -170,7 +166,7 @@ def find_new_root(current_state,previous_action,current_observation,previous_roo
     new_root.update_depth(0)
     return new_root
 
-def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimation_algorithm):
+def monte_carlo_planning(state, agent, max_it, max_depth,estimation_algorithm):
     # 1. Getting the current state and previous action-observation pair
     previous_action = agent.next_action
     current_observation = state.get_observation()
@@ -181,41 +177,40 @@ def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimatio
     else:
         root_node = find_new_root(state, previous_action, current_observation, agent.smart_parameters['search_tree'])
 
-    # 2. Checking if the root_node was defined
-    if root_node is not None:
+    # 3. Checking if the root_node was defined
+    if root_node is None:
         root_node = ONode(observation=None,state=state,depth=0,parent=None)
 
     # - and estimating enviroment parameters
     if estimation_algorithm is not None:
-            if 'estimation_args' in agent.smart_parameters:
-                root_node.state, agent.smart_parameters['estimation'] = \
-                    estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
-            else:
-                root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
-            root_adhoc_agent = root_node.state.get_adhoc_agent()
-            root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
+        if 'estimation_args' in agent.smart_parameters:
+            root_node.state, agent.smart_parameters['estimation'] = \
+                estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
+        else:
+            root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
+        root_adhoc_agent = root_node.state.get_adhoc_agent()
+        root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
     else:
         from estimation import uniform_estimation
         root_node.state = uniform_estimation(root_node.state)
     
-    # 3. Black-box updating
+    # 4. Black-box updating
     black_box_update(state,agent,root_node)
 
-    # 3. Searching for the best action within the tree
+    # 5. Searching for the best action within the tree
     best_action = search(root_node, agent, max_it, max_depth)
-    #print("Particle : ", root_node.particle_filter)
 
-    # 4. Returning the best action
+    # 6. Returning the best action
     return best_action, root_node
 
-def pomcp_planning(env,agent, max_depth=10, max_it=10,estimation_algorithm=None):
+def pomcp_planning(env, agent, max_depth=10, max_it=10, estimation_algorithm=None):
     # 1. Setting the environment for simulation
     copy_env = env.copy()
     copy_env.viewer = None
 
     # 2. Planning
     next_action, search_tree =\
-     monte_carlo_planning(copy_env,copy_env.action_space,agent,max_it,max_depth,estimation_algorithm)
+     monte_carlo_planning(copy_env,agent,max_it,max_depth,estimation_algorithm)
 
     # 3. Updating the search tree
     agent.smart_parameters['search_tree'] = search_tree
