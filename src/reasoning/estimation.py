@@ -119,8 +119,6 @@ def pomcp_estimation(env, adhoc_agent, \
   
     return env, adhoc_agent.smart_parameters['estimation']
 
-
-
 def uniform_estimation(env, template_types=['l1','l2']):
     if isinstance(env,CaptureEnv):
         template_types = ['c1','c2']
@@ -132,6 +130,14 @@ def uniform_estimation(env, template_types=['l1','l2']):
                 teammate.set_parameters(np.random.uniform(0,1,2))
             else:
                 teammate.set_parameters(np.random.uniform(0,1,3))
+    return env
+
+def level_foraging_uniform_estimation(env, template_types=['l1','l2','l3']):
+    adhoc_agent = env.get_adhoc_agent()
+    for teammate in env.components['agents']:
+        if teammate.index != adhoc_agent.index:
+            teammate.type = rd.sample(template_types,1)[0]
+            teammate.set_parameters(np.random.uniform(0,1,3))
     return env
 
 def capture_uniform_estimation(env, template_types=['c1','c2','c3']):
