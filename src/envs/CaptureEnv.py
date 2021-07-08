@@ -577,7 +577,7 @@ class CaptureEnv(AdhocReasoningEnv):
         super(CaptureEnv, self).__init__(state_set, \
                                                transition_function, action_space, reward_function, \
                                                observation_space, components)
-        self.agents_color = {}
+        self.agents_color = {'c1':'green','c2':'blue'}
 
         # Setting the inital state
         self.state_set.initial_state = np.zeros(shape)
@@ -806,14 +806,16 @@ class CaptureEnv(AdhocReasoningEnv):
                 )
 
             for i in range(len(self.components['tasks'])):
-                if not self.components['tasks'][i].completed:
+                if self.drawn_tasks[i] is not None:
                     x, y = self.components['tasks'][i].position[0], self.components['tasks'][i].position[1]
                     self.drawn_tasks[i].set_translation(
                         self.draw_start_x + (x + self.drawn_tasks_shift) * self.draw_scale,
                         (y + self.drawn_tasks_shift) * self.draw_scale + self.draw_start_y
                     )
-                else:
-                    self.drawn_tasks[i].set_scale(0.0, 0.0)
+                    if self.components['tasks'][i].completed:
+                        self.drawn_tasks[i].set_scale(0.0, 0.0)
+                    else:
+                        self.drawn_tasks[i].set_scale(1.0, 1.0)
 
             self.draw_progress()
 
@@ -1020,7 +1022,37 @@ class CaptureEnv(AdhocReasoningEnv):
                 else:
                     raise NotImplementedError
             else:
-                drawn_tasks.append(None)
+                drawn_tasks.append(rendering.Transform())
+                if type_ == 'box':
+                    shift = 0.1
+                    box = rendering.PolyLine([
+                        (0.1 * self.draw_scale, 0.4 * self.draw_scale),
+                        (0.5 * self.draw_scale, 0.4 * self.draw_scale),
+                        (0.5 * self.draw_scale, 0.1 * self.draw_scale),
+                        (0.1 * self.draw_scale, 0.1 * self.draw_scale),
+                        (0.1 * self.draw_scale, 0.4 * self.draw_scale),
+                        (0.35 * self.draw_scale, 0.65 * self.draw_scale),
+                        (0.75 * self.draw_scale, 0.65 * self.draw_scale),
+                        (0.75 * self.draw_scale, 0.35 * self.draw_scale),
+                        (0.5 * self.draw_scale, 0.1 * self.draw_scale),
+                        (0.5 * self.draw_scale, 0.4 * self.draw_scale),
+                        (0.75 * self.draw_scale, 0.65 * self.draw_scale)
+                    ], close=False)
+                    box.set_linewidth(2)
+                    box.add_attr(drawn_tasks[-1])
+                    self.viewer.add_geom(box)
+                elif type_ == 'figure':
+                    shift = 0.5
+                    try:
+                        with open(fname):
+                            figure = rendering.Image(fname, \
+                                                     width=0.9 * self.draw_scale, height=0.9 * self.draw_scale)
+                            figure.add_attr(drawn_tasks[-1])
+                            self.viewer.add_geom(figure)
+                    except FileNotFoundError as e:
+                        raise e
+                else:
+                    raise NotImplementedError
 
         return drawn_tasks, shift
 

@@ -180,14 +180,17 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
                   direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1), angle=random.uniform(0.5, 1)))
 
     # b. teammates and tasks
+    type_index = 0
     for i in range(1, num_agents + num_tasks):
         if (i < num_agents):
             agents.append( \
-                Agent(index=str(i), atype=random.sample(types, 1)[0], position=(random_pos[i][0], random_pos[i][1]),
-                      direction=random.sample(direction, 1)[0], radius=random.uniform(0.1, 1),
-                      angle=random.uniform(0.1, 1)))
+                Agent(index=str(i), atype=types[type_index % len(types)], position=(random_pos[i][0], random_pos[i][1]),
+                      direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1),
+                      angle=random.uniform(0.5, 1)))
         else:
             tasks.append(Task(str(i), position=(random_pos[i][0], random_pos[i][1])))
+
+        type_index += 1
 
     # c. adding to components dict
     components = {
