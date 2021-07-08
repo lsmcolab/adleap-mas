@@ -50,10 +50,7 @@ class ABU(object):
     def init_estimation_grid(self, mode='random'):
         # linear init
         if mode == 'linear':
-            mult = 1
-            while math.factorial(mult+1) < self.grid_size:
-                mult += 1
-                
+            mult = int((self.grid_size)**(1/self.nparameters))
             linear_spaces = [np.linspace(self.parameters_minmax[n][0],self.parameters_minmax[n][1],mult) for n in range(self.nparameters)]
             self.grid = list(itertools.product(*linear_spaces))
 
