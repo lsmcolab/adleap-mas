@@ -224,7 +224,7 @@ def sample_estimate(env,agent=None):
 # Estimation Class 
 
 class POMCE(object):
-    def __init__(self,env,template_types,parameter_minmax,discount_factor=0.9,max_iter=10,max_depth=10,min_particles=100):
+    def __init__(self,env,template_types,parameter_minmax,discount_factor=0.9,max_iter=100,max_depth=10,min_particles=100):
         # Initialising the POMCE parameters
         self.template_types = template_types
         self.nparameters = len(parameter_minmax)

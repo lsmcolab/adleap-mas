@@ -208,7 +208,7 @@ def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimatio
     # 4. Returning the best action
     return best_action, root_node
 
-def pomcp_planning(env,agent, max_depth=10, max_it=10,estimation_algorithm=None):
+def pomcp_planning(env,agent, max_depth=10, max_it=100,estimation_algorithm=None):
     # 1. Setting the environment for simulation
     copy_env = env.copy()
     copy_env.viewer = None
