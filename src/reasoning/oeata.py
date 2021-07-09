@@ -101,13 +101,16 @@ class OEATA(object):
         for type in self.template_types:
             for i in range(self.N):
                 # verifying if the estimator correctly estimates the task
+                # CORRECT
                 if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and\
                  self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index == teammate.smart_parameters['last_completed_task'].index:
                     self.teammate[teammate.index][type]['bag_of_estimators'].append(self.teammate[teammate.index][type]['estimation_set'][i].copy())
                     self.teammate[teammate.index][type]['estimation_set'][i].success_counter += 1
                     self.teammate[teammate.index][type]['estimation_set'][i].c_e = self.teammate[teammate.index][type]['estimation_set'][i].success_counter
                     self.teammate[teammate.index][type]['estimation_set'][i].f_e = 0
-                else:
+
+                # INCORRECT
+                elif self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None:
                     #updating the failure counter
                     self.teammate[teammate.index][type]['estimation_set'][i].failure_counter += 1
                     self.teammate[teammate.index][type]['estimation_set'][i].f_e += 1
