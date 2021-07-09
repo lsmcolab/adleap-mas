@@ -39,7 +39,7 @@ def is_leaf(node, max_depth):
 def is_terminal(node):
     return node.state.state_set.is_final_state(node.state.state)
 
-def simulate(node, agent, max_depth,discount_factor=0.9):
+def simulate(node, max_depth,discount_factor=0.9):
     # 1. Checking the stop condition
     if is_terminal(node) or is_leaf(node,max_depth):
         return 0
@@ -68,8 +68,7 @@ def simulate(node, agent, max_depth,discount_factor=0.9):
         node.children.append(next_node)
 
     # 6. Calculating the reward, quality and updating the node
-    sim_agent = next_node.state.get_adhoc_agent()
-    R = reward + float(discount_factor * simulate(next_node,sim_agent,max_depth,discount_factor))
+    R = reward + float(discount_factor * simulate(next_node,max_depth,discount_factor))
     node.visits += 1
     node.update(action, R)
     return R
@@ -113,7 +112,7 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
     # 3. Performing the Monte-Carlo Tree Search
     it = 0
     while it < max_it:
-        simulate(root_node, agent, max_depth)
+        simulate(root_node, max_depth)
         it += 1
 
     # 4. Retuning the best action and the search tree root node
