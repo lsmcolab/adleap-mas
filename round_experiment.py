@@ -127,12 +127,13 @@ else:
 # 4. Starting the experiment
 done = False
 exp_round = 0
+tasks_per_round = 2
 env.display = args.display
 print(args.env," Visibility:",env.visibility, " Display:",env.display)
 
 for i in range(len(env.components['tasks'])):
-    if i != (2*exp_round) % len(env.components['tasks']) and\
-     i != (2*exp_round+1) % len(env.components['tasks']):
+    if i != (tasks_per_round*exp_round) % len(env.components['tasks']) and\
+     i != (tasks_per_round*exp_round+1) % len(env.components['tasks']):
         env.components['tasks'][i].completed = True
     else:
         env.components['tasks'][i].completed = False
@@ -167,8 +168,8 @@ while env.episode < args.num_episodes:
     if done:
         exp_round += 1
         for i in range(len(env.components['tasks'])):
-            if i != (2*exp_round) % len(env.components['tasks']) and\
-             i != (2*exp_round+1) % len(env.components['tasks']):
+            if i != (tasks_per_round*exp_round) % len(env.components['tasks']) and\
+             i != (tasks_per_round*exp_round+1) % len(env.components['tasks']):
                 env.components['tasks'][i].completed = True
             else:
                 env.components['tasks'][i].completed = False
