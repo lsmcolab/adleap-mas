@@ -7,4 +7,4 @@ source /etc/profile
 module add anaconda3/wmlce
 source activate wmlce_env
 
-python scenario_generator.py
+python scenario_generator.py --fixed true
