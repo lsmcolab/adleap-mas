@@ -94,6 +94,9 @@ class OEATA(object):
                 if just_finished_tasks:
                     # 3. Update
                     self.update(env.copy(), teammate, just_finished_tasks)
+
+                # if the agent was lazy
+                self.check_lazy_particles(env.copy(), teammate)
         
         return self
 
@@ -122,7 +125,8 @@ class OEATA(object):
                         gc.collect()
                         
                 # estimating the next task
-                if self.teammate[teammate.index][type]['estimation_set'][i].parameters is not None:
+                if self.teammate[teammate.index][type]['estimation_set'][i].parameters is not None or\
+                 self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None:
                     self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
         
         # 3. Updating teammate history
@@ -175,6 +179,12 @@ class OEATA(object):
         for type in self.template_types:
             for i in range(self.N):
                 if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index in just_finished_indexes:
+                    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
+
+    def check_lazy_particles(self, env, teammate):
+        for type in self.template_types:
+            for i in range(self.N):
+                if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None:
                     self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
 
     def get_estimation(self, env):
