@@ -36,10 +36,10 @@ def str2bool(v):
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='AGA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
 parser.add_argument('--num_agents',dest='agents', default = 9, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
-parser.add_argument('--dim',dest='dim',default=7,type=int,help="Dimension")
+parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
 parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=200,help="number of episodes")
 parser.add_argument('--po',dest='po',type=str2bool,default=False,help="Partial Observability (True/False) ")
@@ -78,7 +78,7 @@ def list_stats(env):
         else:
             stats['est_level'].append(list(np.zeros(len(adhoc_agent.smart_parameters['estimation'].template_types))))
     stats['type_probabilities'] = type_probabilities
-
+    
     return stats
 
 ###
@@ -153,12 +153,10 @@ while env.episode < args.num_episodes:
         stats = list_stats(env)
         log_file.write(None, stats)
 
-    for ag in env.components['agents']:
-        print(ag.index,ag.target,ag.type,ag.smart_parameters['last_completed_task'])
-
     # Step on environment
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
+    print(just_finished_tasks)
 
     # Writing log
     stats = list_stats(env)
