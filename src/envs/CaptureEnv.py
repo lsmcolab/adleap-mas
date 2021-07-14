@@ -72,8 +72,16 @@ class Task():
 
         return copy_task
 
+    def move(self,env,rperc=0.1):
+        coin = random.uniform(0,1)
+        if coin < rperc:
+            self.move_random(env)
+        else:
+            self.move_far_away(env) 
+        return
+
     # Random Move
-    def move_2(self,env):
+    def move_random(self,env):
         step = random.sample([(-1,0),(0,1),(1,0),(0,-1)],1)[0]
         (w,h) = env.state.shape
         if(0<=self.position[0]+step[0]<w and 0<=self.position[1]+step[1] < h):
@@ -85,7 +93,7 @@ class Task():
         return
 
     # Move farthest from closest agent
-    def move(self,env):
+    def move_far_away(self,env):
         dist = np.inf
         ag = None
         for agent in env.components['agents']:
@@ -316,18 +324,23 @@ def do_action(env):
         if(task.completed):
             continue
 
-        # Agents should surround as well as see the task
-        surround_agents = who_surround(env,task.position)
-        see_index = [a.index for a in who_see(env,task.position)]
-        check = [1 if a.index in see_index else 0 for a in surround_agents]
+        # Checking the conditions to accomplish a task
+        # - agents surrounding the task
+        #surround_agents = who_surround(env,task.position)
 
-        if(surround(task,env) and agents_are_facing(task,surround_agents)):
+        # - agents who see the task
+        #see_index = [a.index for a in who_see(env,task.position)]
+        #check = [1 if a.index in see_index else 0 for a in surround_agents]
+        
+        # - checking if the task is surrounded
+        task_is_surrounded = surround(task,env)
 
+        if(task_is_surrounded):
             task.completed=True
             if(task.index not in [t.index for t in just_finished_tasks]):
                 just_finished_tasks.append(task)
 
-
+        # reseting agents reasoning
         for ag in env.components['agents']:
             if task.completed and (ag.target == task.index or ag.target==task.position):
                 if(not env.simulation):
@@ -342,9 +355,8 @@ def do_action(env):
 
     next_state = update(env)
     for task in components['tasks']:
-        task.move_2(env)
-        # task.move_2(env) for random motion of the prey
-        # task.move(env) for task to maximise distance from the closest task.
+        task.move(env)
+
     next_state = update(env)
 
     info['just_finished_tasks'] = just_finished_tasks
