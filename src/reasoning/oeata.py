@@ -60,6 +60,7 @@ class OEATA(object):
                     self.teammate[teammate.index][type]['estimation_set'] = []
                     self.teammate[teammate.index][type]['bag_of_estimators'] = []
                     self.teammate[teammate.index]['history'] = []
+                    self.teammate[teammate.index]['choose_target_state'] = None
 
                     # initialize the estimation set with N estimators
                     while len(self.teammate[teammate.index][type]['estimation_set']) < self.N:
@@ -67,6 +68,7 @@ class OEATA(object):
                             Estimator(self.nparameters, type, self.d))
                         self.teammate[teammate.index][type]['estimation_set'][-1].predicted_task = \
                             self.teammate[teammate.index][type]['estimation_set'][-1].predict_task(env,teammate)
+                        self.teammate[teammate.index]['choose_target_state'] = env.copy()
 
     def run(self, env):
         # checking if there are new teammates in the environment
@@ -75,8 +77,6 @@ class OEATA(object):
         # check the tasks were completed
         just_finished_tasks = set([teammate.smart_parameters['last_completed_task'] \
             for teammate in env.components['agents'] if teammate.smart_parameters['last_completed_task'] != None])
-        print([t.index for t in just_finished_tasks])
-        print("Number of tasks left : ", len([(t.index,t.completed) for t in env.components['tasks']]))
 
         # running the oeata procedure
         adhoc_agent = env.get_adhoc_agent()
@@ -94,9 +94,6 @@ class OEATA(object):
                 if just_finished_tasks:
                     # 3. Update
                     self.update(env.copy(), teammate, just_finished_tasks)
-
-                # if the agent was lazy
-                self.check_lazy_particles(env.copy(), teammate)
         
         return self
 
@@ -111,9 +108,17 @@ class OEATA(object):
                     self.teammate[teammate.index][type]['estimation_set'][i].success_counter += 1
                     self.teammate[teammate.index][type]['estimation_set'][i].c_e = self.teammate[teammate.index][type]['estimation_set'][i].success_counter
                     self.teammate[teammate.index][type]['estimation_set'][i].f_e = 0
+                
+                # LAZY
+                elif self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None and\
+                 teammate.smart_parameters['last_completed_task'] is None:
+                    self.teammate[teammate.index][type]['bag_of_estimators'].append(self.teammate[teammate.index][type]['estimation_set'][i].copy())
+                    self.teammate[teammate.index][type]['estimation_set'][i].success_counter += 1
+                    self.teammate[teammate.index][type]['estimation_set'][i].c_e = self.teammate[teammate.index][type]['estimation_set'][i].success_counter
+                    self.teammate[teammate.index][type]['estimation_set'][i].f_e = 0
 
                 # INCORRECT
-                elif self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None:
+                else:
                     #updating the failure counter
                     self.teammate[teammate.index][type]['estimation_set'][i].failure_counter += 1
                     self.teammate[teammate.index][type]['estimation_set'][i].f_e += 1
@@ -125,12 +130,16 @@ class OEATA(object):
                         gc.collect()
                         
                 # estimating the next task
-                if self.teammate[teammate.index][type]['estimation_set'][i].parameters is not None or\
-                 self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None:
+                if self.teammate[teammate.index][type]['estimation_set'][i].parameters is not None:
                     self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
         
         # 3. Updating teammate history
-        self.teammate[teammate.index]['history'].append((env.copy(),teammate.smart_parameters['last_completed_task']))
+        prediction_state = self.teammate[teammate.index]['choose_target_state'].copy()
+        completed_task = teammate.smart_parameters['last_completed_task'].copy()
+
+        self.teammate[teammate.index]['history'].append((prediction_state,completed_task))
+
+        self.teammate[teammate.index]['choose_target_state'] = env.copy()
 
     def generation(self, env, teammate):
         for type in self.template_types:
@@ -179,12 +188,6 @@ class OEATA(object):
         for type in self.template_types:
             for i in range(self.N):
                 if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index in just_finished_indexes:
-                    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
-
-    def check_lazy_particles(self, env, teammate):
-        for type in self.template_types:
-            for i in range(self.N):
-                if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None:
                     self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
 
     def get_estimation(self, env):
