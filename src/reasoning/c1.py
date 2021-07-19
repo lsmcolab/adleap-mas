@@ -1,9 +1,8 @@
 from a_star import a_star_planning
 import numpy as np
-import random
 
 # Pursues odd index/furthest preys
-def c1_planning(env,agent,mode='spatial'):
+def c1_planning(env,agent,mode='index'):
     action, target_pos = None, None
     
     # checking if the agent already chosen a prey

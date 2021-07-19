@@ -1,9 +1,8 @@
 from a_star import a_star_planning
 import numpy as np
-import random
 
 # Pursues even index/highest coordinates sum preys
-def c2_planning(env,agent,mode='spatial'):
+def c2_planning(env,agent,mode='index'):
     action, target_pos = None, None
     
     # checking if the agent already chosen a prey
