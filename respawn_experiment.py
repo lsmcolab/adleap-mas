@@ -34,12 +34,12 @@ def str2bool(v):
         raise ArgumentTypeError('Boolean value expected.')
 
 parser = ArgumentParser()
-parser.add_argument('--env', dest='env', default='CaptureEnv', type=str,
+parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
 parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
-parser.add_argument('--num_agents',dest='agents', default = 9, type = int, help = "Number of agents")
+parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
-parser.add_argument('--dim',dest='dim',default=10,type=int,help="Dimension")
+parser.add_argument('--dim',dest='dim',default=20,type=int,help="Dimension")
 parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
 parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=200,help="number of episodes")
 parser.add_argument('--po',dest='po',type=str2bool,default=False,help="Partial Observability (True/False) ")
@@ -79,9 +79,6 @@ def list_stats(env):
             stats['est_level'].append(list(np.zeros(len(adhoc_agent.smart_parameters['estimation'].template_types))))
     stats['type_probabilities'] = type_probabilities
 
-    for i in range(3):
-        print(stats['actual_radius'][i],stats['est_radius'][i])
-
     return stats
 
 ###
@@ -92,20 +89,26 @@ fname = "./results/Respawn_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.a
 log_file = LogFile(None,fname,header)
 
 # 2. Creating the environment
-if args.num_exp >= -1:
+env = None
+if os.path.isdir("./src/envs/maps"):
+    if os.path.isdir("./src/envs/maps/"+args.env):
+        map_path = './src/envs/maps/'+args.env +'/' + str(args.dim) + str(args.agents) +\
+             str(args.tasks) + str(args.num_exp) + '.pickle'
+        if os.path.isfile(map_path):
+            if args.env == 'LevelForagingEnv':
+                env = load_LevelForagingEnv(args.dim,args.agents,args.tasks,args.num_exp)
+            elif args.env == 'CaptureEnv':
+                env = load_CaptureEnv(args.dim,args.agents,args.tasks,args.num_exp)
+            else:
+                raise NotImplemented
+if env is None:
     if args.env == 'LevelForagingEnv':
         env = create_LevelForagingEnv(args.dim,args.agents,args.tasks,args.po,args.display, args.num_exp)
     elif args.env == 'CaptureEnv':
         env = create_CaptureEnv(args.dim,args.agents,args.tasks,args.po,args.display, args.num_exp)
     else:
         raise NotImplemented
-else:
-    if args.env == 'LevelForagingEnv':
-        env = load_LevelForagingEnv(args.dim,args.agents,args.tasks,args.num_exp)
-    elif args.env == 'CaptureEnv':
-        env = load_CaptureEnv(args.dim,args.agents,args.tasks,args.num_exp)
-    else:
-        raise NotImplemented
+
 state = env.reset()
 
 # 3. Estimation algorithm's settings
@@ -159,7 +162,6 @@ while env.episode < args.num_episodes:
     # Step on environment
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
-    print(just_finished_tasks)
 
     # Writing log
     stats = list_stats(env)
