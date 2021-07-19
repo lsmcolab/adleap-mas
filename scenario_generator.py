@@ -244,14 +244,14 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
 	SCENARIO GENERATOR - CREATION ROUTINE
 """
 def creation_routine():
-    """for dim in [20,25,30]:
+    for dim in [20,25,30]:
         for num_agents in [5,7,10]:
             for num_tasks in [20,25,30]:
                 for num_exp in range(100):
                     print('creating LFBEnv',num_agents,num_tasks,dim,num_exp)
-                    create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)"""
+                    create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
                     
-    for setting in [[9,20,10]]:#[[5,5,10],[7,7,10],[10,10,10]]:
+    for setting in [[5,5,10],[7,7,10],[10,10,10]]:
         for num_exp in range(100):
             print('creating CaptureEnv',setting[0],setting[1],setting[2],num_exp)
             create_CaptureEnv(setting[2], setting[0], setting[1], num_exp=num_exp)
