@@ -7,7 +7,7 @@ import time
 ###
 # python cmd format functions               
 def get_python_cmd(env, estimation, num_agents, num_tasks, dim, num_exp, num_episodes):
-    return 'python respawn_experiment.py'+\
+    return 'python experiment.py'+\
      ' --env ' + str(env) + ' --estimation ' + str(estimation) + \
      ' --num_agents ' + str(num_agents) + ' --num_tasks ' + str(num_tasks) + \
      ' --dim ' + str(dim) + ' --num_exp ' + str(num_exp) + ' --num_episodes ' + str(num_episodes) + \
@@ -16,10 +16,10 @@ def get_python_cmd(env, estimation, num_agents, num_tasks, dim, num_exp, num_epi
 ###
 # SCRIPT
 ###
-num_exp = 50
+num_exp = 20
 num_episodes = 200
 for experiment_id in range(num_exp):
-    for env in ['CaptureEnv']: #LevelForagingEnv, CaptureEnv
+    for env in ['LevelForagingEnv', 'CaptureEnv']: #LevelForagingEnv, CaptureEnv
         if env == 'LevelForagingEnv':
             for num_agents in [5,7,10]:
                 for num_tasks in [20,25,30]:
@@ -47,7 +47,7 @@ for experiment_id in range(num_exp):
                             subprocess.run(["qsub","-o","qsuboutput/","-e","qsuberror/","run.sh"])
                             time.sleep(0.25)
         elif env == 'CaptureEnv':
-            for setting in [[9,20,10]]:#[[5,5,10],[7,7,10],[10,10,10]]:
+            for setting in [[5,5,10],[7,7,10],[10,10,10]]:
                 num_agents, num_tasks, dim = setting[0], setting[1], setting[2]
                 for estimation in ['AGA','ABU',"OEATA"]:
                     # defining the experiment parameters
