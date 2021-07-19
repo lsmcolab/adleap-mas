@@ -7,14 +7,8 @@ import random as rd
 from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
 """
-    Rendering 
-"""
-
-"""
     Ad-hoc 
 """
-
-
 class Agent(AdhocAgent):
     """Agent : Main reasoning Component of the Environment. Derives from AdhocAgent Class
     """
@@ -477,6 +471,12 @@ class LevelForagingEnv(AdhocReasoningEnv):
         4: 'Load'
     }
 
+    agents_color = {
+        'mcts': 'red',
+        'l1': 'darkred',
+        'l2': 'darkgreen'
+    }
+
     def __init__(self, shape, components, visibility='full',display=False):
         self.viewer = None
         self.visibility = visibility
@@ -493,7 +493,6 @@ class LevelForagingEnv(AdhocReasoningEnv):
         super(LevelForagingEnv, self).__init__(state_set, \
                                                transition_function, action_space, reward_function, \
                                                observation_space, components)
-        self.agents_color = {}
 
         # Setting the inital state
         self.state_set.initial_state = np.zeros(shape)
@@ -733,7 +732,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
             self.viewer.render(return_rgb_array=mode == 'rgb_array')
             import time
-            time.sleep(1)
+            time.sleep(0.1)
 
         return
 
