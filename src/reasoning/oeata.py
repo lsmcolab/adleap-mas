@@ -5,7 +5,7 @@ import random as rd
 class Estimator(object):
 
     def __init__(self, nparameters, type, d):
-        self.parameters = np.random.randint(0,d+1,nparameters)/d
+        self.parameters = np.random.randint(d/2,d+1,nparameters)/d
         self.type = type
         self.d = d
         self.success_counter = 0
@@ -168,6 +168,7 @@ class OEATA(object):
                     self.teammate[teammate.index][type]['estimation_set'][i].c_e = hist_success
                     self.teammate[teammate.index][type]['estimation_set'][i].f_e = 0
                     self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
+                    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env
 
     def check_history(self, estimator, teammate, history):
         hist_success = 0

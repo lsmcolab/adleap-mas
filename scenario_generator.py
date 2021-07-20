@@ -91,11 +91,11 @@ def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False
     ####
     agents, tasks = [], []
 
-    MIN_RADIUS, MAX_RADIUS = (1.0/dim), 1.0
-    MIN_ANGLE, MAX_ANGLE = (1.0/dim), 1.0
+    MIN_RADIUS, MAX_RADIUS = 0.5, 1.0
+    MIN_ANGLE, MAX_ANGLE = 0.5, 1.0 #(1.0/dim), 1.0
     
     LEVELS, MIN_COMBINATION = [], None
-    MIN_LEVEL, MAX_LEVEL = 0.0, 1.0 
+    MIN_LEVEL, MAX_LEVEL = 0.5, 1.0 
     ####
     # END SETTINGS
     ####

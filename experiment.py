@@ -117,11 +117,11 @@ adhoc_agent = env.get_adhoc_agent()
 
 if args.estimation == 'AGA':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
+     get_env_types(args.env), [(0.5,1),(0.5,1),(0.5,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
     estimation_method = aga_estimation
 elif  args.estimation == 'ABU':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
+     get_env_types(args.env), [(0.5,1),(0.5,1),(0.5,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
     estimation_method = abu_estimation
 elif args.estimation == 'OEATA':
     adhoc_agent.smart_parameters['estimation_args'] =\
