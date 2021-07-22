@@ -1,6 +1,5 @@
 from a_star import a_star_planning
 import numpy as np
-import random as rd
 
 #####
 # LEADER 2 ALGORITHM FROM ALBRECHT AND STONE
@@ -10,7 +9,7 @@ def l2_planning(env, agent):
 	# 1. Choosing a target
 	if agent.target is None or env.state[agent.target[0],agent.target[1]] == -1:
 		# - choosing a target
-		target_position = l2_choose_target_po(env.state, env.action_space, agent)
+		target_position = l2_choose_target_po(env.state)
 		agent.target = target_position
 	else:
 		target_position = agent.target
@@ -41,14 +40,14 @@ def l2_planning(env, agent):
 
 	return next_action,target_position
 
-# returns the furthest visible task
+# returns the task with highest sum of coordinates
 # NOTE: For Aldbrecht and Stone, the agent gets the
 # visible task with the highest level below of its own.
 # In this implementation, as we assume the partial 
 # observability, we don't know the task's level.
 # Therefore, the agent choose the task with the
 # highest sum of position coordinates.
-def l2_choose_target_po(state, action_space, agent):
+def l2_choose_target_po(state):
 	# 0. Initialising the support variables
 	highest_sum_task_id, max_sum = -1, -1
 
