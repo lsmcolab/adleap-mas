@@ -2,6 +2,7 @@
 *__pycache__/*
 .vscode/*
 *results/*
+*bashlog/*
 *.idea
 *.log
 *.pickle

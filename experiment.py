@@ -15,7 +15,7 @@ sys.path.append('src/reasoning')
 
 from scenario_generator import *
 from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estimation
-from src.log import LogFile
+from src.log import BashLogFile, LogFile
 
 ###
 # B. ARGS PARSE
@@ -40,7 +40,7 @@ parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,he
 parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=20,type=int,help="Dimension")
-parser.add_argument('--num_exp',dest = 'num_exp',default=1,type=int,help='number of experiments')
+parser.add_argument('--num_exp',dest = 'num_exp',default=0,type=int,help='number of experiments')
 parser.add_argument('--num_episodes',dest='num_episodes',type=int,default=200,help="number of episodes")
 parser.add_argument('--po',dest='po',type=str2bool,default=False,help="Partial Observability (True/False) ")
 parser.add_argument('--display',dest='display',type=str2bool,nargs='?',const=True,default=False,help="Display (True/False) ")
@@ -85,8 +85,9 @@ def list_stats(env):
 # D. MAIN SCRIPT
 ###1. Initialising the log file
 header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
-fname = "./results/{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
-log_file = LogFile(None,fname,header)
+fname = "{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
+log_file = LogFile(None,'./results/'+fname,header)
+bashlog_file = BashLogFile("./bashlog/"+fname)
 
 # 2. Creating the environment
 env = None
@@ -138,24 +139,32 @@ while not done and env.episode < args.num_episodes:
     # Rendering the environment
     if env.display:
         env.render()
-    print("Episode : ", env.episode)
+    bashlog_file.write("Episode : "+str(env.episode))
 
     # Main Agent taking an action
+    bashlog_file.write("(1.START) =========\nAd-hoc Planning...")
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
     adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
+    bashlog_file.write("Ad-hoc Planning Done.\n(1.END) =========")
 
     if env.episode == 0:
         stats = list_stats(env)
         log_file.write(None, stats)
 
     # Step on environment
+    bashlog_file.write('== (2.START) =========\n== World - Step...')
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
+    bashlog_file.write('== Tasks JUST finished: '+str(len(just_finished_tasks)))
+    bashlog_file.write('== Progress: '+ str((sum([t.completed for t in env.components['tasks']])/ len(env.components['tasks']))*100) + "%" )
+    bashlog_file.write('== (2.END) =========')
 
     # Writing log
+    bashlog_file.write('==== (3.START) ========\n==== Writing log...')
     stats = list_stats(env)
     log_file.write(None, stats)
+    bashlog_file.write('==== Writing done.\n==== (3.END) =========\n\n\n')
 
     # Verifying the end condition
     if done:

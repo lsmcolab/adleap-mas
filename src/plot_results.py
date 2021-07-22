@@ -12,8 +12,8 @@ COLOR = {'AGA':'b','ABU':'g','OEATA':'r'}
 #####
 # COLLECTING INFORMATION
 #####
-def collect_information(a, i, d, n_experiments, env):
-    print('Collecting information...',a,i,d)
+def collect_information(a, i, d, n_experiments, env,mode=""):
+    print('Collecting information...',a,i,d,env,mode)
     information = {}
     for est in ['AGA','ABU','OEATA']:
         # initialising 
@@ -43,7 +43,7 @@ def collect_information(a, i, d, n_experiments, env):
             information[est]['estimated_level'].append([])
             information[est]['type_probabilities'].append([])
 
-            with open('./results/'+env+'_a'+str(a)+'_i'+str(i)+\
+            with open('results/'+mode+env+'_a'+str(a)+'_i'+str(i)+\
              '_dim'+str(d)+'_'+str(est)+'_exp'+str(exp)+'.csv','r') as csv:
                 line_counter = 0
                 for line in csv:
@@ -111,6 +111,33 @@ def plot_performance(information):
     PLOT_NUMBER += 1
 
     return max(max_iterations)
+
+def plot_number_of_completed_tasks(information):
+    print('Plotting performance...')
+    global PLOT_NUMBER, COLOR, pdf
+
+    fig = plt.figure(PLOT_NUMBER, figsize=(8,6))
+
+    data = {}
+    for est in ['AGA','ABU','OEATA']:
+        data[est] = np.zeros(len(information[est]['completions']))
+        for nexp in range(len(information[est]['completions'])):
+            for i in range(len(information[est]['completions'][nexp])-1):
+                data[est][nexp] += 1 if information[est]['completions'][nexp][i] != information[est]['completions'][nexp][i+1]\
+                     else 0
+        data[est] = np.mean(data[est])
+
+    X_estimation_methods = list(data.keys())
+    Y_mean_iteration = list(data.values())
+
+    plt.bar(X_estimation_methods,Y_mean_iteration,color=list(COLOR.values()))
+
+    plt.title("Number of Completed Tasks")
+    plt.xlabel("Estimation Methods")
+    plt.ylabel("Mean Completed Tasks")
+    #plt.show()
+    pdf.savefig( fig )
+    PLOT_NUMBER += 1
 
 def plot_completion(information, max_iterations=200):
     print('Plotting performance...')
@@ -373,16 +400,22 @@ def plot_parameter_estimation_by_completion(env, information, n_agents, n_tasks,
 #####
 # PLOT SCRIPT
 #####
-env = 'CaptureEnv'
-n_experiments = 50
+mode = ''
+env = 'LevelForagingEnv' # LevelForagingEnv, CaptureEnv
+n_experiments = 1
 
-for setting in [[5,5,10],[7,7,10],[10,10,10]]:
+"""for na in [5,7,10]:
+    for nt in [20,25,30]:
+        for d in [20,25,30]:
+            setting = [na, nt, d]"""
+for setting in [[5,10,10]]:
     n_agents, n_tasks, dim = setting[0], setting[1], setting[2]
-    info = collect_information(n_agents,n_tasks,dim, n_experiments,env)
+    info = collect_information(n_agents,n_tasks,dim, n_experiments,env,mode)
 
-    pdf = backend_pdf.PdfPages("./results/plots/results_"+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+    pdf = backend_pdf.PdfPages("results_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
 
     max_iteration = plot_performance(info)
+    #plot_number_of_completed_tasks(info)
     plot_completion(info,max_iteration)
     plot_type_estimation_by_iteration(info, n_agents, max_iteration, n_experiments)
     plot_type_estimation_by_completion(info, n_agents, n_tasks, max_iteration, n_experiments)
