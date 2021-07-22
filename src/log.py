@@ -49,3 +49,23 @@ class LogFile:
                 logfile.write(str(args[0][key])+";")
 
             logfile.write('\n')
+
+class BashLogFile:
+
+    def __init__(self,file_name=""):
+        if(not os.path.isdir("./bashlog")):
+            os.mkdir("./bashlog")
+
+        self.start_time = datetime.datetime.now()
+        if(file_name ==""):
+            self.filename = "./bashlog/"+self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
+        else:
+            self.filename = file_name
+            
+        file = open(self.filename,'w')
+        file.close()
+
+    def write(self,log):
+        print(log)
+        with open(self.filename, 'a') as blfile:
+            blfile.write(log+'\n')
