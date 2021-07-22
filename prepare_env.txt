@@ -1,5 +1,5 @@
 echo 'Creating qsub error/output and results dirs'
-mkdir qsuboutput | mkdir qsuberror | mkdir results
+mkdir qsuboutput | mkdir qsuberror | mkdir results | mkdir bashlog
 
 echo 'Adding the necessary modules'
 module add git | module add anaconda3
