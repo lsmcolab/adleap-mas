@@ -78,14 +78,14 @@ def list_stats(env):
         else:
             stats['est_level'].append(list(np.zeros(len(adhoc_agent.smart_parameters['estimation'].template_types))))
     stats['type_probabilities'] = type_probabilities
-    
+
     return stats
 
 ###
 # D. MAIN SCRIPT
 ###1. Initialising the log file
 header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
-fname = "./results/Round_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
+fname = "./results/Respawn_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
 log_file = LogFile(None,fname,header)
 
 # 2. Creating the environment
@@ -132,17 +132,17 @@ else:
 
 # 4. Starting the experiment
 done = False
-exp_round = 0
-tasks_per_round = 2
+respawn_count = 0
+tasks_at_the_map = 2
 env.display = args.display
 print(args.env," Visibility:",env.visibility, " Display:",env.display)
 
 for i in range(len(env.components['tasks'])):
-    if i != (tasks_per_round*exp_round) % len(env.components['tasks']) and\
-     i != (tasks_per_round*exp_round+1) % len(env.components['tasks']):
-        env.components['tasks'][i].completed = True
-    else:
-        env.components['tasks'][i].completed = False
+    env.components['tasks'][i].completed = True
+
+for i in range(tasks_at_the_map):
+    respawn_count += 1
+    env.components['tasks'][i].completed = False
 
 while env.episode < args.num_episodes:
     # Rendering the environment
@@ -167,12 +167,8 @@ while env.episode < args.num_episodes:
     stats = list_stats(env)
     log_file.write(None, stats)
 
-    # Verifying the end condition
-    if done:
-        exp_round += 1
-        for i in range(len(env.components['tasks'])):
-            if i != (tasks_per_round*exp_round) % len(env.components['tasks']) and\
-             i != (tasks_per_round*exp_round+1) % len(env.components['tasks']):
-                env.components['tasks'][i].completed = True
-            else:
-                env.components['tasks'][i].completed = False
+    # respawning
+    if just_finished_tasks:
+        for i in range(len(just_finished_tasks)):
+            respawn_count += 1
+            env.components['tasks'][(tasks_at_the_map + respawn_count) % len(env.components['tasks'])].completed = False

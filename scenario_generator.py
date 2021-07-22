@@ -1,5 +1,6 @@
 import itertools
 import numpy as np
+import os
 import pickle
 import random
 
@@ -17,16 +18,15 @@ def get_initial_positions(env_name, dim, nagents, ntasks):
 
         if env_name == "LevelForagingEnv":
             if len(pos) >= nagents:
-                if x > 0 and x < dim and y > 0 and y < dim and \
-                        (x, y) not in pos and (x + 1, y) not in pos and \
-                        (x + 1, y + 1) not in pos and (x, y + 1) not in pos and \
-                        (x - 1, y + 1) not in pos and (x - 1, y) not in pos and \
-                        (x - 1, y - 1) not in pos and (x, y - 1) not in pos and \
-                        (x + 1, y - 1) not in pos:
+                if x > 0 and x < dim-1 and y > 0 and y < dim-1 and \
+                 (x, y) not in pos and (x + 1, y) not in pos and \
+                 (x + 1, y + 1) not in pos and (x, y + 1) not in pos and \
+                 (x - 1, y + 1) not in pos and (x - 1, y) not in pos and \
+                 (x - 1, y - 1) not in pos and (x, y - 1) not in pos and \
+                 (x + 1, y - 1) not in pos:
                     pos.append((x, y))
-            else:
-                if (x, y) not in pos:
-                    pos.append((x, y))
+            elif (x, y) not in pos:
+                pos.append((x, y))
         elif env_name == "CaptureEnv":
             if (x, y) not in pos:
                 pos.append((x, y))
@@ -64,13 +64,17 @@ def save_LevelForagingEnv(env, dim, num_agents, num_tasks, num_exp):
 
 
 def load_LevelForagingEnv(dim, num_agents, num_tasks, num_exp):
-    with open('./src/envs/maps/LevelForagingEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(
-            num_exp) + '.pickle', 'rb') as map:
-        env = pickle.load(map)
+    print('Loading Level Foraging Env')
+    map_path = './src/envs/maps/LevelForagingEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(num_exp) + '.pickle'
+    if os.path.isfile(map_path):
+        with open(map_path, 'rb') as map:
+            env = pickle.load(map)
+    else:
+        raise FileNotFoundError
     return env
 
-
 def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False, display=False, num_exp=0):
+    print('Creating Level Foraging Env')
     # 1. Importing the environment and its necessary components
     from src.envs.LevelForagingEnv import LevelForagingEnv, Agent, Task
 
@@ -82,44 +86,60 @@ def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False
     random_pos = get_initial_positions("LevelForagingEnv", dim, num_agents, num_tasks)
 
     # 4. Creating the components
+    ####
+    # SETTINGS INIT
+    ####
     agents, tasks = [], []
 
+    MIN_RADIUS, MAX_RADIUS = 0.5, 1.0
+    MIN_ANGLE, MAX_ANGLE = 0.5, 1.0 #(1.0/dim), 1.0
+    
+    LEVELS, MIN_COMBINATION = [], None
+    MIN_LEVEL, MAX_LEVEL = 0.5, 1.0 
+    ####
+    # END SETTINGS
+    ####
     # a. main agent
+    LEVELS.append(round(random.uniform(MIN_LEVEL, MAX_LEVEL), 3))
     if not partial_observable:
         agents.append(
             Agent(index=str(0), atype='mcts',
                   position=(random_pos[0][0], random_pos[0][1]),
-                  direction=random.sample(direction, 1)[0], radius=1.0, angle=1.0,
-                  level=round(random.uniform(0.1, 1), 3)))
+                  direction=random.sample(direction, 1)[0], 
+                  radius=MAX_RADIUS, angle=MAX_ANGLE,
+                  level=LEVELS[-1]))
     else:
         agents.append(
             Agent(index=str(0), atype='pomcp',
                   position=(random_pos[0][0], random_pos[0][1]),
-                  direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1), angle=random.uniform(0.5, 1),
-                  level=round(random.uniform(0.1, 1), 3)))
-
+                  direction=random.sample(direction, 1)[0],
+                  radius=random.uniform(MIN_RADIUS, MAX_RADIUS),
+                  angle=random.uniform(MIN_ANGLE, MAX_ANGLE),
+                  level=LEVELS[-1]))
+                  
     # b. teammates and tasks
-    LEVELS, MIN_COMBINATION = [], None
     for i in range(1, num_agents + num_tasks):
         if (i < num_agents):
-            LEVELS.append(round(random.uniform(0.1, 1), 3))
+            LEVELS.append(round(random.uniform(MIN_LEVEL, MAX_LEVEL), 3))
             agents.append( \
-                Agent(index=str(i), atype=random.sample(types, 1)[0], position=(random_pos[i][0], random_pos[i][1]),
-                      direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1),
-                      angle=random.uniform(0.5, 1), level=LEVELS[-1]))
+                Agent(index=str(i), atype=random.sample(types, 1)[0], 
+                    position=(random_pos[i][0], random_pos[i][1]),
+                    direction=random.sample(direction, 1)[0], 
+                    radius=random.uniform(MIN_RADIUS, MAX_RADIUS),
+                    angle=random.uniform(MIN_ANGLE, MAX_ANGLE),
+                    level=LEVELS[-1]))
         else:
             if MIN_COMBINATION is None:
-                if num_agents >= 4:
-                    min_combination = [list(c) for c in list(itertools.combinations(LEVELS, 4))]
-                    for j in range(len(min_combination)):
-                        min_combination[j] = sum(min_combination[j])
-                    min_combination = min(min_combination) if min(min_combination) <= 1 else 1.0
+                if num_agents > 4:
+                    MIN_COMBINATION = [list(c) for c in list(itertools.combinations(LEVELS, 4))]
+                    for j in range(len(MIN_COMBINATION)):
+                        MIN_COMBINATION[j] = sum(MIN_COMBINATION[j])
+                    MIN_COMBINATION = min(MIN_COMBINATION) if min(MIN_COMBINATION) <= 1 else 1.0
                 else:
-                    min_combination = 1.0
-
+                    MIN_COMBINATION = sum(LEVELS) if sum(LEVELS) < 1 else 1.0
+ 
             sampleLevels = random.sample(LEVELS, 2)
-            task_level = round(random.uniform(max(sampleLevels), sum(sampleLevels)), 3) \
-                if sum(sampleLevels) <= 1 else round(random.uniform(max(sampleLevels), min_combination), 3)
+            task_level = round(random.uniform(min(sampleLevels), MIN_COMBINATION), 3)
             tasks.append(Task(str(i), position=(random_pos[i][0], random_pos[i][1]), level=task_level))
 
     # c. adding to components dict
@@ -147,13 +167,18 @@ def save_CaptureEnv(env, dim, num_agents, num_tasks, num_exp):
 
 
 def load_CaptureEnv(dim, num_agents, num_tasks, num_exp):
-    with open('./src/envs/maps/CaptureEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(num_exp) + '.pickle',
-              'rb') as map:
-        env = pickle.load(map)
+    print('Loading Capture Env')
+    map_path = './src/envs/maps/CaptureEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(num_exp) + '.pickle'
+    if os.path.isfile(map_path):
+        with open(map_path,'rb') as map:
+            env = pickle.load(map)
+    else:
+        raise FileNotFoundError
     return env
 
 
 def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, display=False, num_exp=0):
+    print('Creating Capture Env')
     # 1. Importing the environment and its necessary components
     from src.envs.CaptureEnv import CaptureEnv, Agent, Task
 
@@ -164,8 +189,14 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
     # 3. Getting the initial positions
     random_pos = get_initial_positions('CaptureEnv', dim, num_agents, num_tasks)
 
-    # 4. Creating the components
+    # 4. Creating the components 
+    # ####
+    # SETTINGS INIT
+    ####
     agents, tasks = [], []
+
+    MIN_RADIUS, MAX_RADIUS = (1.0/dim), 1.0
+    MIN_ANGLE, MAX_ANGLE = (1.0/dim), 1.0
 
     # a. main agent
     if not partial_observable:
@@ -177,7 +208,8 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
         agents.append(
             Agent(index=str(0), atype='pomcp',
                   position=(random_pos[0][0], random_pos[0][1]),
-                  direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1), angle=random.uniform(0.5, 1)))
+                  direction=random.sample(direction, 1)[0], 
+                  radius=random.uniform(MIN_RADIUS, MAX_RADIUS), angle=random.uniform(MIN_ANGLE, MAX_ANGLE)))
 
     # b. teammates and tasks
     type_index = 0
@@ -185,8 +217,8 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
         if (i < num_agents):
             agents.append( \
                 Agent(index=str(i), atype=types[type_index % len(types)], position=(random_pos[i][0], random_pos[i][1]),
-                      direction=random.sample(direction, 1)[0], radius=random.uniform(0.5, 1),
-                      angle=random.uniform(0.5, 1)))
+                      direction=random.sample(direction, 1)[0], radius=random.uniform(MIN_RADIUS, MAX_RADIUS),
+                      angle=random.uniform(MIN_ANGLE, MAX_ANGLE)))
         else:
             tasks.append(Task(str(i), position=(random_pos[i][0], random_pos[i][1])))
 
@@ -218,16 +250,19 @@ def creation_routine():
                 for num_exp in range(100):
                     print('creating LFBEnv',num_agents,num_tasks,dim,num_exp)
                     create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
-    
+                    
     for setting in [[5,5,10],[7,7,10],[10,10,10]]:
         for num_exp in range(100):
             print('creating CaptureEnv',setting[0],setting[1],setting[2],num_exp)
             create_CaptureEnv(setting[2], setting[0], setting[1], num_exp=num_exp)
 
-import os
 if not os.path.isdir("./src/envs/maps"):
     os.mkdir("./src/envs/maps")
+
+if not os.path.isdir("./src/envs/maps/CaptureEnv"):
     os.mkdir("./src/envs/maps/CaptureEnv")
+
+if not os.path.isdir("./src/envs/maps/LevelForagingEnv"):
     os.mkdir("./src/envs/maps/LevelForagingEnv")
 
 from argparse import ArgumentParser, ArgumentTypeError

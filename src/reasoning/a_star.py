@@ -1,6 +1,7 @@
 import random
 import heapq
 import numpy as np
+
 class SquareGrid:
     def __init__(self, width, height):
         self.width = width
@@ -8,25 +9,30 @@ class SquareGrid:
         self.walls = []
         self.agents = []
         self.targets = []
+
     def in_bounds(self, id):
         (x, y) = id
-        return 0 <= x < self.width and 0 <= y < self.height
+        return ((0 <= x < self.width) and (0 <= y < self.height))
     
     def passable(self, id):
-        return id not in self.walls and id not in self.agents and id not in self.targets
+        return ((id not in self.walls) and (id not in self.agents) and (id not in self.targets))
     
     def neighbors(self, id):
         (x, y) = id
+
         results = [(x+1, y), (x, y-1), (x-1, y), (x, y+1)]
-        if (x + y) % 2 == 0: results.reverse() # aesthetics
+        if (x + y) % 2 == 0: 
+            results.reverse() # aesthetics
+
         results = filter(self.in_bounds, results)
         results = filter(self.passable, results)
+
         return results
 
     def cost(self, from_node, to_node):
         (x1, y1) = from_node
         (x2, y2) = to_node
-        return abs(x1 - x2) + abs(y1 - y2)
+        return (abs(x1 - x2) + abs(y1 - y2))
 
     def update(self,sim_map,start,goal):
         for y in reversed(range(self.height)):
@@ -34,10 +40,11 @@ class SquareGrid:
                 xy =sim_map[x,y]
                 if xy == -1:
                     self.walls.append((x,y)),  # obstacle
-                if xy == 1 and not (x,y)==start and not (x,y) == goal:
+                if xy == 1 and (x,y) != start and (x,y) != goal:
                     self.agents.append((x,y))
-                if xy == np.inf and not (x,y) == goal and not (x,y) ==start:
+                if xy == np.inf and (x,y) != goal and (x,y) != start:
                     self.targets.append((x,y))
+
 class PriorityQueue:
     def __init__(self):
         self.elements = []
@@ -63,7 +70,7 @@ def a_star(sim_map, dim_w, dim_h, start, goal):
     graph.update(sim_map,start,goal) # allocating the obstacles
 
     start = (start[0],start[1])
-    goal  = (goal[0] ,goal[1] )
+    goal  = ( goal[0], goal[1])
 
     frontier = PriorityQueue()
     frontier.put(start, 0)
@@ -113,8 +120,6 @@ def a_star_planning(sim_map, dim_w, dim_h, action_space, start, goal):
             actions.append(3)
         else:
             actions.append(-1)
-
-
 
     if len(actions) > 0:
         return actions[0]
