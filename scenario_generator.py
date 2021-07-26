@@ -53,6 +53,14 @@ def get_env_nparameters(env_name):
     else:
         raise NotImplemented
 
+def get_env_parameters_minmax(env_name):
+    if env_name == "LevelForagingEnv":
+        return [(0.1,1),(0.1,1),(0.1,1)]
+    elif env_name == "CaptureEnv":
+        return [(0.1,1),(0.1,1)]
+    else:
+        raise NotImplemented
+
 
 def save_LevelForagingEnv(env, dim, num_agents, num_tasks, num_exp):
     file = open(
