@@ -1,8 +1,0 @@
-echo 'Creating qsub error/output and results dirs'
-mkdir qsuboutput | mkdir qsuberror | mkdir results | mkdir bashlog
-
-echo 'Adding the necessary modules'
-module add git | module add anaconda3
-
-echo 'Creating the fixed maps... Please wait. Check the task with qstat command'
-qsub run_sg.sh
