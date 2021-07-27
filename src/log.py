@@ -17,21 +17,28 @@ def lineno():
 class LogFile:
 
     def __init__(self,env=None,file_name="",*args):
-        # self.filename = './results/'+ str(self.n_agents) + '_' +\
-        #     str(self.n_tasks) + '_' + self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss") + '.csv'
-        self.env = env
-        self.start_time = datetime.datetime.now()
-        self.header = args
-        if(file_name ==""):
-            self.filename = "./results/"+self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
-        else:
-            self.filename = file_name
+        # creating the path
         if(not os.path.isdir("results")):
             os.mkdir("results")
+        self.path = "./results/"
+
+        self.env = env
+        self.header = args
+
+        # defining filename
+        self.start_time = datetime.datetime.now()
+        # self.filename = './results/'+ str(self.n_agents) + '_' +\
+        #     str(self.n_tasks) + '_' + self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss") + '.csv'
+        if(file_name ==""):
+            self.filename = self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
+        else:
+            self.filename = file_name
+
+        # creating the result file
         self.write_header()
 
     def write_header(self):
-        with open(self.filename, 'w') as logfile:
+        with open(self.path+self.filename, 'w') as logfile:
             #logfile.write('Iteration;')
             #logfile.write('CPU Usage (%);')
             #logfile.write('Memory Usage (RAM) (%);')
@@ -41,7 +48,7 @@ class LogFile:
             logfile.write('\n')
 
     def write(self,env=None,*args):
-        with open(self.filename, 'a') as logfile:
+        with open(self.path+self.filename, 'a') as logfile:
             if(not len(args) ==len(self.header)):
                 warnings.warn("Initialisation and writing have different sizes .")
 
@@ -53,22 +60,30 @@ class LogFile:
 class BashLogFile:
 
     def __init__(self,file_name=""):
+        # creating the path
         if(not os.path.isdir("./bashlog")):
             os.mkdir("./bashlog")
+        self.path = "./bashlog/"
 
+        # defining filename
         self.start_time = datetime.datetime.now()
         if(file_name ==""):
-            self.filename = "./bashlog/"+self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
+            self.filename = self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
         else:
             self.filename = file_name
         
+        # saving original stderr
         self.original_stderr = sys.stderr
 
-        file = open(self.filename,'w')
-        file.close()
+        # creating the log files
+        ofile = open(self.path+'OUTPUT_'+self.filename,'w')
+        ofile.close()
+
+        efile = open(self.path+'ERROR_'+self.filename,'w')
+        efile.close()
 
     def redirect_stderr(self):
-        file = open(self.filename,'a')
+        file = open(self.path+'ERROR_'+self.filename,'a')
         sys.stderr = file
     
     def reset_stderr(self):
@@ -76,5 +91,5 @@ class BashLogFile:
 
     def write(self,log):
         print(log)
-        with open(self.filename, 'a') as blfile:
+        with open(self.path+'OUTPUT_'+self.filename, 'a') as blfile:
             blfile.write(log+'\n')
