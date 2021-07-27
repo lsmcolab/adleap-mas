@@ -1,8 +1,8 @@
 import inspect
 import os
-import psutil
 import datetime
 import warnings
+import sys
 
 ######
 # EXCEPTION METHODS
@@ -61,9 +61,18 @@ class BashLogFile:
             self.filename = "./bashlog/"+self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
         else:
             self.filename = file_name
-            
+        
+        self.original_stderr = sys.stderr
+
         file = open(self.filename,'w')
         file.close()
+
+    def redirect_stderr(self):
+        file = open(self.filename,'a')
+        sys.stderr = file
+    
+    def reset_stderr(self):
+        sys.stderr = self.original_stderr
 
     def write(self,log):
         print(log)
