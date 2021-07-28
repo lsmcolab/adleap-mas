@@ -35,7 +35,6 @@ def get_configurations():
     with open('experiment_configuration.csv','r') as config_file:
         for line in config_file:
             if search('^#',line) is None and search('^$',line[0]) is None:
-                print(line)
                 config = line.split(',')
 
                 configurations.append({'mode':None, 'num_exp':None, 'num_episodes':None,\
@@ -60,12 +59,12 @@ def get_python_cmd(mode, env, estimation, num_agents, num_tasks, dim, num_exp, n
      ' --po False --display False' 
 
 # create qsubfile for submission
-def create_qsubfile(mode,estimation,num_agents,num_tasks,dim,experiment_id):
+def create_qsubfile(mode,estimation,num_agents,num_tasks,dim,experiment_id,python_cmd):
     fname = mode+estimation+"_a"+str(num_agents)+"_i"+str(num_tasks)+"_d"+str(dim)+"_exp"+str(experiment_id)
     with open("run.sh", "w") as bashfile:           
         bashfile.write("#$ -S /bin/bash\n\n")   
         bashfile.write("#$ -N "+fname+"\n")   
-        bashfile.write("#$ -l h_vmem=6G\n")         
+        bashfile.write("#$ -l h_vmem=8G\n")         
         bashfile.write("#$ -l h_rt=02:00:00\n\n")  
         bashfile.write("source /etc/profile\n")     
         bashfile.write("module add anaconda3/wmlce\n")                              
@@ -84,14 +83,13 @@ configurations = get_configurations()
 
 for config in configurations:
     # 3. Setting the configurations
-    mode = config['mode']
-    num_exp = int(config['num_exp'])
-    num_episodes = int(config['num_episodes'])
-    env = config['env']
-    num_agents = int(config['num_agents'])
-
-    num_tasks = int(config['num_tasks'])
-    dim = int(config['dim'])
+    mode = config['mode'].strip()
+    num_exp = int(config['num_exp'].strip())
+    num_episodes = int(config['num_episodes'].strip())
+    env = config['env'].strip()
+    num_agents = int(config['num_agents'].strip())
+    num_tasks = int(config['num_tasks'].strip())
+    dim = int(config['dim'].strip())
 
     
     # 4. Creating the scenarios
@@ -111,7 +109,7 @@ for config in configurations:
                         num_tasks,dim,experiment_id,num_episodes)
 
             # writing the bash file
-            create_qsubfile(mode,estimation,num_agents,num_tasks,dim,experiment_id)
+            create_qsubfile(mode,estimation,num_agents,num_tasks,dim,experiment_id,python_cmd)
 
             # submiting the job
             subprocess.run(["qsub","-o","qsuboutput/","-e","qsuberror/","run.sh"])
