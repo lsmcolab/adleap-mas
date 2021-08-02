@@ -92,6 +92,19 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
         root_node = QNode(action=None,
                             state=state,depth=0,parent=None)
         
+    #####
+    # ESTIMATION METHOD UPDATE: START
+    #####
+    # - performing estimation
+    if 'estimation_args' in agent.smart_parameters:
+        root_node.state, agent.smart_parameters['estimation'] = \
+            estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
+    else:
+        root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
+    #####
+    # ESTIMATION METHOD UPDATE: END
+    #####
+
     # - cleaning the memory cache
     import gc
     gc.collect()
@@ -101,13 +114,9 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
     while it < max_it:
         # - estimating environment parameters
         if estimation_algorithm is not None:
-            if 'estimation_args' in agent.smart_parameters:
-                root_node.state, agent.smart_parameters['estimation'] = \
-                    estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
-            else:
-                root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
             root_adhoc_agent = root_node.state.get_adhoc_agent()
             root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
+            root_node.state = root_adhoc_agent.smart_parameters['estimation'].sample_state(state)
         else:
             from estimation import uniform_estimation
             root_node.state = uniform_estimation(root_node.state)

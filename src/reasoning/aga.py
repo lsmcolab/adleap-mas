@@ -69,7 +69,9 @@ class AGA(object):
         if self.previous_state is None:
             self.previous_state = env.copy()
             return self
-        
+        elif env.episode == 0:
+            return self
+
         #####
         # START OF AGA ESTIMATION
         #####
@@ -111,7 +113,7 @@ class AGA(object):
         # END OF AGA ESTIMATION
         #####
         # Updating the previous state variable
-        self.previous_state = env
+        self.previous_state = env.copy()
 
         return self
 
@@ -240,6 +242,18 @@ class AGA(object):
                 estimated_parameters.append(list(parameter_est))
 
         return type_probabilities, estimated_parameters
+
+    def sample_state(self, env):
+        adhoc_agent = env.get_adhoc_agent()
+        for teammate in env.components['agents']:
+            if teammate.index != adhoc_agent.index:
+                selected_type = self.sample_type_for_agent(teammate)
+                selected_parameter = self.get_parameter_for_selected_type(teammate,selected_type)
+
+                teammate.type = selected_type
+                teammate.set_parameters(selected_parameter)
+
+        return env
 
     def sample_type_for_agent(self, teammate):
         type_prob = np.zeros(len(self.template_types))
