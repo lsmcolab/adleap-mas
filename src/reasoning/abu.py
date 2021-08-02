@@ -333,6 +333,18 @@ class ABU(object):
 
         return type_probabilities, estimated_parameters
 
+    def sample_state(self, env):
+        adhoc_agent = env.get_adhoc_agent()
+        for teammate in env.components['agents']:
+            if teammate.index != adhoc_agent.index:
+                selected_type = self.sample_type_for_agent(teammate)
+                selected_parameter = self.get_parameter_for_selected_type(teammate,selected_type)
+
+                teammate.type = selected_type
+                teammate.set_parameters(selected_parameter)
+
+        return env       
+
     def sample_type_for_agent(self, teammate):
         type_prob = np.zeros(len(self.template_types))
         for i in range(len(self.template_types)):
