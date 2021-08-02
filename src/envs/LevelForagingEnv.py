@@ -719,12 +719,13 @@ class LevelForagingEnv(AdhocReasoningEnv):
                 )
 
             for i in range(len(self.components['tasks'])):
+                x, y = self.components['tasks'][i].position[0], self.components['tasks'][i].position[1]
+                self.drawn_tasks[i].set_translation(
+                    self.draw_start_x + (x + self.drawn_tasks_shift) * self.draw_scale,
+                    (y + self.drawn_tasks_shift) * self.draw_scale + self.draw_start_y
+                )
                 if not self.components['tasks'][i].completed:
-                    x, y = self.components['tasks'][i].position[0], self.components['tasks'][i].position[1]
-                    self.drawn_tasks[i].set_translation(
-                        self.draw_start_x + (x + self.drawn_tasks_shift) * self.draw_scale,
-                        (y + self.drawn_tasks_shift) * self.draw_scale + self.draw_start_y
-                    )
+                    self.drawn_tasks[i].set_scale(1.0, 1.0)
                 else:
                     self.drawn_tasks[i].set_scale(0.0, 0.0)
 
