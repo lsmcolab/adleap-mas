@@ -51,10 +51,10 @@ print(args)
 ###
 # C. AUX FUNCTIONS
 ###
-def list_stats(env, accomplished_tasks):
+def list_stats(env):
     stats = {}
     stats['iteration'] = env.episode
-    stats['completion'] = accomplished_tasks
+    stats['completion'] = sum([t.completed for t in env.components['tasks']])/len(env.components['tasks'])
     stats['environment'] = args.env
     stats['estimation'] = args.estimation
     stats['actual_radius'] = [a.radius for a in env.components['agents'] if a.index != '0']
@@ -78,16 +78,16 @@ def list_stats(env, accomplished_tasks):
         else:
             stats['est_level'].append(list(np.zeros(len(adhoc_agent.smart_parameters['estimation'].template_types))))
     stats['type_probabilities'] = type_probabilities
-    
+        
     return stats
 
 ###
 # D. MAIN SCRIPT
 ###1. Initialising the log file
 header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
-fname = "Round_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
-log_file = LogFile(None,'./results/'+fname,header)
-bashlog_file = BashLogFile("./bashlog/"+fname)
+fname = "{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
+log_file = LogFile(None,fname,header)
+bashlog_file = BashLogFile(fname)
 
 # 2. Creating the environment
 env = None
@@ -118,11 +118,11 @@ adhoc_agent = env.get_adhoc_agent()
 
 if args.estimation == 'AGA':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
+     get_env_types(args.env), [(0.5,1),(0.5,1),(0.5,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
     estimation_method = aga_estimation
 elif  args.estimation == 'ABU':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
+     get_env_types(args.env), [(0.5,1),(0.5,1),(0.5,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
     estimation_method = abu_estimation
 elif args.estimation == 'OEATA':
     adhoc_agent.smart_parameters['estimation_args'] =\
@@ -133,57 +133,45 @@ else:
 
 # 4. Starting the experiment
 done = False
-exp_round = 0
-tasks_per_round = int(args.tasks/2) if int(args.tasks/2) > 0 else 1
 env.display = args.display
 print(args.env," Visibility:",env.visibility, " Display:",env.display)
 
-for i in range(len(env.components['tasks'])):
-    if i != (tasks_per_round*exp_round) % len(env.components['tasks']) and\
-     i != (tasks_per_round*exp_round+1) % len(env.components['tasks']):
-        env.components['tasks'][i].completed = True
-    else:
-        env.components['tasks'][i].completed = False
+###
+# EXPERIMENT START
+###
+bashlog_file.redirect_stderr()
 
-accomplished_tasks = 0
-while env.episode < args.num_episodes:
+while not done and env.episode < args.num_episodes:
     # Rendering the environment
     if env.display:
         env.render()
-    bashlog_file.write("Episode : "+str(env.episode))
+    print("Episode : "+str(env.episode))
 
     # Main Agent taking an action
-    bashlog_file.write("(1.START) =========\nAd-hoc Planning...")
+    print("Main Agent planning")
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
     adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
-    bashlog_file.write("Ad-hoc Planning Done.\n(1.END) =========")
 
     if env.episode == 0:
-        stats = list_stats(env, accomplished_tasks)
+        stats = list_stats(env)
         log_file.write(None, stats)
 
     # Step on environment
-    bashlog_file.write('== (2.START) =========\n== World - Step...')
+    print("Simulation Step")
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
-    accomplished_tasks += len(just_finished_tasks)
-    bashlog_file.write('== Tasks JUST finished: '+str(len(just_finished_tasks)))
-    bashlog_file.write('== Progress: '+ str(accomplished_tasks) +' accomplished tasks.')
-    bashlog_file.write('== (2.END) =========')
 
     # Writing log
-    bashlog_file.write('==== (3.START) ========\n==== Writing log...')
-    stats = list_stats(env, accomplished_tasks)
+    print("Log\n")
+    stats = list_stats(env)
     log_file.write(None, stats)
-    bashlog_file.write('==== Writing done.\n==== (3.END) =========\n\n\n')
 
     # Verifying the end condition
     if done:
-        exp_round += 1
-        for i in range(len(env.components['tasks'])):
-            if i != (tasks_per_round*exp_round) % len(env.components['tasks']) and\
-             i != (tasks_per_round*exp_round+1) % len(env.components['tasks']):
-                env.components['tasks'][i].completed = True
-            else:
-                env.components['tasks'][i].completed = False
+        break
+
+bashlog_file.reset_stderr()
+###
+# EXPERIMENT END
+###

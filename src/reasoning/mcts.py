@@ -91,19 +91,6 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
     if root_node is None:
         root_node = QNode(action=None,
                             state=state,depth=0,parent=None)
-
-    # - estimating environment parameters
-    if estimation_algorithm is not None:
-        if 'estimation_args' in agent.smart_parameters:
-            root_node.state, agent.smart_parameters['estimation'] = \
-                estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
-        else:
-            root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
-        root_adhoc_agent = root_node.state.get_adhoc_agent()
-        root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
-    else:
-        from estimation import uniform_estimation
-        root_node.state = uniform_estimation(root_node.state)
         
     # - cleaning the memory cache
     import gc
@@ -112,6 +99,20 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
     # 3. Performing the Monte-Carlo Tree Search
     it = 0
     while it < max_it:
+        # - estimating environment parameters
+        if estimation_algorithm is not None:
+            if 'estimation_args' in agent.smart_parameters:
+                root_node.state, agent.smart_parameters['estimation'] = \
+                    estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
+            else:
+                root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
+            root_adhoc_agent = root_node.state.get_adhoc_agent()
+            root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
+        else:
+            from estimation import uniform_estimation
+            root_node.state = uniform_estimation(root_node.state)
+
+        # - simulating
         simulate(root_node, max_depth)
         it += 1
 

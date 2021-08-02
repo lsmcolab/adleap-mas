@@ -4,11 +4,13 @@ import os
 import pickle
 import random
 
-
 def get_initial_positions(env_name, dim, nagents, ntasks):
     # verifying if it is possible to create the scenario
     if env_name == "LevelForagingEnv" and (ntasks * 9) > (dim ** 2):
-        raise StopIteration
+        print('It is not possible to create the '+ env_name+' scenario with'+\
+            str(ntasks)+' and '+str(dim)+'-- not enough room to it.\n We reduced the'+\
+                ' number of tasks from '+str(ntasks)+' to '+str(int((dim**2) - 1))+'.')
+        ntasks = int((dim**2) - 1)
 
     # getting the random positions
     pos = []
@@ -72,7 +74,7 @@ def save_LevelForagingEnv(env, dim, num_agents, num_tasks, num_exp):
 
 
 def load_LevelForagingEnv(dim, num_agents, num_tasks, num_exp):
-    print('Loading Level Foraging Env')
+    print('Loading Level Foraging Env #'+str(num_exp)+':', dim, num_agents, num_tasks)
     map_path = './src/envs/maps/LevelForagingEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(num_exp) + '.pickle'
     if os.path.isfile(map_path):
         with open(map_path, 'rb') as map:
@@ -82,7 +84,7 @@ def load_LevelForagingEnv(dim, num_agents, num_tasks, num_exp):
     return env
 
 def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False, display=False, num_exp=0):
-    print('Creating Level Foraging Env')
+    print('Creating Level Foraging Env #'+str(num_exp)+':', dim, num_agents, num_tasks)
     # 1. Importing the environment and its necessary components
     from src.envs.LevelForagingEnv import LevelForagingEnv, Agent, Task
 
@@ -175,7 +177,7 @@ def save_CaptureEnv(env, dim, num_agents, num_tasks, num_exp):
 
 
 def load_CaptureEnv(dim, num_agents, num_tasks, num_exp):
-    print('Loading Capture Env')
+    print('Loading Capture Env #'+str(num_exp)+':', dim, num_agents, num_tasks)
     map_path = './src/envs/maps/CaptureEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(num_exp) + '.pickle'
     if os.path.isfile(map_path):
         with open(map_path,'rb') as map:
@@ -186,7 +188,7 @@ def load_CaptureEnv(dim, num_agents, num_tasks, num_exp):
 
 
 def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, display=False, num_exp=0):
-    print('Creating Capture Env')
+    print('Creating Capture Env #'+str(num_exp)+':', dim, num_agents, num_tasks)
     # 1. Importing the environment and its necessary components
     from src.envs.CaptureEnv import CaptureEnv, Agent, Task
 
@@ -246,51 +248,3 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
 
     save_CaptureEnv(env, dim, num_agents, num_tasks, num_exp)
     return env
-
-
-"""
-	SCENARIO GENERATOR - CREATION ROUTINE
-"""
-def creation_routine():
-    for dim in [20,25,30]:
-        for num_agents in [5,7,10]:
-            for num_tasks in [20,25,30]:
-                for num_exp in range(100):
-                    print('creating LFBEnv',num_agents,num_tasks,dim,num_exp)
-                    create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=num_exp)
-                    
-    for setting in [[5,5,10],[7,7,10],[10,10,10]]:
-        for num_exp in range(100):
-            print('creating CaptureEnv',setting[0],setting[1],setting[2],num_exp)
-            create_CaptureEnv(setting[2], setting[0], setting[1], num_exp=num_exp)
-
-if not os.path.isdir("./src/envs/maps"):
-    os.mkdir("./src/envs/maps")
-
-if not os.path.isdir("./src/envs/maps/CaptureEnv"):
-    os.mkdir("./src/envs/maps/CaptureEnv")
-
-if not os.path.isdir("./src/envs/maps/LevelForagingEnv"):
-    os.mkdir("./src/envs/maps/LevelForagingEnv")
-
-from argparse import ArgumentParser, ArgumentTypeError
-
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0',''):
-        return False
-    else:
-        raise ArgumentTypeError('Boolean value expected.')
-
-parser = ArgumentParser()
-if parser.prog == 'scenario_generator.py':
-    parser.add_argument('--fixed', dest='fixed', default=False, type=str2bool,
-                        help='Fixed maps: True or False')
-    args = parser.parse_args()
-    print(args)
-
-    if args.fixed:
-        creation_routine()

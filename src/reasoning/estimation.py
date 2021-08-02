@@ -64,14 +64,15 @@ def abu_estimation(env, adhoc_agent, \
     return env, adhoc_agent.smart_parameters['estimation']
 
 def oeata_estimation(env, adhoc_agent,\
- template_types, nparameters, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
+ template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
     #####
     # OEATA INITIALISATION
     #####
     # Initialising the oeata method inside the adhoc agent
     if 'estimation' not in adhoc_agent.smart_parameters:
         from oeata import OEATA
-        adhoc_agent.smart_parameters['estimation'] = OEATA(env,template_types,nparameters,N,xi,mr,d,normalise)
+        adhoc_agent.smart_parameters['estimation'] = OEATA(env,template_types,parameters_minmax,\
+                                                                                N,xi,mr,d,normalise)
         
     #####    
     # OEATA PROCESS

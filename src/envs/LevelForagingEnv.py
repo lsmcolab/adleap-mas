@@ -900,40 +900,40 @@ class LevelForagingEnv(AdhocReasoningEnv):
     def draw_tasks(self, type_='box', fname=None):
         drawn_tasks, shift = [], 0
         for task in self.components['tasks']:
-            if not task.completed:
-                drawn_tasks.append(rendering.Transform())
-                if type_ == 'box':
-                    shift = 0.1
-                    box = rendering.PolyLine([
-                        (0.1 * self.draw_scale, 0.4 * self.draw_scale),
-                        (0.5 * self.draw_scale, 0.4 * self.draw_scale),
-                        (0.5 * self.draw_scale, 0.1 * self.draw_scale),
-                        (0.1 * self.draw_scale, 0.1 * self.draw_scale),
-                        (0.1 * self.draw_scale, 0.4 * self.draw_scale),
-                        (0.35 * self.draw_scale, 0.65 * self.draw_scale),
-                        (0.75 * self.draw_scale, 0.65 * self.draw_scale),
-                        (0.75 * self.draw_scale, 0.35 * self.draw_scale),
-                        (0.5 * self.draw_scale, 0.1 * self.draw_scale),
-                        (0.5 * self.draw_scale, 0.4 * self.draw_scale),
-                        (0.75 * self.draw_scale, 0.65 * self.draw_scale)
-                    ], close=False)
-                    box.set_linewidth(2)
-                    box.add_attr(drawn_tasks[-1])
-                    self.viewer.add_geom(box)
-                elif type_ == 'figure':
-                    shift = 0.5
-                    try:
-                        with open(fname):
-                            figure = rendering.Image(fname, \
-                                                     width=0.9 * self.draw_scale, height=0.9 * self.draw_scale)
-                            figure.add_attr(drawn_tasks[-1])
-                            self.viewer.add_geom(figure)
-                    except FileNotFoundError as e:
-                        raise e
-                else:
-                    raise NotImplementedError
+            #if not task.completed:
+            drawn_tasks.append(rendering.Transform())
+            if type_ == 'box':
+                shift = 0.1
+                box = rendering.PolyLine([
+                    (0.1 * self.draw_scale, 0.4 * self.draw_scale),
+                    (0.5 * self.draw_scale, 0.4 * self.draw_scale),
+                    (0.5 * self.draw_scale, 0.1 * self.draw_scale),
+                    (0.1 * self.draw_scale, 0.1 * self.draw_scale),
+                    (0.1 * self.draw_scale, 0.4 * self.draw_scale),
+                    (0.35 * self.draw_scale, 0.65 * self.draw_scale),
+                    (0.75 * self.draw_scale, 0.65 * self.draw_scale),
+                    (0.75 * self.draw_scale, 0.35 * self.draw_scale),
+                    (0.5 * self.draw_scale, 0.1 * self.draw_scale),
+                    (0.5 * self.draw_scale, 0.4 * self.draw_scale),
+                    (0.75 * self.draw_scale, 0.65 * self.draw_scale)
+                ], close=False)
+                box.set_linewidth(2)
+                box.add_attr(drawn_tasks[-1])
+                self.viewer.add_geom(box)
+            elif type_ == 'figure':
+                shift = 0.5
+                try:
+                    with open(fname):
+                        figure = rendering.Image(fname, \
+                                                    width=0.9 * self.draw_scale, height=0.9 * self.draw_scale)
+                        figure.add_attr(drawn_tasks[-1])
+                        self.viewer.add_geom(figure)
+                except FileNotFoundError as e:
+                    raise e
             else:
-                drawn_tasks.append(None)
+                raise NotImplementedError
+            #else:
+            #    drawn_tasks.append(None)
 
         return drawn_tasks, shift
 
