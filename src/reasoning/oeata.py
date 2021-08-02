@@ -2,6 +2,8 @@ import gc
 import numpy as np
 import random as rd
 
+from numpy.core.fromnumeric import choose
+
 class Estimator(object):
 
     def __init__(self, nparameters, type, d):
@@ -17,6 +19,8 @@ class Estimator(object):
 
     def predict_task(self, env, teammate):
         self.choose_target_state = env
+        if (env==None):
+            print(teammate.index)
         self.predicted_task = env.get_target(teammate.index, self.type, self.parameters)
         return self.predicted_task
 
@@ -96,7 +100,7 @@ class OEATA(object):
         return self
 
     def evaluation(self, env, teammate):
-        max_ce, choose_target_state = 0, None
+        max_ce, choose_target_state = -2*self.xi, None
         completed_task = teammate.smart_parameters['last_completed_task'].copy()
         for type in self.template_types:
             for i in range(self.N):
@@ -121,8 +125,10 @@ class OEATA(object):
                         self.teammate[teammate.index][type]['estimation_set'][i].parameters = None
                         gc.collect()
 
+                print(i,self.teammate[teammate.index][type]['estimation_set'][i].c_e)
                 # verifying the choose target state
                 if max_ce < self.teammate[teammate.index][type]['estimation_set'][i].c_e:
+                    print("MAX : ", max_ce,self.teammate[teammate.index][type]['estimation_set'][i].c_e)
                     max_ce = self.teammate[teammate.index][type]['estimation_set'][i].c_e
                     choose_target_state = self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state.copy()
 
@@ -132,6 +138,8 @@ class OEATA(object):
                     self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env
         
         # Updating teammate history
+        if choose_target_state == None:
+            print("Nooooooooooooooooooooooooo",max_ce,teammate.index)
         self.teammate[teammate.index]['history'].append((choose_target_state,completed_task))
 
     def generation(self, env, teammate):
