@@ -53,6 +53,7 @@ class OEATA(object):
 
         # initialising the oeata teammates estimation set
         self.teammate = {}
+        self.target_selected = {}
         self.check_teammates_estimation_set(initial_state)
 
     def check_teammates_estimation_set(self,env):
@@ -64,6 +65,7 @@ class OEATA(object):
             if tindex != adhoc_agent.index and tindex not in self.teammate:
                 self.teammate[tindex] = {}
                 self.teammate[tindex]['history'] = []
+                self.target_selected[tindex] = False
 
                 # for each type
                 for type in self.template_types:
@@ -71,13 +73,11 @@ class OEATA(object):
                     self.teammate[tindex][type] = {}
                     self.teammate[tindex][type]['estimation_set'] = []
                     self.teammate[tindex][type]['bag_of_estimators'] = []
+
                     # initialize the estimation set with N estimators
                     while len(self.teammate[tindex][type]['estimation_set']) < self.N:
                         self.teammate[tindex][type]['estimation_set'].append(\
                             Estimator(self.parameters_minmax, type, self.d))
-                        self.teammate[tindex][type]['estimation_set'][-1].predicted_task = \
-                            self.teammate[tindex][type]['estimation_set'][-1].predict_task(env,teammate)
-                        self.teammate[tindex][type]['estimation_set'][-1].choose_target_state = env.copy()
 
     def run(self, env):
         # checking if there are new teammates in the environment
@@ -98,6 +98,8 @@ class OEATA(object):
 
                     # 2. Generation
                     self.generation(env, teammate)
+                    
+                    self.target_selected[teammate.index] = False
 
                 # 3. Update
                 self.update(env, teammate, just_finished_tasks)
@@ -105,10 +107,14 @@ class OEATA(object):
         return self
 
     def evaluation(self, env, teammate):
+        choose_target_state = None
         completed_task = teammate.smart_parameters['last_completed_task'].copy()
         for type in self.template_types:
+            removed = 0
+
             # saving the choose target state
-            choose_target_state = self.teammate[teammate.index][type]['estimation_set'][-1].choose_target_state.copy()
+            if choose_target_state is None and self.teammate[teammate.index][type]['estimation_set'][-1].choose_target_state is not None:
+                choose_target_state = self.teammate[teammate.index][type]['estimation_set'][-1].choose_target_state.copy()
             
             for i in range(self.N):
                 # verifying if the estimator correctly estimates the task
@@ -129,21 +135,23 @@ class OEATA(object):
 
                     # checking if the task must be removed
                     if self.teammate[teammate.index][type]['estimation_set'][i].f_e >= self.xi:
+                        removed += 1
                         self.teammate[teammate.index][type]['estimation_set'][i].parameters = None
                         gc.collect()
                     
-                    if self.teammate[teammate.index][type]['estimation_set'][i].parameters is not None:
-                        self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
-                        self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
-        
+                    #if self.teammate[teammate.index][type]['estimation_set'][i].parameters is not None:
+                    #    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
+                    #    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
+
         # Updating teammate history
-        self.teammate[teammate.index]['history'].append((choose_target_state,completed_task))
+        if choose_target_state is not None:
+            self.teammate[teammate.index]['history'].append((choose_target_state,completed_task))
 
     def generation(self, env, teammate):
         for type in self.template_types:
             # 1. Calculating the number of mutations
+            n_removed_estimators = sum([self.teammate[teammate.index][type]['estimation_set'][i].parameters is None for i in range(self.N)])
             if len(self.teammate[teammate.index][type]['bag_of_estimators']) > 0:
-                n_removed_estimators = sum([self.teammate[teammate.index][type]['estimation_set'][i].parameters is None for i in range(self.N)])
                 nmutations = int(self.mr*n_removed_estimators)
             else:
                 nmutations = 0
@@ -169,8 +177,8 @@ class OEATA(object):
                     self.teammate[teammate.index][type]['estimation_set'][i].failure_counter = 0
                     self.teammate[teammate.index][type]['estimation_set'][i].c_e = hist_success
                     self.teammate[teammate.index][type]['estimation_set'][i].f_e = 0
-                    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
-                    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
+                    #self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
+                    #self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
 
     def check_history(self, estimator, teammate, history):
         hist_success = 0
@@ -185,19 +193,37 @@ class OEATA(object):
     def update(self, env, teammate, just_finished_tasks):
         # updating the estimator-predicted task
         just_finished_indexes = [task.index for task in just_finished_tasks]
-        for type in self.template_types:
-            for i in range(self.N):
+
+        if teammate.target is not None and self.target_selected[teammate.index] is False:
+            for type in self.template_types:
+                for i in range(self.N):
+                    self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
+                    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
+            self.target_selected[teammate.index] = True
+
+        if teammate.target is  None and self.target_selected[teammate.index] is True:
+            for type in self.template_types:
+                for i in range(self.N):
+                    if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and\
+                    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index in just_finished_indexes:
+                        self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = None
+                        self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = None
+            self.target_selected[teammate.index] = False
+        
+        #for type in self.template_types:
+            #for i in range(self.N):
                 # if the selected task was accomplished by other agent
-                if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and\
-                 self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index in just_finished_indexes:
-                    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task =\
-                         self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
-                    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
+                #if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and\
+                # self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index in just_finished_indexes:
+                #   self.teammate[teammate.index][type]['estimation_set'][i].predicted_task = \
+                #         self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
+                #    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
+
                 # or if the estimator did not select any task
-                elif self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None:
-                    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task =\
-                        self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
-                    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
+                #elif self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None:
+                #    self.teammate[teammate.index][type]['estimation_set'][i].predicted_task =\
+                #        self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
+                #    self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()
                     
     def get_estimation(self, env):
         type_probabilities, estimated_parameters = [], []
