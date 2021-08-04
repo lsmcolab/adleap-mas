@@ -190,7 +190,7 @@ while env.episode < args.num_episodes:
     if just_finished_tasks:
         for i in range(len(just_finished_tasks)):
             respawn_count += 1
-            env.components['tasks'][(tasks_at_the_map + respawn_count) % len(env.components['tasks'])].completed = False
+            env.components['tasks'][(respawn_count) % len(env.components['tasks'])].completed = False
 
 bashlog_file.reset_stderr()
 ###
