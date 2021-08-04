@@ -9,8 +9,8 @@ def get_initial_positions(env_name, dim, nagents, ntasks):
     if env_name == "LevelForagingEnv" and (ntasks * 9) > (dim ** 2):
         print('It is not possible to create the '+ env_name+' scenario with'+\
             str(ntasks)+' and '+str(dim)+'-- not enough room to it.\n We reduced the'+\
-                ' number of tasks from '+str(ntasks)+' to '+str(int((dim**2) - 1))+'.')
-        ntasks = int((dim**2) - 1)
+                ' number of tasks from '+str(ntasks)+' to '+str(int((dim**2)/9) - 1)+'.')
+        ntasks = int((dim**2)/9) - 1
 
     # getting the random positions
     pos = []
@@ -19,7 +19,7 @@ def get_initial_positions(env_name, dim, nagents, ntasks):
         y = random.randint(0, dim - 1)
 
         if env_name == "LevelForagingEnv":
-            if len(pos) >= nagents:
+            if len(pos) <= ntasks:
                 if x > 0 and x < dim-1 and y > 0 and y < dim-1 and \
                  (x, y) not in pos and (x + 1, y) not in pos and \
                  (x + 1, y + 1) not in pos and (x, y + 1) not in pos and \
@@ -35,6 +35,9 @@ def get_initial_positions(env_name, dim, nagents, ntasks):
         else:
             raise NotImplemented
 
+    pos.reverse()
+    if env_name == "LevelForagingEnv":
+        return pos, ntasks
     return pos
 
 
@@ -93,7 +96,7 @@ def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False
     direction = [0, np.pi / 2, np.pi, 3 * np.pi / 2]
 
     # 3. Getting the initial positions
-    random_pos = get_initial_positions("LevelForagingEnv", dim, num_agents, num_tasks)
+    random_pos, num_tasks = get_initial_positions("LevelForagingEnv", dim, num_agents, num_tasks)
 
     # 4. Creating the components
     ####
