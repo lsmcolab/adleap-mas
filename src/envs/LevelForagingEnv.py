@@ -598,12 +598,15 @@ class LevelForagingEnv(AdhocReasoningEnv):
         adhoc_agent = copied_env.get_adhoc_agent()
         adhoc_agent.type = new_type
         adhoc_agent.set_parameters(new_parameter)
+        adhoc_agent.target = None
 
         obsavable_env = copied_env.observation_space(copied_env)
 
+        obsavable_env.components['adhoc_agent_index'] = agent_index
         adhoc_agent = obsavable_env.get_adhoc_agent()
         adhoc_agent.type = new_type
         adhoc_agent.set_parameters(new_parameter)
+        adhoc_agent.target = None
 
         # planning the action from agent i perspective
         module = __import__(new_type)
