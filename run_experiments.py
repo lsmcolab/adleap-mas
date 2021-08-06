@@ -65,12 +65,36 @@ def create_qsubfile(mode,estimation,num_agents,num_tasks,dim,experiment_id,pytho
         bashfile.write("#$ -S /bin/bash\n\n")   
         bashfile.write("#$ -N "+fname+"\n")   
         bashfile.write("#$ -l h_vmem=8G\n")         
-        bashfile.write("#$ -l h_rt=02:00:00\n\n")  
+        bashfile.write("#$ -l h_rt=04:00:00\n\n")  
+
         bashfile.write("source /etc/profile\n")     
         bashfile.write("module add anaconda3/wmlce\n")                              
-        bashfile.write("source activate wmlce_env\n\n")                             
+        bashfile.write("source activate wmlce_env\n\n") 
+                                   
         bashfile.write(python_cmd)
 
+    time.sleep(0.25)
+
+# create qsubfile for submission
+def create_map(env,num_agents,num_tasks,dim,experiment_id):
+    fname = "MAP_"+str(env)+"_a"+str(num_agents)+"_i"+str(num_tasks)+"_d"+str(dim)+"_exp"+str(experiment_id)
+    with open("run.sh", "w") as bashfile:           
+        bashfile.write("#$ -S /bin/bash\n\n")   
+        bashfile.write("#$ -N "+fname+"\n")   
+        bashfile.write("#$ -l h_vmem=8G\n")         
+        bashfile.write("#$ -l h_rt=00:02:00\n\n") 
+
+        bashfile.write("source /etc/profile\n")     
+        bashfile.write("module add anaconda3/wmlce\n")                              
+        bashfile.write("source activate wmlce_env\n\n")     
+
+        bashfile.write("python envs/create_"+str(env)+".py "+\
+            '--num_exp ' + str(experiment_id) + \
+            ' --dim ' + str(dim) + \
+            ' --num_agents ' + str(num_agents) + \
+            ' --num_tasks ' + str(num_tasks))
+
+    subprocess.run(["qsub","-o","qsuboutput/","-e","qsuberror/","run.sh"])
     time.sleep(0.25)
 ###
 # SCRIPT
@@ -94,12 +118,7 @@ for config in configurations:
     
     # 4. Creating the scenarios
     for experiment_id in range(num_exp):
-        if env == 'LevelForagingEnv':
-            create_LevelForagingEnv(dim, num_agents, num_tasks, num_exp=experiment_id)
-        elif env == 'CaptureEnv':
-            create_CaptureEnv(dim, num_agents, num_tasks, num_exp=experiment_id)
-        else:
-            raise NotImplemented
+        create_map(env,num_agents,num_tasks,dim,experiment_id)
 
     # 5. Stating the remote experiment
     for experiment_id in range(num_exp):
