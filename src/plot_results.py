@@ -8,12 +8,13 @@ import numpy as np
 #####
 PLOT_NUMBER = 0
 PLOT_SETTINGS = [[7,20,20]]
-COLOR = {'AGA':'b','ABU':'g','OEATA':'r'}
+COLOR = {'AGA':'b','ABU':'g','OEATA':'r','SOEATA':'black'}
+MIN_ITERATIONS = 0
 
 mode = 'Respawn_'
 env = 'LevelForagingEnv' # LevelForagingEnv, CaptureEnv
-n_experiments = 1
-estimation_methods = ['OEATA', 'AGA', 'ABU']
+n_experiments = 20
+estimation_methods = ['OEATA', 'AGA', 'ABU','SOEATA']
 
 #####
 # COLLECTING INFORMATION
@@ -88,7 +89,7 @@ def collect_information(a, i, d, n_experiments, env, estimation_methods, mode=""
 
                     line_counter += 1
             
-            if line_counter != 102:
+            if line_counter < MIN_ITERATIONS:
                 information[est]['iterations'].pop()
                 information[est]['completions'].pop()
                 information[est]['actual_radius'].pop()
