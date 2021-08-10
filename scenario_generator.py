@@ -60,9 +60,9 @@ def get_env_nparameters(env_name):
 
 def get_env_parameters_minmax(env_name):
     if env_name == "LevelForagingEnv":
-        return [(0.1,1),(0.1,1),(0.1,1)]
+        return [(0.5,1),(0.5,1),(0.5,1)]
     elif env_name == "CaptureEnv":
-        return [(0.1,1),(0.1,1)]
+        return [(0.5,1),(0.5,1)]
     else:
         raise NotImplemented
 
