@@ -87,7 +87,7 @@ class SOEATA(object):
                 # if the agent accomplished a task
                 if teammate.smart_parameters['last_completed_task'] != None:
                     # 1. Evaluation
-                    self.evaluation(env, teammate)
+                    self.evaluation(teammate)
 
                     # 2. Generation
                     self.generation(teammate)
@@ -97,7 +97,7 @@ class SOEATA(object):
         
         return self
 
-    def evaluation(self, env, teammate):
+    def evaluation(self, teammate):
         completed_task = teammate.smart_parameters['last_completed_task'].copy()
         for type in self.template_types:
             removed = 0
@@ -116,7 +116,8 @@ class SOEATA(object):
                 # INCORRECT
                 else:
                     #updating the failure counter
-                    self.teammate[teammate.index][type]['estimation_set'][i].failure_counter += 1
+                    t2c = self.teammate[teammate.index][type]['estimation_set'][i].time2completion
+                    self.teammate[teammate.index][type]['estimation_set'][i].failure_counter += (t2c + 1)
 
                     # checking if the task must be removed
                     c_e = self.teammate[teammate.index][type]['estimation_set'][i].success_counter
