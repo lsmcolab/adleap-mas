@@ -78,24 +78,29 @@ def create_qsubfile(mode,estimation,num_agents,num_tasks,dim,experiment_id,pytho
 # create qsubfile for submission
 def create_map(env,num_agents,num_tasks,dim,experiment_id):
     fname = "MAP_"+str(env)+"_a"+str(num_agents)+"_i"+str(num_tasks)+"_d"+str(dim)+"_exp"+str(experiment_id)
-    with open("run.sh", "w") as bashfile:           
-        bashfile.write("#$ -S /bin/bash\n\n")   
-        bashfile.write("#$ -N "+fname+"\n")   
-        bashfile.write("#$ -l h_vmem=8G\n")         
-        bashfile.write("#$ -l h_rt=00:02:00\n\n") 
 
-        bashfile.write("source /etc/profile\n")     
-        bashfile.write("module add anaconda3/wmlce\n")                              
-        bashfile.write("source activate wmlce_env\n\n")     
+    path = "./src/envs/maps/"+str(env)+"/"+str(dim) + str(num_agents) + str(num_tasks) + str(experiment_id) + '.pickle'  
+    if os.path.isfile(path):
+        with open("run.sh", "w") as bashfile:           
+            bashfile.write("#$ -S /bin/bash\n\n")   
+            bashfile.write("#$ -N "+fname+"\n")   
+            bashfile.write("#$ -l h_vmem=8G\n")         
+            bashfile.write("#$ -l h_rt=00:02:00\n\n") 
 
-        bashfile.write("python envs/create_"+str(env)+".py "+\
-            '--num_exp ' + str(experiment_id) + \
-            ' --dim ' + str(dim) + \
-            ' --num_agents ' + str(num_agents) + \
-            ' --num_tasks ' + str(num_tasks))
+            bashfile.write("source /etc/profile\n")     
+            bashfile.write("module add anaconda3/wmlce\n")                              
+            bashfile.write("source activate wmlce_env\n\n")     
 
-    subprocess.run(["qsub","-o","qsuboutput/","-e","qsuberror/","run.sh"])
-    time.sleep(0.25)
+            bashfile.write("python envs/create_"+str(env)+".py "+\
+                '--num_exp ' + str(experiment_id) + \
+                ' --dim ' + str(dim) + \
+                ' --num_agents ' + str(num_agents) + \
+                ' --num_tasks ' + str(num_tasks))
+
+        
+        subprocess.run(["qsub","-o","qsuboutput/","-e","qsuberror/","run.sh"])
+        time.sleep(0.25)
+        
 ###
 # SCRIPT
 ###
@@ -122,7 +127,7 @@ for config in configurations:
 
     # 5. Stating the remote experiment
     for experiment_id in range(num_exp):
-        for estimation in ['AGA','ABU',"OEATA"]:
+        for estimation in ['AGA','ABU','OEATA','SOEATA']:
             # defining the experiment parameters
             python_cmd = get_python_cmd(mode,env,estimation,num_agents,
                         num_tasks,dim,experiment_id,num_episodes)

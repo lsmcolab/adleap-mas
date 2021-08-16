@@ -217,7 +217,19 @@ class SOEATA(object):
                 parameter_est = []
                 for i in range(len(self.template_types)):
                     type = self.template_types[i]
-                    parameter_est.append(list(self.normalise([e.parameters for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)))
+                    success_sum = sum([e.success_counter for e in self.teammate[teammate.index][type]['estimation_set']])
+                    if success_sum > 0:
+                        parameter_est.append(\
+                         np.sum([e.success_counter*np.array(e.parameters)/success_sum \
+                          for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)\
+                        )
+                    else:
+                        parameter_est.append(\
+                         np.sum([np.array(e.parameters)/self.N \
+                          for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)\
+                        )
+
+                    
                 estimated_parameters.append(parameter_est)
 
         return type_probabilities, estimated_parameters

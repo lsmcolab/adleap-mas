@@ -9,7 +9,7 @@ import numpy as np
 PLOT_NUMBER = 0
 PLOT_SETTINGS = [[7,20,20]]
 COLOR = {'AGA':'b','ABU':'g','OEATA':'r','SOEATA':'black'}
-MIN_ITERATIONS = 0
+MIN_ITERATIONS = 200
 
 mode = 'Respawn_'
 env = 'LevelForagingEnv' # LevelForagingEnv, CaptureEnv
