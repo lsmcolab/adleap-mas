@@ -26,7 +26,7 @@ class Estimator(object):
 
     def predict_task(self, env, teammate):
         self.choose_target_state = env
-       self.predicted_task = env.get_target(teammate.index, self.type, self.parameters)
+        self.predicted_task = env.get_target(teammate.index, self.type, self.parameters)
         return self.predicted_task
 
     def copy(self):

@@ -182,6 +182,7 @@ while env.episode < args.num_episodes:
         stats = list_stats(env, accomplished_tasks)
         log_file.write(None, stats)
 
+    #print(stats)
     # Step on environment
     bashlog_file.write("Simulation Step")
     state, reward, done, info = env.step(adhoc_agent.next_action)

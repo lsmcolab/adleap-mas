@@ -208,8 +208,8 @@ def create_CaptureEnv(dim, num_agents, num_tasks, partial_observable=False, disp
     ####
     agents, tasks = [], []
 
-    MIN_RADIUS, MAX_RADIUS = (1.0/dim), 1.0
-    MIN_ANGLE, MAX_ANGLE = (1.0/dim), 1.0
+    MIN_RADIUS, MAX_RADIUS = 0.5, 1.0
+    MIN_ANGLE, MAX_ANGLE = 0.5, 1.0
 
     # a. main agent
     if not partial_observable:
