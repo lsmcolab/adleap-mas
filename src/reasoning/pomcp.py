@@ -205,7 +205,7 @@ def monte_carlo_planning(state, agent, max_it, max_depth,estimation_algorithm):
 
 
 def pomcp_planning(env,agent, max_depth=10, max_it=100,estimation_algorithm=None):
-
+    
     # 1. Setting the environment for simulation
     copy_env = env.copy()
     copy_env.viewer = None
