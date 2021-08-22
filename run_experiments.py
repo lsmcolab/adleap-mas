@@ -64,7 +64,7 @@ def create_qsubfile(mode,estimation,num_agents,num_tasks,dim,experiment_id,pytho
     with open("run.sh", "w") as bashfile:           
         bashfile.write("#$ -S /bin/bash\n\n")   
         bashfile.write("#$ -N "+fname+"\n")   
-        bashfile.write("#$ -l h_vmem=8G\n")         
+        bashfile.write("#$ -l h_vmem=2G\n")         
         bashfile.write("#$ -l h_rt=04:00:00\n\n")  
 
         bashfile.write("source /etc/profile\n")     
@@ -84,8 +84,8 @@ def create_map(env,num_agents,num_tasks,dim,experiment_id):
         with open("run.sh", "w") as bashfile:           
             bashfile.write("#$ -S /bin/bash\n\n")   
             bashfile.write("#$ -N "+fname+"\n")   
-            bashfile.write("#$ -l h_vmem=8G\n")         
-            bashfile.write("#$ -l h_rt=00:02:00\n\n") 
+            bashfile.write("#$ -l h_vmem=2G\n")         
+            bashfile.write("#$ -l h_rt=00:04:00\n\n") 
 
             bashfile.write("source /etc/profile\n")     
             bashfile.write("module add anaconda3/wmlce\n")                              

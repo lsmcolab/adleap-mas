@@ -7,9 +7,30 @@ import numpy as np
 # CUSTOMISATION
 #####
 PLOT_NUMBER = 0
-PLOT_SETTINGS = [[7,20,20]]
-COLOR = {'AGA':'b','ABU':'g','OEATA':'r','SOEATA':'black'}
-MIN_ITERATIONS = 200
+PLOT_SETTINGS = [[12,20,20],
+                [12,20,30],
+                [12,20,25],
+                [12,20,35],
+                [12,20,40],
+                [12,25,20],
+                [12,25,25],
+                [12,25,30],
+                [12,25,35],
+                [12,25,40],
+                [12,30,20],
+                [12,30,25],
+                [12,30,30],
+                [12,30,35],
+                [12,30,40],
+                [12,35,20],
+                [12,35,25],
+                [12,35,30],
+                [12,35,35],
+                [12,35,40]]
+COLOR = {'AGA':'b','ABU':'g','OEATA':'r'}
+
+REMOVE = False
+MIN_ITERATIONS = np.inf
 
 mode = 'Respawn_'
 env = 'LevelForagingEnv' # LevelForagingEnv, CaptureEnv
@@ -21,6 +42,8 @@ estimation_methods = ['OEATA', 'AGA', 'ABU','SOEATA']
 #####
 def collect_information(a, i, d, n_experiments, env, estimation_methods, mode=""):
     print('Collecting information...',a,i,d,env,mode)
+    global MIN_ITERATIONS, REMOVE
+
     information = {}
     for est in estimation_methods:
         # initialising 
@@ -89,7 +112,7 @@ def collect_information(a, i, d, n_experiments, env, estimation_methods, mode=""
 
                     line_counter += 1
             
-            if line_counter < MIN_ITERATIONS:
+            if REMOVE and line_counter < MIN_ITERATIONS:
                 information[est]['iterations'].pop()
                 information[est]['completions'].pop()
                 information[est]['actual_radius'].pop()
@@ -100,6 +123,20 @@ def collect_information(a, i, d, n_experiments, env, estimation_methods, mode=""
                 information[est]['estimated_angle'].pop()
                 information[est]['estimated_level'].pop()
                 information[est]['type_probabilities'].pop()
+            elif line_counter <= 1:
+                information[est]['iterations'].pop()
+                information[est]['completions'].pop()
+                information[est]['actual_radius'].pop()
+                information[est]['actual_angle'].pop()
+                information[est]['actual_level'].pop()
+                information[est]['actual_type'].pop()
+                information[est]['estimated_radius'].pop()
+                information[est]['estimated_angle'].pop()
+                information[est]['estimated_level'].pop()
+                information[est]['type_probabilities'].pop()
+            elif (line_counter - 2) < MIN_ITERATIONS:
+                MIN_ITERATIONS = line_counter - 2
+
     return information
 
 #####
@@ -128,6 +165,7 @@ def plot_performance(information, estimation_methods):
     plt.ylabel("Performance")
     #plt.show()
     pdf.savefig( fig )
+    plt.close()
     PLOT_NUMBER += 1
 
     return max(max_iterations)
@@ -158,6 +196,7 @@ def plot_number_of_completed_tasks(information,estimation_methods):
     plt.ylabel("Mean Completed Tasks")
     #plt.show()
     pdf.savefig( fig )
+    plt.close()
     PLOT_NUMBER += 1
 
 def plot_completion(information, estimation_methods, max_iterations=200):
@@ -183,6 +222,7 @@ def plot_completion(information, estimation_methods, max_iterations=200):
     plt.ylabel("Completion")
     #plt.show()
     pdf.savefig( fig )
+    plt.close()
     PLOT_NUMBER += 1
 
 def plot_type_estimation_by_iteration(information, n_agents, estimation_methods, max_iteration=200):
@@ -214,6 +254,7 @@ def plot_type_estimation_by_iteration(information, n_agents, estimation_methods,
     plt.ylabel("Error")
     #plt.show()
     pdf.savefig( fig )
+    plt.close()
     PLOT_NUMBER += 1
     return
 
@@ -255,6 +296,7 @@ def plot_type_estimation_by_completion(information, n_agents, n_tasks, estimatio
     plt.ylabel("Error")
     #plt.show()
     pdf.savefig( fig )
+    plt.close()
     PLOT_NUMBER += 1
     return
 
@@ -338,6 +380,7 @@ def plot_parameter_estimation_by_iteration(env, information, n_agents, estimatio
         parameter_ax[i].set(xlabel="Iteration",ylabel='Error')
     #plt.show()
     pdf.savefig( fig )
+    plt.close()
     PLOT_NUMBER += 1
     return
 
@@ -428,6 +471,7 @@ def plot_parameter_estimation_by_completion(env, information, n_agents, n_tasks,
         parameter_ax[i].set_title(parameter_title[i])
         parameter_ax[i].set(xlabel="Completion",ylabel='Error')
     pdf.savefig( fig )
+    plt.close()
     PLOT_NUMBER += 1
     return
     
@@ -435,6 +479,9 @@ def plot_parameter_estimation_by_completion(env, information, n_agents, n_tasks,
 # PLOT SCRIPT
 #####
 for setting in PLOT_SETTINGS:
+    if not REMOVE:
+        MIN_ITERATIONS = np.inf
+        
     n_agents, n_tasks, dim = setting[0], setting[1], setting[2]
     info = collect_information(n_agents,n_tasks,dim, n_experiments,env,estimation_methods,mode)
 
