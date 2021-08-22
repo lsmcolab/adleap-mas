@@ -15,7 +15,7 @@ from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estim
 # TODO : fix pomcp black box .
 components = {
     'agents':[
-        Agent(index='A',atype="pomcp",position=(1,0),direction=3*np.pi/2,radius=1,angle=1),
+        Agent(index='A',atype="mcts",position=(1,0),direction=3*np.pi/2,radius=1,angle=1),
         Agent(index='B',atype='c1',position=(8,2),direction=3*np.pi/2,radius=0.40,angle=0.19),
        Agent(index='C',atype='c1',position=(6,4),direction=3*np.pi/2,radius=0.15,angle=0.4),
         Agent(index='D',atype='c1',position=(2,7),direction=np.pi,radius=0.11,angle=0.41),

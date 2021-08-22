@@ -14,7 +14,7 @@ import sys
 sys.path.append('src/reasoning')
 
 from scenario_generator import *
-from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estimation, soeata_estimation
+from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estimation, pomcp_estimation, soeata_estimation
 from src.log import BashLogFile, LogFile
 
 ###
@@ -142,6 +142,13 @@ elif args.estimation == 'SOEATA':
 
     estimation_method = soeata_estimation
     
+elif args.estimation == 'POMCP':
+    adhoc_agent.smart_parameters['estimation_args'] =\
+    get_env_types(args.env), get_env_parameters_minmax(args.env)
+
+    estimation_method = pomcp_estimation
+
+
 else:
     estimation_method = None
 
@@ -177,11 +184,10 @@ while env.episode < args.num_episodes:
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
     adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
-
     if env.episode == 0:
         stats = list_stats(env, accomplished_tasks)
         log_file.write(None, stats)
-
+    #print(stats)
     # Step on environment
     bashlog_file.write("Simulation Step")
     state, reward, done, info = env.step(adhoc_agent.next_action)
@@ -192,7 +198,6 @@ while env.episode < args.num_episodes:
     bashlog_file.write("Log\n")
     stats = list_stats(env, accomplished_tasks)
     log_file.write(None, stats)
-
     # respawning
     if just_finished_tasks:
         for i in range(len(just_finished_tasks)):

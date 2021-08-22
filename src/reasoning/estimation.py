@@ -122,7 +122,7 @@ def soeata_estimation(env, adhoc_agent,\
     return env, adhoc_agent.smart_parameters['estimation']
 
 def pomcp_estimation(env, adhoc_agent, \
- template_types, parameters_minmax, discount_factor=0.9, max_iter=10, max_depth=10,min_particles=100):
+ template_types, parameters_minmax, discount_factor=0.9, max_iter=100, max_depth=10,min_particles=100):
     #####
     # POMCE INITIALISATION
     ##### discount_factor=0.9,max_iter=10,max_depth=10,min_particles=100

@@ -22,6 +22,12 @@ class Estimator(object):
 
     def predict_task(self, env, teammate):
         self.predicted_task = env.get_target(teammate.index, self.type, self.parameters)
+        try :
+            pass
+            ##print("Why mostly None ? ",self.predicted_task.index, teammate.index)
+        except:
+            pass
+            ##print("Why mostly None ? --- ",teammate.index)
         return self.predicted_task
 
     def copy(self):
@@ -86,6 +92,7 @@ class SOEATA(object):
             if teammate.index != adhoc_agent.index:
                 # if the agent accomplished a task
                 if teammate.smart_parameters['last_completed_task'] != None:
+                    #print("SOEATA RUN", teammate.index)
                     # 1. Evaluation
                     self.evaluation(teammate)
 
@@ -104,6 +111,13 @@ class SOEATA(object):
             for i in range(self.N):
                 # verifying if the estimator correctly estimates the task
                 # CORRECT
+                try:
+                    pass
+                    #print("Evaluation : ",teammate.index,self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index,completed_task.index)
+                except Exception as e:
+                    pass
+                    #print("None ",teammate.index, e)
+                
                 if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and\
                  self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index == completed_task.index:
                     # adding to the bag of estimators
@@ -167,6 +181,7 @@ class SOEATA(object):
 
                 # or if the estimator did not select any task
                 elif self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is None:
+                    #print("Task is None for an estimator of ", teammate.index)
                     self.teammate[teammate.index][type]['estimation_set'][i].predicted_task =\
                         self.teammate[teammate.index][type]['estimation_set'][i].predict_task(env, teammate)
                     self.teammate[teammate.index][type]['estimation_set'][i].choose_target_state = env.copy()

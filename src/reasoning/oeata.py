@@ -2,6 +2,8 @@ import gc
 import numpy as np
 import random as rd
 
+from numpy.core.fromnumeric import choose
+
 class Estimator(object):
 
     def __init__(self, parameters_minmax , type, d):
