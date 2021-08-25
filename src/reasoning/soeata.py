@@ -35,7 +35,7 @@ class Estimator(object):
 
 class SOEATA(object):
 
-    def __init__(self, initial_state, template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean, mode='unif'):
+    def __init__(self, initial_state, template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean, mode='weight'):
         # initialising the oeata parameters
         self.template_types = template_types
         self.nparameters = len(parameters_minmax)
