@@ -22,12 +22,6 @@ class Estimator(object):
 
     def predict_task(self, env, teammate):
         self.predicted_task = env.get_target(teammate.index, self.type, self.parameters)
-        try :
-            pass
-            ##print("Why mostly None ? ",self.predicted_task.index, teammate.index)
-        except:
-            pass
-            ##print("Why mostly None ? --- ",teammate.index)
         return self.predicted_task
 
     def copy(self):
@@ -41,7 +35,7 @@ class Estimator(object):
 
 class SOEATA(object):
 
-    def __init__(self, initial_state, template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
+    def __init__(self, initial_state, template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean, mode='unif'):
         # initialising the oeata parameters
         self.template_types = template_types
         self.nparameters = len(parameters_minmax)
@@ -51,6 +45,7 @@ class SOEATA(object):
         self.mr = mr
         self.d = d
         self.normalise = normalise
+        self.mode = mode
 
         # initialising the oeata teammates estimation set
         self.teammate = {}
@@ -111,13 +106,6 @@ class SOEATA(object):
             for i in range(self.N):
                 # verifying if the estimator correctly estimates the task
                 # CORRECT
-                try:
-                    pass
-                    #print("Evaluation : ",teammate.index,self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index,completed_task.index)
-                except Exception as e:
-                    pass
-                    #print("None ",teammate.index, e)
-                
                 if self.teammate[teammate.index][type]['estimation_set'][i].predicted_task is not None and\
                  self.teammate[teammate.index][type]['estimation_set'][i].predicted_task.index == completed_task.index:
                     # adding to the bag of estimators
@@ -218,18 +206,31 @@ class SOEATA(object):
                 for i in range(len(self.template_types)):
                     type = self.template_types[i]
                     success_sum = sum([e.success_counter for e in self.teammate[teammate.index][type]['estimation_set']])
+                    
+                    # if we have made estimations
                     if success_sum > 0:
-                        parameter_est.append(\
-                         np.sum([e.success_counter*np.array(e.parameters)/success_sum \
-                          for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)\
-                        )
+                        # unif estimation
+                        if self.mode == 'unif':
+                            parameter_est.append(\
+                             self.normalise([np.array(e.parameters) \
+                              for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)\
+                            )
+                        elif self.mode == 'weight':
+                            # weight estimation
+                            parameter_est.append(\
+                            np.sum([e.success_counter*np.array(e.parameters)/success_sum \
+                            for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)\
+                            )
+                        else:
+                            raise NotImplemented
+
+                    # else, mean
                     else:
                         parameter_est.append(\
-                         np.sum([np.array(e.parameters)/self.N \
+                         np.mean([np.array(e.parameters) \
                           for e in self.teammate[teammate.index][type]['estimation_set']],axis=0)\
                         )
-
-                    
+   
                 estimated_parameters.append(parameter_est)
 
         return type_probabilities, estimated_parameters
@@ -264,5 +265,14 @@ class SOEATA(object):
         return sampled_type[0]
 
     def get_parameter_for_selected_type(self, teammate, selected_type):
-        parameter_est = rd.sample(self.teammate[teammate.index][selected_type]['estimation_set'],1)[0].parameters
+        # unif set
+        if self.mode == 'unif':
+            sample_set = self.teammate[teammate.index][selected_type]['estimation_set']
+        # weight set
+        elif self.mode == 'weight':
+            sample_set = [e for e in self.teammate[teammate.index][selected_type]['estimation_set'] for i in range(e.success_counter)]
+        else:
+            raise NotImplemented
+
+        parameter_est = rd.sample(sample_set,1)[0].parameters
         return parameter_est
