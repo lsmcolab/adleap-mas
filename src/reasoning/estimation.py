@@ -167,7 +167,7 @@ def level_foraging_uniform_estimation(env, template_types=['l1','l2','l3']):
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
             teammate.type = rd.sample(template_types,1)[0]
-            teammate.set_parameters(np.random.uniform(0,1,3))
+            teammate.set_parameters(np.random.uniform(0.5,1,3))
     return env
 
 def capture_uniform_estimation(env, template_types=['c1','c2','c3']):
@@ -175,7 +175,7 @@ def capture_uniform_estimation(env, template_types=['c1','c2','c3']):
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:
             teammate.type = rd.sample(template_types,1)[0]
-            teammate.set_parameters(np.random.uniform(0,1,2))
+            teammate.set_parameters(np.random.uniform(0.5,1,2))
     return env
 
 def truco_uniform_estimation(env):

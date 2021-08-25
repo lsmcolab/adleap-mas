@@ -133,7 +133,7 @@ def black_box_update(env,agent,root,k=100):
     # 3. Sampling new particles while don't get k particles into the filter
     while(len(root.particle_filter) < k):
         sampled_env = env.sample_state(agent)
-        sampled_env = uniform_estimation(sampled_env,agent)
+        sampled_env = uniform_estimation(sampled_env)
         root.particle_filter.append(sampled_env)
 
 def find_new_root(current_state,previous_action,current_observation,previous_root):
