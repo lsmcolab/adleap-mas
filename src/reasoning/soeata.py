@@ -265,12 +265,17 @@ class SOEATA(object):
         return sampled_type[0]
 
     def get_parameter_for_selected_type(self, teammate, selected_type):
+        success_sum = sum([e.success_counter for e in self.teammate[teammate.index][selected_type]['estimation_set']])
+                    
         # unif set
         if self.mode == 'unif':
             sample_set = self.teammate[teammate.index][selected_type]['estimation_set']
         # weight set
         elif self.mode == 'weight':
-            sample_set = [e for e in self.teammate[teammate.index][selected_type]['estimation_set'] for i in range(e.success_counter)]
+            if success_sum > 0:
+                sample_set = [e for e in self.teammate[teammate.index][selected_type]['estimation_set'] for i in range(e.success_counter)]
+            else:
+                sample_set = self.teammate[teammate.index][selected_type]['estimation_set']
         else:
             raise NotImplemented
 
