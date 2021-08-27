@@ -127,7 +127,7 @@ for config in configurations:
 
     # 5. Stating the remote experiment
     for experiment_id in range(num_exp):
-        for estimation in ['SOEATA']: #['AGA','ABU','OEATA','SOEATA']:
+        for estimation in ['AGA','ABU','POMCP','SOEATA']:
             # defining the experiment parameters
             python_cmd = get_python_cmd(mode,env,estimation,num_agents,
                         num_tasks,dim,experiment_id,num_episodes)
