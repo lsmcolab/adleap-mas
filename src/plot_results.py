@@ -1,33 +1,16 @@
 from ast import literal_eval
-import matplotlib.pyplot as plt
 from matplotlib.backends import backend_pdf
+from myplotlib import *
 import numpy as np
 
 #####
 # CUSTOMISATION
 #####
 PLOT_NUMBER = 0
-PLOT_SETTINGS = [[12,20,20],
-                [12,20,30],
-                [12,20,25],
-                [12,20,35],
-                [12,20,40],
-                [12,25,20],
-                [12,25,25],
-                [12,25,30],
-                [12,25,35],
-                [12,25,40],
-                [12,30,20],
-                [12,30,25],
-                [12,30,30],
-                [12,30,35],
-                [12,30,40],
-                [12,35,20],
-                [12,35,25],
-                [12,35,30],
-                [12,35,35],
-                [12,35,40]]
-COLOR = {'AGA':'b','ABU':'g','OEATA':'r'}
+PLOT_SETTINGS =[[7,30,30]]
+
+COLOR = {'AGA':'b','ABU':'g','SOEATA':'r','POMCP':'y'}
+MARKER = {'AGA':'^','ABU':'v','SOEATA':'o','POMCP':'s'}
 
 REMOVE = False
 MIN_ITERATIONS = np.inf
@@ -35,7 +18,7 @@ MIN_ITERATIONS = np.inf
 mode = 'Respawn_'
 env = 'LevelForagingEnv' # LevelForagingEnv, CaptureEnv
 n_experiments = 20
-estimation_methods = ['OEATA', 'AGA', 'ABU','SOEATA']
+estimation_methods = ['AGA', 'ABU','POMCP','SOEATA']
 
 #####
 # COLLECTING INFORMATION
@@ -139,363 +122,139 @@ def collect_information(a, i, d, n_experiments, env, estimation_methods, mode=""
 
     return information
 
-#####
-# PLOT METHODS
-#####
-def plot_performance(information, estimation_methods):
-    print('Plotting performance...')
-    global PLOT_NUMBER, COLOR, pdf
-
-    fig = plt.figure(PLOT_NUMBER, figsize=(8,6))
-
-    data, max_iterations, colors_ = {}, [], []
+def get_max_iteration(information, estimation_methods):
+    max_iterations = []
     for est in estimation_methods:
         max_iterations.append(max([information[est]['iterations'][i][-1] for i in range(len(information[est]['iterations']))]))
-        mean_iteration = np.mean([information[est]['iterations'][i][-1] for i in range(len(information[est]['iterations']))])
-        data[est] = mean_iteration
-        colors_.append(COLOR[est])
-
-    X_estimation_methods = list(data.keys())
-    Y_mean_iteration = list(data.values())
-
-    plt.bar(X_estimation_methods,Y_mean_iteration,color=colors_)
-
-    plt.title("Performance")
-    plt.xlabel("Estimation Methods")
-    plt.ylabel("Performance")
-    #plt.show()
-    pdf.savefig( fig )
-    plt.close()
-    PLOT_NUMBER += 1
-
     return max(max_iterations)
 
-def plot_number_of_completed_tasks(information,estimation_methods):
-    print('Plotting performance...')
-    global PLOT_NUMBER, COLOR, pdf
-
-    fig = plt.figure(PLOT_NUMBER, figsize=(8,6))
-
-    data,colors_ = {}, []
-    for est in estimation_methods:
-        data[est] = np.zeros(len(information[est]['completions']))
-        for nexp in range(len(information[est]['completions'])):
-            for i in range(len(information[est]['completions'][nexp])-1):
-                data[est][nexp] += 1 if information[est]['completions'][nexp][i] != information[est]['completions'][nexp][i+1]\
-                     else 0
-        data[est] = np.mean(data[est])
-        colors_.append(COLOR[est])
-
-    X_estimation_methods = list(data.keys())
-    Y_mean_iteration = list(data.values())
-
-    plt.bar(X_estimation_methods,Y_mean_iteration,color=colors_)
-
-    plt.title("Number of Completed Tasks")
-    plt.xlabel("Estimation Methods")
-    plt.ylabel("Mean Completed Tasks")
-    #plt.show()
-    pdf.savefig( fig )
-    plt.close()
-    PLOT_NUMBER += 1
-
-def plot_completion(information, estimation_methods, max_iterations=200):
-    print('Plotting performance...')
-    global PLOT_NUMBER, COLOR, pdf
-
-    fig = plt.figure(PLOT_NUMBER, figsize=(8,6))
-
-    data = {}
-    for est in estimation_methods:
-        data[est] = np.zeros(max_iterations)
-        for nexp in range(len(information[est]['completions'])):
-            for i in range(max_iterations):
-                if len(information[est]['completions'][nexp]) - 1 < i:
-                    data[est][i] += information[est]['completions'][nexp][-1]
-                else:
-                    data[est][i] += information[est]['completions'][nexp][i]
-        data[est] /= len(information[est]['completions'])
-        plt.plot(range(max_iterations),data[est],color=COLOR[est])
-
-    plt.title("Completion")
-    plt.xlabel("Estimation Methods")
-    plt.ylabel("Completion")
-    #plt.show()
-    pdf.savefig( fig )
-    plt.close()
-    PLOT_NUMBER += 1
-
-def plot_type_estimation_by_iteration(information, n_agents, estimation_methods, max_iteration=200):
-    print('Plotting type_estimation by iteration...')
-    global PLOT_NUMBER, COLOR, pdf
-
-    fig = plt.figure(PLOT_NUMBER, figsize=(8,6))
-
-    x = range(max_iteration)
-    y = {}
-
-    for est in estimation_methods:
-        y[est] = np.zeros(max_iteration)
-        for n in range(len(information[est]['actual_type'])):
-            for a in range(n_agents-1):
-                for i in range(max_iteration):
-                    if i < len(information[est]['actual_type'][n]):
-                        type_index = int(list(information[est]['actual_type'][n][i][a])[1]) - 1
-                        y[est][i] += (1 - information[est]['type_probabilities'][n][i][a][type_index])
-                    else:
-                        type_index = int(list(information[est]['actual_type'][n][-1][a])[1]) - 1
-                        y[est][i] += (1 - information[est]['type_probabilities'][n][-1][a][type_index])
-
-        y[est] /= len(information[est]['actual_type'])*(n_agents-1)
-        plt.plot(x,y[est],color=COLOR[est])
-
-    plt.title("Type Estimation by Iteration")
-    plt.xlabel("Iterations")
-    plt.ylabel("Error")
-    #plt.show()
-    pdf.savefig( fig )
-    plt.close()
-    PLOT_NUMBER += 1
-    return
-
-def plot_type_estimation_by_completion(information, n_agents, n_tasks, estimation_methods, max_iteration=200):
-    print('Plotting type_estimation by completion...')
-    global PLOT_NUMBER, COLOR,pdf
-
-    fig = plt.figure(PLOT_NUMBER, figsize=(8,6))
-
-    x = np.linspace(0,1,n_tasks+1)
-    y = {}
-    y_norm_factor = {}
-
-    for est in estimation_methods:
-        y[est] = np.zeros(len(x))
-        y_norm_factor[est] = np.zeros(len(x))
-        for n in range(len(information[est]['actual_type'])):
-            for a in range(n_agents-1):
-                for i in range(max_iteration):
-                    if i < len(information[est]['actual_type'][n]):
-                        completion = int(information[est]['completions'][n][i]*n_tasks)
-                        type_index = int(list(information[est]['actual_type'][n][i][a])[1]) - 1
-                        y[est][completion] +=\
-                            (1 - information[est]['type_probabilities'][n][i][a][type_index])
-                        y_norm_factor[est][completion] += 1
-                    else:
-                        completion = int(information[est]['completions'][n][-1]*n_tasks)
-                        type_index = int(list(information[est]['actual_type'][n][-1][a])[1]) - 1
-                        y[est][completion] +=\
-                            (1 - information[est]['type_probabilities'][n][-1][a][type_index])
-                        y_norm_factor[est][completion] += 1
-
-        for i in range(len(y[est])):
-            y[est][i] /= y_norm_factor[est][i]
-        plt.plot(x,y[est],color=COLOR[est])
-
-    plt.title("Type Estimation by Completion")
-    plt.xlabel("Completion")
-    plt.ylabel("Error")
-    #plt.show()
-    pdf.savefig( fig )
-    plt.close()
-    PLOT_NUMBER += 1
-    return
-
-def plot_parameter_estimation_by_iteration(env, information, n_agents, estimation_methods, max_iteration=200, mode='gt'):
-    print('Plotting parameter_estimation by iteration...')
-    global PLOT_NUMBER, COLOR, pdf
-
-    fig, axs= plt.subplots(nrows = 2, ncols=2, figsize=(15,15))
-    ax_r, ax_a, ax_l, ax_p = axs[0,0], axs[0,1], axs[1,0], axs[1,1]
-
-    x = range(max_iteration)
-    y_radius = {}
-    y_angle = {}
-    y_level = {}
-
-    for est in estimation_methods:
-        y_radius[est] = np.zeros(max_iteration)
-        y_angle[est] = np.zeros(max_iteration)
-        if env == 'LevelForagingEnv':
-            y_level[est] = np.zeros(max_iteration)
-
-        for n in range(len(information[est]['actual_type'])):
-            for a in range(n_agents-1):
-                for i in range(max_iteration):
-                    if i < len(information[est]['actual_radius'][n]):
-                        if mode == 'gt':
-                            agent_type = 0 if information[est]['actual_type'][n][i][a] == 'l1' or \
-                                information[est]['actual_type'][n][i][a] == 'c1' else 1
-                        elif mode == 'ht':
-                            agent_type = list(information[est]['type_probabilities'][n][i][a]).index(\
-                                max(information[est]['type_probabilities'][n][i][a]))
-                        else:
-                            raise NotImplemented
-                            
-                        act_radius = information[est]['actual_radius'][n][i][a]
-                        act_angle = information[est]['actual_angle'][n][i][a]
-                        if env == 'LevelForagingEnv':
-                            act_level = information[est]['actual_level'][n][i][a]
-
-                        y_radius[est][i] += abs(act_radius - information[est]['estimated_radius'][n][i][a][agent_type])
-                        y_angle[est][i] += abs(act_angle - information[est]['estimated_angle'][n][i][a][agent_type])
-                        if env == 'LevelForagingEnv':
-                            y_level[est][i] += abs(act_level - information[est]['estimated_level'][n][i][a][agent_type])
-                    else:
-                        if mode == 'gt':
-                            agent_type = 0 if information[est]['actual_type'][n][-1][a] == 'l1' or \
-                                information[est]['actual_type'][n][-1][a] == 'c1' else 1
-                        elif mode == 'ht':
-                            agent_type = list(information[est]['type_probabilities'][n][-1][a]).index(\
-                                max(information[est]['type_probabilities'][n][-1][a]))
-                        else:
-                            raise NotImplemented
-                            
-                        act_radius = information[est]['actual_radius'][n][-1][a]
-                        act_angle = information[est]['actual_angle'][n][-1][a]
-                        if env == 'LevelForagingEnv':
-                            act_level = information[est]['actual_level'][n][-1][a]
-
-                        y_radius[est][i] += abs(act_radius - information[est]['estimated_radius'][n][-1][a][agent_type])
-                        y_angle[est][i] += abs(act_angle - information[est]['estimated_angle'][n][-1][a][agent_type])
-                        if env == 'LevelForagingEnv':
-                            y_level[est][i] += abs(act_level - information[est]['estimated_level'][n][-1][a][agent_type])
-
-        y_radius[est] /= (len(information[est]['actual_type'])*(n_agents-1))
-        y_angle[est] /= (len(information[est]['actual_type'])*(n_agents-1))
-        if env == 'LevelForagingEnv':
-            y_level[est] /= len(information[est]['actual_type'])*(n_agents-1)
-
-        ax_r.plot(x,y_radius[est],color=COLOR[est])
-        ax_a.plot(x,y_angle[est],color=COLOR[est])
-        if env == 'LevelForagingEnv':
-            ax_l.plot(x,y_level[est],color=COLOR[est])
-            ax_p.plot(x,(y_radius[est] + y_angle[est] + y_level[est])/3,color=COLOR[est])
-        else:
-            ax_p.plot(x,(y_radius[est] + y_angle[est])/2,color=COLOR[est])
-
-    parameter_ax = [ax_r, ax_a, ax_l, ax_p]
-    parameter_title = ['Radius', 'Angle', 'Level', 'General']
-    for i in range(len(parameter_ax)):
-        parameter_ax[i].set_title(parameter_title[i])
-        parameter_ax[i].set(xlabel="Iteration",ylabel='Error')
-    #plt.show()
-    pdf.savefig( fig )
-    plt.close()
-    PLOT_NUMBER += 1
-    return
-
-def plot_parameter_estimation_by_completion(env, information, n_agents, n_tasks, estimation_methods, max_iteration=200, mode='gt'):
-    print('Plotting parameter_estimation by completion...')
-    global PLOT_NUMBER, COLOR, pdf
-
-    fig, axs= plt.subplots(nrows = 2, ncols=2, figsize=(15,15))
-    ax_r, ax_a, ax_l, ax_p = axs[0,0], axs[0,1], axs[1,0], axs[1,1]
-
-    x = np.linspace(0,1,n_tasks+1)
-    y_radius = {}
-    y_angle = {}
-    y_level = {}
-    y_norm_factor = {}
-
-    for est in estimation_methods:
-        y_radius[est] = np.zeros(len(x))
-        y_angle[est] = np.zeros(len(x))
-        y_norm_factor[est] = np.zeros(len(x))
-        if env == 'LevelForagingEnv':
-            y_level[est] = np.zeros(len(x))
-
-        for n in range(len(information[est]['actual_type'])):
-            for a in range(n_agents-1):
-                for i in range(max_iteration):
-                    if i < len(information[est]['actual_radius'][n]):
-                        completion = int(information[est]['completions'][n][i]*n_tasks)
-                        if mode == 'gt':
-                            agent_type = 0 if information[est]['actual_type'][n][i][a] == 'l1' or \
-                                information[est]['actual_type'][n][i][a] == 'c1' else 1
-                        elif mode == 'ht':
-                            agent_type = list(information[est]['type_probabilities'][n][i][a]).index(\
-                                max(information[est]['type_probabilities'][n][i][a]))
-                        else:
-                            raise NotImplemented
-                            
-                        act_radius = information[est]['actual_radius'][n][i][a]
-                        act_angle = information[est]['actual_angle'][n][i][a]
-                        if env == 'LevelForagingEnv':
-                            act_level = information[est]['actual_level'][n][i][a]
-
-                        y_radius[est][completion] += abs(act_radius - information[est]['estimated_radius'][n][i][a][agent_type])
-                        y_angle[est][completion] += abs(act_angle - information[est]['estimated_angle'][n][i][a][agent_type])
-                        if env == 'LevelForagingEnv':
-                            y_level[est][completion] += abs(act_level - information[est]['estimated_level'][n][i][a][agent_type])
-                        y_norm_factor[est][completion] += 1
-                    else:
-                        completion = int(information[est]['completions'][n][-1]*n_tasks)
-                        if mode == 'gt':
-                            agent_type = 0 if information[est]['actual_type'][n][-1][a] == 'l1' or \
-                                information[est]['actual_type'][n][-1][a] == 'c1' else 1
-                        elif mode == 'ht':
-                            agent_type = list(information[est]['type_probabilities'][n][-1][a]).index(\
-                                max(information[est]['type_probabilities'][n][-1][a]))
-                        else:
-                            raise NotImplemented
-                            
-                        act_radius = information[est]['actual_radius'][n][-1][a]
-                        act_angle = information[est]['actual_angle'][n][-1][a]
-                        if env == 'LevelForagingEnv':
-                            act_level = information[est]['actual_level'][n][-1][a]
-
-                        y_radius[est][completion] += abs(act_radius - information[est]['estimated_radius'][n][-1][a][agent_type])
-                        y_angle[est][completion] += abs(act_angle - information[est]['estimated_angle'][n][-1][a][agent_type])
-                        if env == 'LevelForagingEnv':
-                            y_level[est][completion] += abs(act_level - information[est]['estimated_level'][n][-1][a][agent_type])
-                        y_norm_factor[est][completion] += 1
-
-        for i in range(len(y_radius[est])):
-            y_radius[est][i] /= y_norm_factor[est][i]
-            y_angle[est][i] /= y_norm_factor[est][i]
-            if env == 'LevelForagingEnv':
-                y_level[est][i] /= y_norm_factor[est][i]
-
-        ax_r.plot(x,y_radius[est],color=COLOR[est])
-        ax_a.plot(x,y_angle[est],color=COLOR[est])
-        if env == 'LevelForagingEnv':
-            ax_l.plot(x,y_level[est],color=COLOR[est])
-            ax_p.plot(x,(y_radius[est] + y_angle[est] + y_level[est])/3,color=COLOR[est])
-        else:
-            ax_p.plot(x,(y_radius[est] + y_angle[est])/2,color=COLOR[est])
-
-    #plt.show()
-    parameter_ax = [ax_r, ax_a, ax_l, ax_p]
-    parameter_title = ['Radius', 'Angle', 'Level', 'General']
-    for i in range(len(parameter_ax)):
-        parameter_ax[i].set_title(parameter_title[i])
-        parameter_ax[i].set(xlabel="Completion",ylabel='Error')
-    pdf.savefig( fig )
-    plt.close()
-    PLOT_NUMBER += 1
-    return
-    
 #####
 # PLOT SCRIPT
 #####
+# SINGLE WAY
+"""
 for setting in PLOT_SETTINGS:
     if not REMOVE:
         MIN_ITERATIONS = np.inf
         
+    # 1. Collecting info
     n_agents, n_tasks, dim = setting[0], setting[1], setting[2]
-    info = collect_information(n_agents,n_tasks,dim, n_experiments,env,estimation_methods,mode)
+    information = collect_information(n_agents,n_tasks,dim, n_experiments,env,estimation_methods,mode)
+    max_iteration = get_max_iteration(information,estimation_methods)
 
-    pdf = backend_pdf.PdfPages("./plots/results_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+    #pdf = backend_pdf.PdfPages("./plots/results_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
 
-    max_iteration = plot_performance(info,estimation_methods)
-
-    plot_number_of_completed_tasks(info,estimation_methods)
-    plot_type_estimation_by_iteration( info, n_agents,estimation_methods, max_iteration)
-    plot_parameter_estimation_by_iteration(env, info, n_agents, estimation_methods, max_iteration, mode='gt')
-    
-    if mode == "":
-        plot_completion(info,estimation_methods,max_iteration)
-        plot_type_estimation_by_completion(info, n_agents, n_tasks, estimation_methods, max_iteration)
-        plot_parameter_estimation_by_completion(env, info, n_agents, n_tasks, estimation_methods, max_iteration, mode='gt')
-
+    # 2. Starting to plot
+    # A. COMPLETED TASKS
+    pdf = backend_pdf.PdfPages("./plots/CompletedTasks_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+    plot_number_of_completed_tasks(information,estimation_methods,\
+                                    plot_number=PLOT_NUMBER,color=COLOR,pdf=pdf)
     pdf.close()
+    PLOT_NUMBER += 1
+
+    # B. PARAMETER ESTIMATION
+    pdf = backend_pdf.PdfPages("./plots/ParameterEstimation_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+    kruskal_result = plot_parameter(env, information, n_agents, estimation_methods,\
+                     max_iteration,plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+    pdf.close()
+    PLOT_NUMBER += 1
+    
+    pdf = backend_pdf.PdfPages("./plots/ParameterKruskal_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+    plot_pvalues(kruskal_result,estimation_methods,max_iteration,COLOR,MARKER,pdf)
+    pdf.close()
+    PLOT_NUMBER += 1
+
+    # C. TYPE ESTIMATION
+    pdf = backend_pdf.PdfPages("./plots/TypeEstimation_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+    plot_type_estimation_by_iteration(information, n_agents, estimation_methods,\
+                                         max_iteration,plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER, pdf=pdf)
+    pdf.close()
+    PLOT_NUMBER += 1
+
+    pdf = backend_pdf.PdfPages("./plots/TypeKruskal_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+    plot_pvalues(kruskal_result,estimation_methods,max_iteration,COLOR,MARKER,pdf)
+    pdf.close()
+    PLOT_NUMBER += 1
+
+    # 3. Saving it
+    #pdf.close()
+"""
+
+# MULTIWAY
+# N AGENTS
+"""
+PLOT_SETTINGS = [[5,30,30],
+                [7,30,30],
+                [10,30,30],
+                [12,30,30],
+                [15,30,30]]
+
+information, max_iteration = [], []
+for setting in PLOT_SETTINGS:
+    if not REMOVE:
+        MIN_ITERATIONS = np.inf
+        
+    # 1. Collecting info
+    n_agents, n_tasks, dim = setting[0], setting[1], setting[2]
+    information.append(collect_information(n_agents,n_tasks,dim, n_experiments,env,estimation_methods,mode))
+    max_iteration.append(get_max_iteration(information[-1],estimation_methods))
+
+# 2. Starting to plot
+pdf = backend_pdf.PdfPages("./plots/MultAgents_"+mode+env+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+plot_multparameter(env, information, PLOT_SETTINGS, 0, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
+"""
+
+# N TASKS
+
+PLOT_SETTINGS = [[7,30,20],
+                [7,30,25],
+                [7,30,30],
+                [7,30,35],
+                [7,30,40]]
+                
+information, max_iteration = [], []
+for setting in PLOT_SETTINGS:
+    if not REMOVE:
+        MIN_ITERATIONS = np.inf
+        
+    # 1. Collecting info
+    n_agents, n_tasks, dim = setting[0], setting[1], setting[2]
+    information.append(collect_information(n_agents,n_tasks,dim, n_experiments,env,estimation_methods,mode))
+    max_iteration.append(get_max_iteration(information[-1],estimation_methods))
+
+# 2. Starting to plot
+pdf = backend_pdf.PdfPages("./plots/MultTasks_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multparameter(env, information, PLOT_SETTINGS, 1, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
+
+
+# N DIMS
+"""
+PLOT_SETTINGS = [[7,30,20],
+                [7,30,25],
+                [7,30,30],
+                [7,30,35],
+                [7,30,40]]
+                
+information, max_iteration = [], []
+for setting in PLOT_SETTINGS:
+    if not REMOVE:
+        MIN_ITERATIONS = np.inf
+        
+    # 1. Collecting info
+    n_agents, n_tasks, dim = setting[0], setting[1], setting[2]
+    information.append(collect_information(n_agents,n_tasks,dim, n_experiments,env,estimation_methods,mode))
+    max_iteration.append(get_max_iteration(information[-1],estimation_methods))
+
+# 2. Starting to plot
+pdf = backend_pdf.PdfPages("./plots/MultDims_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multparameter(env, information, PLOT_SETTINGS, 2, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
+"""

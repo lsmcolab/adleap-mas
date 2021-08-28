@@ -80,7 +80,7 @@ def create_map(env,num_agents,num_tasks,dim,experiment_id):
     fname = "MAP_"+str(env)+"_a"+str(num_agents)+"_i"+str(num_tasks)+"_d"+str(dim)+"_exp"+str(experiment_id)
 
     path = "./src/envs/maps/"+str(env)+"/"+str(dim) + str(num_agents) + str(num_tasks) + str(experiment_id) + '.pickle'  
-    if os.path.isfile(path):
+    if not os.path.isfile(path):
         with open("run.sh", "w") as bashfile:           
             bashfile.write("#$ -S /bin/bash\n\n")   
             bashfile.write("#$ -N "+fname+"\n")   
@@ -127,7 +127,7 @@ for config in configurations:
 
     # 5. Stating the remote experiment
     for experiment_id in range(num_exp):
-        for estimation in ['AGA','ABU','OEATA','SOEATA']:
+        for estimation in ['AGA','ABU','POMCP','SOEATA']:
             # defining the experiment parameters
             python_cmd = get_python_cmd(mode,env,estimation,num_agents,
                         num_tasks,dim,experiment_id,num_episodes)

@@ -2,14 +2,14 @@ from a_star import a_star_planning
 import numpy as np
 
 #####
-# LEADER 4 ALGORITHM
+# LEADER 5 ALGORITHM
 #####
-# returns the action to lead to task with lowest sum of coordinates
-def l4_planning(env, agent):
+# returns the action to lead to the first task found
+def l5_planning(env, agent):
 	# 1. Choosing a target
 	if agent.target is None or env.state[agent.target[0],agent.target[1]] == -1:
 		# - choosing a target
-		target_position = l4_choose_target(env.state)
+		target_position = l5_choose_target(env.state)
 		agent.target = target_position
 	else:
 		target_position = agent.target
@@ -40,25 +40,16 @@ def l4_planning(env, agent):
 
 	return next_action,target_position
 
-# returns the task with lowest sum of coordinates
-def l4_choose_target(state):
-	# 0. Initialising the support variables
-	lowest_sum_task_id, lowest_sum = np.inf, np.inf
-
-	# 1. Searching for highest sum task
+# returns the first task found
+def l5_choose_target(state):
+	# 1. Searching tasks
 	visible_tasks = [(x,y) for x in range(state.shape[0]) 
 		for y in range(state.shape[1]) if state[x,y] == np.inf]
 
-	for i in range(0, len(visible_tasks)):
-		sum_value = sum(visible_tasks[i])
-		if sum_value < lowest_sum:
-			lowest_sum = sum_value
-			lowest_sum_task_id = i
-
 	# 2. Verifying the found task
 	# a. no task found
-	if lowest_sum_task_id == np.inf:
+	if len(visible_tasks) == 0:
 		return None
 	# b. task found
 	else:
-		return visible_tasks[lowest_sum_task_id]
+		return visible_tasks[0]
