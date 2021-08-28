@@ -150,8 +150,6 @@ def pomcp_estimation(env, adhoc_agent, \
     return env, adhoc_agent.smart_parameters['estimation']
 
 def uniform_estimation(env, template_types=['l1','l2']):
-    if isinstance(env,CaptureEnv):
-        template_types = ['c1','c2']
     adhoc_agent = env.get_adhoc_agent()
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:

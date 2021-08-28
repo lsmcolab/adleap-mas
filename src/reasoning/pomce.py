@@ -100,13 +100,13 @@ def simulate(node, agent, max_depth,discount_factor=0.9):
     node.update(action, R)
     return R
 
-def search(node, agent, max_it, max_depth):
+def search(node, template_types,agent, max_it, max_depth):
     # 1. Performing the Monte-Carlo Tree Search
     it = 0
     while it < max_it:
         # a. Sampling the belief state for simulation
         if len(node.particle_filter) == 0:
-            beliefState = uniform_estimation(node.state.sample_state(agent))
+            beliefState = uniform_estimation(node.state.sample_state(agent),template_types)
         else:
             beliefState = rd.sample(node.particle_filter,1)[0]
 
@@ -119,7 +119,7 @@ def search(node, agent, max_it, max_depth):
         it += 1
     return node.get_best_action()
 
-def black_box_update(env,agent,root,k=100):
+def black_box_update(env,template_types,agent,root,k=100):
     # 1. Getting real-world current observation
     real_obs = env.get_observation()
 
@@ -133,7 +133,7 @@ def black_box_update(env,agent,root,k=100):
     # 3. Sampling new particles while don't get k particles into the filter
     while(len(root.particle_filter) < k):
         sampled_env = env.sample_state(agent)
-        sampled_env = uniform_estimation(sampled_env)
+        sampled_env = uniform_estimation(sampled_env,template_types)
         root.particle_filter.append(sampled_env)
 
 def find_new_root(current_state,previous_action,current_observation,previous_root):
@@ -176,7 +176,7 @@ def find_new_root(current_state,previous_action,current_observation,previous_roo
     new_root.update_depth(0)
     return new_root
 
-def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimation_algorithm,particles=100):
+def monte_carlo_planning(state, action_space, template_types,agent, max_it, max_depth,estimation_algorithm,particles=100):
     # 1. Getting the current state and previous action-observation pair
     previous_action = agent.next_action
     current_observation = state.get_observation()
@@ -195,15 +195,15 @@ def monte_carlo_planning(state, action_space, agent, max_it, max_depth,estimatio
 
     from estimation import uniform_estimation
     if estimation_algorithm is None:
-        root_node.state = uniform_estimation(root_node.state)
+        root_node.state = uniform_estimation(root_node.state,template_types)
     else:
         root_node.state = estimation_algorithm(root_node.state)
 
     # 3. Black-box updating
-    black_box_update(state,agent,root_node,particles)
+    black_box_update(state,template_types,agent,root_node,particles)
 
     # 3. Searching for the best action within the tree
-    best_action = search(root_node, agent, max_it, max_depth)
+    best_action = search(root_node, template_types,agent, max_it, max_depth)
     #print("Particle : ", root_node.particle_filter)
 
     # 4. Returning the best action
@@ -268,7 +268,7 @@ class POMCE(object):
         env.viewer = None
         agent = env.get_adhoc_agent()
 
-        next_action, root_node = monte_carlo_planning(env,env.action_space,agent,max_it,max_depth,sample_estimate,self.min_particles)
+        next_action, root_node = monte_carlo_planning(env,env.action_space,self.template_types,agent,max_it,max_depth,sample_estimate,self.min_particles)
 
         # 3. Updating the search tree
         agent.smart_parameters['est_search_tree'] = root_node
