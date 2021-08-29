@@ -63,6 +63,7 @@ class ABU(object):
 
     # update the grid given the current environment
     def update(self,env):
+        self.check_teammates_estimation_set(env)
         # AGA estimation requires, at least, one previous state in the history to start the estimation
         if self.previous_state is None:
             self.previous_state = env.copy()
@@ -318,6 +319,17 @@ class ABU(object):
     
         adhoc_agent = env.get_adhoc_agent()
         for teammate in env.components['agents']:
+            if teammate.index not in self.teammate.keys() and teammate.index != adhoc_agent.index:
+                type_prob = np.array([-1 for i in range(0,len(self.template_types))]) 
+                parameter_est = []
+                for type in self.template_types:
+                    parameter_est.append(np.array([-1 for i in range(0,self.nparameters)]))
+                type_probabilities.append(list(type_prob))
+                estimated_parameters.append(parameter_est)
+                continue
+
+        
+            
             if teammate.index != adhoc_agent.index:
                 # type result
                 type_prob = []
@@ -347,6 +359,9 @@ class ABU(object):
 
     def sample_type_for_agent(self, teammate):
         type_prob = np.zeros(len(self.template_types))
+        if(teammate.index not in self.teammate.keys()):
+            return rd.sample(self.template_types,1)[0]
+
         for i in range(len(self.template_types)):
             type = self.template_types[i]
             type_prob[i] = self.teammate[teammate.index][type]['probability_history'][-1]
@@ -355,5 +370,9 @@ class ABU(object):
         return sampled_type[0]
 
     def get_parameter_for_selected_type(self, teammate, selected_type):
+        if teammate.index not in self.teammate.keys():
+            parameter_est = [rd.uniform(self.parameters_minmax[i][0],self.parameters_minmax[i][1]) for i in range(self.nparameters)]
+            return parameter_est
+
         parameter_est = self.teammate[teammate.index][selected_type]['parameter_estimation_history'][-1]
         return parameter_est

@@ -65,6 +65,7 @@ class AGA(object):
 
     # update the grid given the current environment
     def update(self,env):
+        self.check_teammates_estimation_set(env)
         # AGA estimation requires, at least, one previous state in the history to start the estimation
         if self.previous_state is None:
             self.previous_state = env.copy()
@@ -228,6 +229,15 @@ class AGA(object):
     
         adhoc_agent = env.get_adhoc_agent()
         for teammate in env.components['agents']:
+            if teammate.index not in self.teammate.keys() and teammate.index != adhoc_agent.index:    
+                type_prob = np.array([-1 for i in range(0,len(self.template_types))]) 
+                parameter_est = []
+                for type in self.template_types:
+                    parameter_est.append(np.array([-1 for i in range(0,self.nparameters)]))
+                type_probabilities.append(list(type_prob))
+                estimated_parameters.append(parameter_est)
+                continue
+
             if teammate.index != adhoc_agent.index:
                 # type result
                 type_prob = []

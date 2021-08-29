@@ -581,7 +581,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
             count += 1
 
             # - setting tasks
-            if rd.uniform(0, 1) < sample_p:
+            if rd.uniform(0, 1) < sample_p and len(empty_position)>0:
                 pos = rd.sample(empty_position, 1)[0]
                 u_env.state[pos[0], pos[1]] = np.inf
                 empty_position.remove(pos)
