@@ -91,6 +91,7 @@ bashlog_file = BashLogFile(fname)
 
 # 2. Creating the environment
 env = None
+args.po = True
 if os.path.isdir("./src/envs/maps"):
     if os.path.isdir("./src/envs/maps/"+args.env):
         map_path = './src/envs/maps/'+args.env +'/' + str(args.dim) + str(args.agents) +\
