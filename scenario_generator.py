@@ -92,8 +92,7 @@ def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False
     from src.envs.LevelForagingEnv import LevelForagingEnv, Agent, Task
 
     # 2. Defining the types and directions of the environment
-    #types = get_env_types("LevelForagingEnv")
-    types =  ['l3', 'l4']
+    types = get_env_types("LevelForagingEnv")
     direction = [0, np.pi / 2, np.pi, 3 * np.pi / 2]
 
     # 3. Getting the initial positions
