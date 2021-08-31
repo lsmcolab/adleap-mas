@@ -132,7 +132,6 @@ def get_max_iteration(information, estimation_methods):
 # PLOT SCRIPT
 #####
 # SINGLE WAY
-"""
 for setting in PLOT_SETTINGS:
     if not REMOVE:
         MIN_ITERATIONS = np.inf
@@ -178,11 +177,9 @@ for setting in PLOT_SETTINGS:
 
     # 3. Saving it
     #pdf.close()
-"""
 
 # MULTIWAY
 # N AGENTS
-"""
 PLOT_SETTINGS = [[5,30,30],
                 [7,30,30],
                 [10,30,30],
@@ -200,20 +197,29 @@ for setting in PLOT_SETTINGS:
     max_iteration.append(get_max_iteration(information[-1],estimation_methods))
 
 # 2. Starting to plot
-pdf = backend_pdf.PdfPages("./plots/MultAgents_"+mode+env+"_i"+str(n_tasks)+"_d"+str(dim)+".pdf")
+pdf = backend_pdf.PdfPages("./plots/MultAgentsParam_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
 plot_multparameter(env, information, PLOT_SETTINGS, 0, estimation_methods, max_iteration,\
                      plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
 pdf.close()
 PLOT_NUMBER += 1
-"""
+
+pdf = backend_pdf.PdfPages("./plots/MultAgentsTypes_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multtype(information, PLOT_SETTINGS, 0, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
+
+pdf = backend_pdf.PdfPages("./plots/MultAgentsPerformance_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multperformance(information, PLOT_SETTINGS, 0, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
 
 # N TASKS
-
-PLOT_SETTINGS = [[7,30,20],
-                [7,30,25],
-                [7,30,30],
-                [7,30,35],
-                [7,30,40]]
+PLOT_SETTINGS = [[7,20,30],
+                [7,40,30],
+                [7,60,30],
+                [7,80,30],]
                 
 information, max_iteration = [], []
 for setting in PLOT_SETTINGS:
@@ -226,15 +232,25 @@ for setting in PLOT_SETTINGS:
     max_iteration.append(get_max_iteration(information[-1],estimation_methods))
 
 # 2. Starting to plot
-pdf = backend_pdf.PdfPages("./plots/MultTasks_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+pdf = backend_pdf.PdfPages("./plots/MultTasksParam_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
 plot_multparameter(env, information, PLOT_SETTINGS, 1, estimation_methods, max_iteration,\
                      plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
 pdf.close()
 PLOT_NUMBER += 1
 
+pdf = backend_pdf.PdfPages("./plots/MultTasksTypes_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multtype(information, PLOT_SETTINGS, 1, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
+
+pdf = backend_pdf.PdfPages("./plots/MultTasksPerformance_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multperformance(information, PLOT_SETTINGS, 1, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
 
 # N DIMS
-"""
 PLOT_SETTINGS = [[7,30,20],
                 [7,30,25],
                 [7,30,30],
@@ -252,9 +268,20 @@ for setting in PLOT_SETTINGS:
     max_iteration.append(get_max_iteration(information[-1],estimation_methods))
 
 # 2. Starting to plot
-pdf = backend_pdf.PdfPages("./plots/MultDims_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+pdf = backend_pdf.PdfPages("./plots/MultDimsParam_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
 plot_multparameter(env, information, PLOT_SETTINGS, 2, estimation_methods, max_iteration,\
                      plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
 pdf.close()
 PLOT_NUMBER += 1
-"""
+
+pdf = backend_pdf.PdfPages("./plots/MultDimsTypes_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multtype(information, PLOT_SETTINGS, 2, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1
+
+pdf = backend_pdf.PdfPages("./plots/MultDimsPerformance_"+mode+env+"_a"+str(n_agents)+"_i"+str(n_tasks)+".pdf")
+plot_multperformance(information, PLOT_SETTINGS, 2, estimation_methods, max_iteration,\
+                     plot_number=PLOT_NUMBER,color=COLOR, marker=MARKER,pdf=pdf)
+pdf.close()
+PLOT_NUMBER += 1

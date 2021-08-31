@@ -83,7 +83,7 @@ def plot_parameter(env, information, n_agents, estimation_methods, max_iteration
                 plot_number = 0, color = None, marker = None, pdf = None, title=False):
     print('Plotting parameter_estimation by iteration...')
 
-    fig = plt.figure(plot_number, figsize=(8,6))
+    fig = plt.figure(plot_number, figsize=(6.4, 3.8))
 
     x = range(max_iteration)
     y_radius = {}
@@ -180,25 +180,72 @@ def plot_parameter(env, information, n_agents, estimation_methods, max_iteration
                     
             plt.fill_between(x, (rlow + alow + llow)/3, (rhigh + ahigh + lhigh)/3,
                             color=color[est], alpha=.15)
-                            
-            for i in range(max_iteration):
-                for j in range(len(y_radius[est][i])):
-                    samples[est][i].append(\
-                        (y_radius[est][i][j] + y_radius[est][i][j] + y_radius[est][i][j])/3 )
 
             if color and marker:
-                plt.plot(x,(\
-                    np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
-                    np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]) +\
-                    np.array([np.mean(y_level[est][i]  ,axis=0) for i in range(max_iteration)]))/3,
-                    color=color[est],marker=marker[est], markevery=20, label=est)
+                if est == 'SOEATA':
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_level[est][i]  ,axis=0) for i in range(max_iteration)]))/3,
+                        color=color[est],marker=marker[est], markevery=20, label='OEATE')
+                else:
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_level[est][i]  ,axis=0) for i in range(max_iteration)]))/3,
+                        color=color[est],marker=marker[est], markevery=20, label=est)
             else:
-                plt.plot(x,(\
-                    np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
-                    np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]) +\
-                    np.array([np.mean(y_level[est][i]  ,axis=0) for i in range(max_iteration)]))/3, label=est)
+                if est == 'SOEATA':
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_level[est][i]  ,axis=0) for i in range(max_iteration)]))/3, label='OEATE')
+                
+                else:
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_level[est][i]  ,axis=0) for i in range(max_iteration)]))/3, label=est)
         else:
-            plt.plot(x,(y_radius[est] + y_angle[est])/2,color=color[est])
+            rlow = np.array([\
+                st.t.interval(0.95, len(y_radius[est][i])-1, loc=np.mean(y_radius[est][i]), scale=st.sem(y_radius[est][i]))[0]\
+                    for i in range(max_iteration)])
+            rhigh = np.array([\
+                st.t.interval(0.95, len(y_radius[est][i])-1, loc=np.mean(y_radius[est][i]), scale=st.sem(y_radius[est][i]))[1]\
+                    for i in range(max_iteration)])
+
+
+            alow = np.array([\
+                st.t.interval(0.95, len(y_angle[est][i])-1, loc=np.mean(y_angle[est][i]), scale=st.sem(y_angle[est][i]))[0]\
+                    for i in range(max_iteration)])
+            ahigh = np.array([\
+                st.t.interval(0.95, len(y_angle[est][i])-1, loc=np.mean(y_angle[est][i]), scale=st.sem(y_angle[est][i]))[1]\
+                    for i in range(max_iteration)])
+                    
+            plt.fill_between(x, (rlow + alow)/2, (rhigh + ahigh)/2,
+                            color=color[est], alpha=.15)
+
+            if color and marker:
+                if est == 'SOEATA':
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]))/2,
+                        color=color[est],marker=marker[est], markevery=20, label='OEATE')
+                else:
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]))/2,
+                        color=color[est],marker=marker[est], markevery=20, label=est)
+            else:
+                if est == 'SOEATA':
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]))/2, label='OEATE')
+                
+                else:
+                    plt.plot(x,(\
+                        np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                        np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]))/2, label=est)
 
     kruskal_result = []
     for i in range(max_iteration):
@@ -215,8 +262,9 @@ def plot_parameter(env, information, n_agents, estimation_methods, max_iteration
     axis.yaxis.set_tick_params(labelsize=14)
     plt.legend(loc="upper center", fontsize='large',
                 borderaxespad=0.1, borderpad=0.1, handletextpad=0.1,
-                fancybox=True, framealpha=0.8, ncol=3)
+                fancybox=True, framealpha=0.8, ncol=4)
 
+    plt.tight_layout()
     if pdf is None:
         plt.show()
     else:
@@ -230,7 +278,7 @@ def plot_type_estimation_by_iteration(information, n_agents, estimation_methods,
 
     print('Plotting type_estimation by iteration...')
 
-    fig = plt.figure(plot_number, figsize=(8,6))
+    fig = plt.figure(plot_number, figsize=(6.4, 3.8))
 
     x = range(max_iteration)
     y = {}
@@ -258,17 +306,26 @@ def plot_type_estimation_by_iteration(information, n_agents, estimation_methods,
         if color and marker: 
             plt.fill_between(x, dlow, dhigh,
                         color=color[est], alpha=.15)
-                        
-            plt.plot(x,[np.mean(y[est][i] ,axis=0) for i in range(max_iteration)],
-                        color=color[est],marker=marker[est], markevery=20, label=est)
+
+            if est == 'SOEATA':
+                plt.plot(x,[np.mean(y[est][i] ,axis=0) for i in range(max_iteration)],
+                            color=color[est],marker=marker[est], markevery=20, label='OEATE')
+            else:  
+                plt.plot(x,[np.mean(y[est][i] ,axis=0) for i in range(max_iteration)],
+                            color=color[est],marker=marker[est], markevery=20, label=est)
         else:
             plt.fill_between(x, dlow, dhigh, alpha=.15)
                       
-            plt.plot(x,[np.mean(y[est][i] ,axis=0) for i in range(max_iteration)], label=est)
+            if est == 'SOEATA':
+                plt.plot(x,[np.mean(y[est][i] ,axis=0) for i in range(max_iteration)], label='OEATE')
+            else:
+                plt.plot(x,[np.mean(y[est][i] ,axis=0) for i in range(max_iteration)], label=est)
 
     if title:
         plt.title("Type Estimation by Iteration")
 
+    plt.yticks([0.1,0.3,0.5])
+    plt.ylim(0.09,0.57)
     axis = plt.gca()
     axis.set_ylabel("Type Error", fontsize='x-large')
     axis.set_xlabel('Number of Iterations', fontsize='x-large')
@@ -276,8 +333,9 @@ def plot_type_estimation_by_iteration(information, n_agents, estimation_methods,
     axis.yaxis.set_tick_params(labelsize=14)
     plt.legend(loc="upper center", fontsize='large',
                 borderaxespad=0.1, borderpad=0.1, handletextpad=0.1,
-                fancybox=True, framealpha=0.8, ncol=3)
+                fancybox=True, framealpha=0.8, ncol=4)
 
+    plt.tight_layout()
     if pdf is None:
         plt.show()
     else:
@@ -301,6 +359,7 @@ def plot_pvalues(pvalues, estimation_methods, max_iteration,color=None,marker=No
     plt.ylim(-0.001,0.05)
 
     plt.legend()
+    plt.tight_layout()
     if pdf is None:
         plt.show()
     else:
@@ -312,7 +371,7 @@ def plot_multparameter(env, informations, settings, setting_index, estimation_me
                 plot_number = 0, color = None, marker = None, pdf = None, title=False):
     print('Plotting multparameters...')
 
-    fig = plt.figure(plot_number, figsize=(8,6))
+    fig = plt.figure(plot_number, figsize=(5.8, 5.8))
 
     info_counter = 0
     samples_ = []
@@ -418,7 +477,25 @@ def plot_multparameter(env, informations, settings, setting_index, estimation_me
                     np.array([np.mean(y_level[est][i]  ,axis=0) for i in range(max_iteration)]))/3)
 
             else:
-                raise NotImplemented
+                rlow = np.array([\
+                st.t.interval(0.95, len(y_radius[est][i])-1, loc=np.mean(y_radius[est][i]), scale=st.sem(y_radius[est][i]))[0]\
+                    for i in range(max_iteration)])
+                rhigh = np.array([\
+                    st.t.interval(0.95, len(y_radius[est][i])-1, loc=np.mean(y_radius[est][i]), scale=st.sem(y_radius[est][i]))[1]\
+                        for i in range(max_iteration)])
+
+                alow = np.array([\
+                    st.t.interval(0.95, len(y_angle[est][i])-1, loc=np.mean(y_angle[est][i]), scale=st.sem(y_angle[est][i]))[0]\
+                        for i in range(max_iteration)])
+                ahigh = np.array([\
+                    st.t.interval(0.95, len(y_angle[est][i])-1, loc=np.mean(y_angle[est][i]), scale=st.sem(y_angle[est][i]))[1]\
+                        for i in range(max_iteration)])
+                        
+                samplesstd[est] = [(rlow + alow)/2, (rhigh + ahigh)/2]
+
+                samples[est] = (\
+                    (np.array([np.mean(y_radius[est][i] ,axis=0) for i in range(max_iteration)]) +\
+                    np.array([np.mean(y_angle[est][i]  ,axis=0) for i in range(max_iteration)]))/2)
         
         samples_.append(samples)
         samples_std.append(samplesstd)
@@ -434,24 +511,41 @@ def plot_multparameter(env, informations, settings, setting_index, estimation_me
         low = [np.mean(samples_std[i][est][0]) for i in range(len(informations))]
         high = [np.mean(samples_std[i][est][1]) for i in range(len(informations))]
     
-        plt.fill_between([settings[i][setting_index] for i in range(len(settings))], low, high,
-                    color=color[est], alpha=.15)
+        #plt.fill_between([settings[i][setting_index] for i in range(len(settings))], low, high,
+        #            color=color[est], alpha=.15)
+        plt.errorbar(x=[settings[i][setting_index] for i in range(len(settings))],
+                     y=curve, yerr=abs(np.array(high)-np.array(low))/2,ecolor=color[est],capsize=3,fmt='.')
 
-        plt.plot([settings[i][setting_index] for i in range(len(settings))], curve,\
-                    color=color[est],marker=marker[est], label=est)
+        if est == 'SOEATA':
+            plt.plot([settings[i][setting_index] for i in range(len(settings))], curve,\
+                        color=color[est],marker=marker[est], label='OEATE')
+        else:
+            plt.plot([settings[i][setting_index] for i in range(len(settings))], curve,\
+                        color=color[est],marker=marker[est], label=est)
 
     if title:
-        plt.title("Type Estimation by Iteration")
+        plt.title("Parameter Estimation by Number of Tasks")
 
+    plt.xticks([settings[i][setting_index] for i in range(len(settings))])
     axis = plt.gca()
+
+    if setting_index == 0:
+        x_label = 'Number of Agents'
+    elif setting_index == 1:
+        x_label = 'Number of Tasks'
+    else:
+        x_label = 'Scenario Dimension'
+
+
     axis.set_ylabel("Parameter Error", fontsize='x-large')
-    axis.set_xlabel('Number of Agents', fontsize='x-large')
+    axis.set_xlabel(x_label, fontsize='x-large')
     axis.xaxis.set_tick_params(labelsize=14)
     axis.yaxis.set_tick_params(labelsize=14)
     plt.legend(loc="upper center", fontsize='large',
                 borderaxespad=0.1, borderpad=0.1, handletextpad=0.1,
-                fancybox=True, framealpha=0.8, ncol=3)
+                fancybox=True, framealpha=0.8, ncol=4)
 
+    plt.tight_layout()
     if pdf is None:
         plt.show()
     else:
@@ -459,3 +553,168 @@ def plot_multparameter(env, informations, settings, setting_index, estimation_me
     plt.close()
 
     return 
+
+def plot_multtype(informations, settings, setting_index, estimation_methods, max_iterations,\
+                plot_number = 0, color = None, marker = None, pdf = None, title=False):
+    print('Plotting multtypes...')
+
+    fig = plt.figure(plot_number, figsize=(5.8, 5.8))
+
+    info_counter = 0
+    samples_ = []
+    samples_std = []
+    for information in informations:
+        max_iteration = max_iterations[info_counter]
+        x = range(max_iteration)
+        y = {}
+        samples = {}
+        samplesstd = {}
+
+        for est in estimation_methods:
+            y[est] = [[] for i in range(max_iteration)]
+            for n in range(len(information[est]['actual_type'])):
+                for a in range(int(settings[info_counter][0])-1):
+                    for i in range(max_iteration):
+                        if i < len(information[est]['actual_type'][n]):
+                            type_index = int(list(information[est]['actual_type'][n][i][a])[1]) - 1
+                            y[est][i].append(1 - information[est]['type_probabilities'][n][i][a][type_index])
+                        else:
+                            type_index = int(list(information[est]['actual_type'][n][-1][a])[1]) - 1
+                            y[est][i].append(1 - information[est]['type_probabilities'][n][-1][a][type_index])
+
+            #delta = np.array([np.std(y[est][i] ,axis=0) for i in range(max_iteration)])
+            dlow = np.array([\
+                st.t.interval(0.95, len(y[est][i])-1, loc=np.mean(y[est][i]), scale=st.sem(y[est][i]))[0]\
+                    for i in range(max_iteration)])
+            dhigh = np.array([\
+                st.t.interval(0.95, len(y[est][i])-1, loc=np.mean(y[est][i]), scale=st.sem(y[est][i]))[1]\
+                    for i in range(max_iteration)])
+                    
+            samplesstd[est] = [dlow, dhigh]
+            samples[est] = [np.mean(y[est][i] ,axis=0) for i in range(max_iteration)]
+
+        samples_.append(samples)
+        samples_std.append(samplesstd)
+        info_counter += 1
+
+    for est in estimation_methods:
+        curve = [np.mean(samples_[i][est]) for i in range(len(informations))]
+        low = [np.mean(samples_std[i][est][0]) for i in range(len(informations))]
+        high = [np.mean(samples_std[i][est][1]) for i in range(len(informations))]
+    
+        #plt.fill_between([settings[i][setting_index] for i in range(len(settings))], low, high,
+        #            color=color[est], alpha=.15)
+        plt.errorbar(x=[settings[i][setting_index] for i in range(len(settings))],
+                     y=curve, yerr=abs(np.array(high)-np.array(low))/2,ecolor=color[est],capsize=3,fmt='.')
+
+        if est == 'SOEATA':
+            plt.plot([settings[i][setting_index] for i in range(len(settings))], curve,\
+                        color=color[est],marker=marker[est], label='OEATE')
+        else:
+            plt.plot([settings[i][setting_index] for i in range(len(settings))], curve,\
+                        color=color[est],marker=marker[est], label=est)
+
+    if title:
+        plt.title("Type Estimation by Number of Tasks")
+
+    plt.xticks([settings[i][setting_index] for i in range(len(settings))])
+    axis = plt.gca()
+
+    
+    if setting_index == 0:
+        x_label = 'Number of Agents'
+    elif setting_index == 1:
+        x_label = 'Number of Tasks'
+    else:
+        x_label = 'Scenario Dimension'
+
+
+    axis.set_ylabel("Type Error", fontsize='x-large')
+    axis.set_xlabel(x_label, fontsize='x-large')
+    axis.xaxis.set_tick_params(labelsize=14)
+    axis.yaxis.set_tick_params(labelsize=14)
+    plt.legend(loc="upper center", fontsize='large',
+                borderaxespad=0.1, borderpad=0.1, handletextpad=0.1,
+                fancybox=True, framealpha=0.8, ncol=4)
+
+    plt.tight_layout()
+    if pdf is None:
+        plt.show()
+    else:
+        pdf.savefig(fig)
+    plt.close()
+
+def plot_multperformance(informations, settings, setting_index, estimation_methods, max_iterations,\
+                plot_number = 0, color = None, marker = None, pdf = None, title=False):
+    print('Plotting multtypes...')
+
+    fig = plt.figure(plot_number, figsize=(5.8, 5.8))
+
+    info_counter = 0
+    samples_ = []
+    samples_std = []
+    for information in informations:
+        data,colors_, yerr = {}, [], []
+        samples = {}
+        samplesstd = {}
+
+        for est in estimation_methods:
+            data[est] = np.zeros(len(information[est]['completions']))
+            for nexp in range(len(information[est]['completions'])):
+                for i in range(len(information[est]['completions'][nexp])-1):
+                    data[est][nexp] += 1 if information[est]['completions'][nexp][i] != information[est]['completions'][nexp][i+1]\
+                        else 0
+
+            samplesstd[est] = np.std(data[est])
+            samples[est] = np.mean(data[est])
+
+            colors_.append(color[est])
+
+        info_counter += 1
+        samples_.append(samples)
+        samples_std.append(samplesstd)
+
+    for est in estimation_methods:
+        curve = [samples_[i][est] for i in range(len(informations))]
+        low = [samples_[i][est] - samples_std[i][est] for i in range(len(informations))]
+        high = [samples_[i][est] + samples_std[i][est] for i in range(len(informations))]
+    
+        #plt.fill_between([settings[i][setting_index] for i in range(len(settings))], low, high,
+        #            color=color[est], alpha=.15)
+        plt.errorbar(x=[settings[i][setting_index] for i in range(len(settings))],
+                     y=curve, yerr=abs(np.array(high)-np.array(low))/2,ecolor=color[est],capsize=3,fmt='.')
+
+        if est == 'SOEATA':
+            plt.plot([settings[i][setting_index] for i in range(len(settings))], curve,\
+                        color=color[est],marker=marker[est], label='OEATE')
+        else:
+            plt.plot([settings[i][setting_index] for i in range(len(settings))], curve,\
+                        color=color[est],marker=marker[est], label=est)
+
+    if title:
+        plt.title("Performance by Number of Tasks")
+
+    plt.xticks([settings[i][setting_index] for i in range(len(settings))])
+    axis = plt.gca()
+
+    if setting_index == 0:
+        x_label = 'Number of Agents'
+    elif setting_index == 1:
+        x_label = 'Number of Tasks'
+    else:
+        x_label = 'Scenario Dimension'
+
+    axis.set_ylabel("Number of Tasks Completed", fontsize='x-large')
+    axis.set_xlabel(x_label, fontsize='x-large')
+    axis.xaxis.set_tick_params(labelsize=14)
+    axis.yaxis.set_tick_params(labelsize=14)
+    plt.legend(loc="upper center", fontsize='large',
+                borderaxespad=0.1, borderpad=0.1, handletextpad=0.1,
+                fancybox=True, framealpha=0.8, ncol=4)
+
+    plt.tight_layout()
+    if pdf is None:
+        plt.show()
+    else:
+        pdf.savefig(fig)
+    plt.close()
