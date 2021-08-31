@@ -12,7 +12,4 @@
 # > e.g.: respawn, 30, 200, LevelForagingEnv, 7 , 20 , 20
 #
 
-respawn,20,200,LevelForagingEnv,7,20,30
-respawn,20,200,LevelForagingEnv,7,40,30
-respawn,20,200,LevelForagingEnv,7,60,30
-respawn,20,200,LevelForagingEnv,7,80,30
+respawn,20,200,LevelForagingEnv,7,30,30
