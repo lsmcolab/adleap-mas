@@ -14,7 +14,7 @@ import sys
 sys.path.append('src/reasoning')
 
 from scenario_generator import *
-from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estimation, pomcp_estimation, soeata_estimation
+from src.reasoning.estimation import aga_estimation, abu_estimation, oeate_estimation, pomcp_estimation
 from src.log import BashLogFile, LogFile
 
 ###
@@ -36,7 +36,7 @@ def str2bool(v):
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='SOEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='OEATE',type=str,help="Estimation type (AGA/ABU/OEATE/POMCP) ")
 parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=20,type=int,help="Dimension")
@@ -71,10 +71,16 @@ def list_stats(env, accomplished_tasks):
 
     stats['est_radius'], stats['est_angle'], stats['est_level'] = [], [], []
     for i in range(len(env.components['agents'])-1):
-        stats['est_radius'].append([estimated_parameters[i][j][0] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
-        stats['est_angle'].append([estimated_parameters[i][j][1] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+        stats['est_radius'].append([estimated_parameters[i][j][0] 
+            for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+
+        stats['est_angle'].append([estimated_parameters[i][j][1] 
+            for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+
         if args.env == 'LevelForagingEnv':
-            stats['est_level'].append([estimated_parameters[i][j][2] for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+            stats['est_level'].append([estimated_parameters[i][j][2] 
+                for j in range(len(adhoc_agent.smart_parameters['estimation'].template_types))])
+
         else:
             stats['est_level'].append(list(np.zeros(len(adhoc_agent.smart_parameters['estimation'].template_types))))
     stats['type_probabilities'] = type_probabilities
@@ -84,8 +90,10 @@ def list_stats(env, accomplished_tasks):
 ###
 # D. MAIN SCRIPT
 ###1. Initialising the log file
-header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
-fname = "Respawn_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
+header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle",
+            "Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
+
+fname = "Result_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
 log_file = LogFile(None,fname,header)
 bashlog_file = BashLogFile(fname)
 
@@ -129,26 +137,18 @@ elif  args.estimation == 'ABU':
 
     estimation_method = abu_estimation
 
-elif args.estimation == 'OEATA':
+elif args.estimation == 'OEATE':
     adhoc_agent.smart_parameters['estimation_args'] =\
      get_env_types(args.env), get_env_parameters_minmax(args.env),\
       100, 2, 0.2, 100, np.mean
 
-    estimation_method = oeata_estimation
-
-elif args.estimation == 'SOEATA':
-    adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), get_env_parameters_minmax(args.env),\
-      100, 2, 0.2, 100, np.mean
-
-    estimation_method = soeata_estimation
+    estimation_method = oeate_estimation
     
 elif args.estimation == 'POMCP':
     adhoc_agent.smart_parameters['estimation_args'] =\
     get_env_types(args.env), get_env_parameters_minmax(args.env)
 
     estimation_method = pomcp_estimation
-
 
 else:
     estimation_method = None

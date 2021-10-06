@@ -63,53 +63,24 @@ def abu_estimation(env, adhoc_agent, \
 
     return env, adhoc_agent.smart_parameters['estimation']
 
-def oeata_estimation(env, adhoc_agent,\
+def oeate_estimation(env, adhoc_agent,\
  template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
     #####
-    # OEATA INITIALISATION
+    # OEATE INITIALISATION
     #####
     # Initialising the oeata method inside the adhoc agent
     if 'estimation' not in adhoc_agent.smart_parameters:
-        from oeata import OEATA
-        adhoc_agent.smart_parameters['estimation'] = OEATA(env,template_types,parameters_minmax,\
+        from oeate import OEATE
+        adhoc_agent.smart_parameters['estimation'] = OEATE(env,template_types,parameters_minmax,\
                                                                                 N,xi,mr,d,normalise)
         
     #####    
-    # OEATA PROCESS
+    # OEATE PROCESS
     #####
     adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].run(env)
 
     #####
-    # OEATA - SET ESTIMATION
-    #####
-    for teammate in env.components['agents']:
-        if teammate.index != adhoc_agent.index:
-            selected_type = adhoc_agent.smart_parameters['estimation'].sample_type_for_agent(teammate)
-            selected_parameter = adhoc_agent.smart_parameters['estimation'].get_parameter_for_selected_type(teammate,selected_type)
-
-            teammate.type = selected_type
-            teammate.set_parameters(selected_parameter)
-
-    return env, adhoc_agent.smart_parameters['estimation']
-
-def soeata_estimation(env, adhoc_agent,\
- template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean):
-    #####
-    # OEATA INITIALISATION
-    #####
-    # Initialising the oeata method inside the adhoc agent
-    if 'estimation' not in adhoc_agent.smart_parameters:
-        from soeata import SOEATA
-        adhoc_agent.smart_parameters['estimation'] = SOEATA(env,template_types,parameters_minmax,\
-                                                                                N,xi,mr,d,normalise)
-        
-    #####    
-    # OEATA PROCESS
-    #####
-    adhoc_agent.smart_parameters['estimation'] = adhoc_agent.smart_parameters['estimation'].run(env)
-
-    #####
-    # OEATA - SET ESTIMATION
+    # OEATE - SET ESTIMATION
     #####
     for teammate in env.components['agents']:
         if teammate.index != adhoc_agent.index:

@@ -33,7 +33,7 @@ class Estimator(object):
         return copied_estimator
 
 
-class SOEATA(object):
+class OEATE(object):
 
     def __init__(self, initial_state, template_types, parameters_minmax, N=100, xi=2, mr=0.2, d=100, normalise=np.mean, mode='weight'):
         # initialising the oeata parameters
@@ -87,7 +87,6 @@ class SOEATA(object):
             if teammate.index != adhoc_agent.index:
                 # if the agent accomplished a task
                 if teammate.smart_parameters['last_completed_task'] != None:
-                    #print("SOEATA RUN", teammate.index)
                     # 1. Evaluation
                     self.evaluation(teammate)
 

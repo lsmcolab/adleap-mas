@@ -14,7 +14,7 @@ import sys
 sys.path.append('src/reasoning')
 
 from scenario_generator import *
-from src.reasoning.estimation import aga_estimation, abu_estimation, oeata_estimation
+from src.reasoning.estimation import aga_estimation, abu_estimation, oeate_estimation, pomcp_estimation
 from src.log import BashLogFile, LogFile
 
 ###
@@ -36,7 +36,7 @@ def str2bool(v):
 parser = ArgumentParser()
 parser.add_argument('--env', dest='env', default='LevelForagingEnv', type=str,
                     help='Environment name - LevelForagingEnv, CaptureEnv')
-parser.add_argument('--estimation',dest='estimation',default='OEATA',type=str,help="Estimation type (AGA/ABU/OEATA) ")
+parser.add_argument('--estimation',dest='estimation',default='OEATE',type=str,help="Estimation type (AGA/ABU/OEATE/POMCP) ")
 parser.add_argument('--num_agents',dest='agents', default = 7, type = int, help = "Number of agents")
 parser.add_argument('--num_tasks',dest='tasks',default=20,type=int,help = "Number of Tasks")
 parser.add_argument('--dim',dest='dim',default=20,type=int,help="Dimension")
@@ -118,16 +118,29 @@ adhoc_agent = env.get_adhoc_agent()
 
 if args.estimation == 'AGA':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
+     get_env_types(args.env), get_env_parameters_minmax(args.env)
+
     estimation_method = aga_estimation
+
 elif  args.estimation == 'ABU':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), [(0,1),(0,1),(0,1)] if args.env=="LevelForagingEnv" else [(0,1),(0,1)]
+     get_env_types(args.env), get_env_parameters_minmax(args.env)
+
     estimation_method = abu_estimation
-elif args.estimation == 'OEATA':
+
+elif args.estimation == 'OEATE':
     adhoc_agent.smart_parameters['estimation_args'] =\
-     get_env_types(args.env), get_env_nparameters(args.env), 100, 2, 0.2, 100, np.mean
-    estimation_method = oeata_estimation
+     get_env_types(args.env), get_env_parameters_minmax(args.env),\
+      100, 2, 0.2, 100, np.mean
+
+    estimation_method = oeate_estimation
+    
+elif args.estimation == 'POMCP':
+    adhoc_agent.smart_parameters['estimation_args'] =\
+    get_env_types(args.env), get_env_parameters_minmax(args.env)
+
+    estimation_method = pomcp_estimation
+
 else:
     estimation_method = None
 
