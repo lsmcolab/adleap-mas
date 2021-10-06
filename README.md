@@ -28,7 +28,7 @@ In this README you can find:
  
 <p style="text-align: justify; text-indent: 20px;" >  
 You must install Python 3 and the OpenAI Gym package to run the framework.
-You can use <a href="https://www.python.org/downloads/">Python 3 website</a> and the <a href="https://github.com/openai/gym">OpenAI Gym GitHub</a> for information about installation **or**, if you are programming at Linux, run the following command lines:
+You can use <a href="https://www.python.org/downloads/">Python 3 website</a> and the <a href="https://github.com/openai/gym">OpenAI Gym GitHub</a> for information about installation <b>OR</b>, if you are programming at Linux, run the following command lines:
 </p>
 
 > **For Python 3:**
@@ -72,7 +72,7 @@ Once you started your VcXserver (before running the framework), select the follo
 
 **NOTE:** If your program still cannot access the virtual screen or the error *NoSuchDisplay* arises, the following line may fix the problem:
 
-> `export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0`
+> `export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0` 
 
 ------------------------
 <a name="sec-usage"></a>
@@ -80,11 +80,11 @@ Once you started your VcXserver (before running the framework), select the follo
 
 <p style="text-align: justify; text-indent: 20px;" >  
 With all dependencies installed, you have to download this GitHub project and set it on your local workspace.
-To start the framework, you only need to choose an environment and run the file <i><b>test_[environment_name].py</b></i>.
-Via the command line, you can use (within the main project directory):
+To start the framework, you only need to choose an experiment configuration and run the file <i><b>experiment_[configuration].py</b></i>.
+For example, via the command line you can use (within the main project directory):
 <p>
 
-> `python3 test_[environment_name].py`
+> `python3 experiment_respawn.py`
 
 <p style="text-align: justify; text-indent: 20px;" >  
 That's all folks. At this point, you will have the display popping up and the simulation starting with the default components.
