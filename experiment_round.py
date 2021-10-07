@@ -87,7 +87,7 @@ def list_stats(env, accomplished_tasks):
 header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle","Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
 fname = "Round_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
 log_file = LogFile(None,fname,header)
-bashlog_file = BashLogFile(fname)
+#bashlog_file = BashLogFile(fname)
 
 # 2. Creating the environment
 env = None
@@ -163,7 +163,7 @@ accomplished_tasks = 0
 ###
 # EXPERIMENT START
 ###
-bashlog_file.redirect_stderr()
+#bashlog_file.redirect_stderr()
 
 while env.episode < args.num_episodes:
     # Rendering the environment
@@ -202,7 +202,7 @@ while env.episode < args.num_episodes:
             else:
                 env.components['tasks'][i].completed = False
 
-bashlog_file.reset_stderr()
+#bashlog_file.reset_stderr()
 ###
 # EXPERIMENT END
 ###

@@ -93,9 +93,9 @@ def list_stats(env, accomplished_tasks):
 header = ["Iterations","Completion","Environment","Estimation","Actual Radius","Actual Angle",
             "Actual Level", "Actual Types", "Radius Est.", "Angle Est.","Level Est.","Type Prob."]
 
-fname = "Result_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
+fname = "Respawn_{}_a{}_i{}_dim{}_{}_exp{}.csv".format(args.env,args.agents,args.tasks,args.dim,args.estimation,args.num_exp)
 log_file = LogFile(None,fname,header)
-bashlog_file = BashLogFile(fname)
+#bashlog_file = BashLogFile(fname)
 
 # 2. Creating the environment
 env = None
@@ -172,16 +172,16 @@ accomplished_tasks = 0
 ###
 # EXPERIMENT START
 ###
-bashlog_file.redirect_stderr()
+#bashlog_file.redirect_stderr()
 
 while env.episode < args.num_episodes:
     # Rendering the environment
     if env.display:
         env.render()
-    bashlog_file.write("Episode : "+str(env.episode))
+    #bashlog_file.write("Episode : "+str(env.episode))
 
     # Main Agent taking an action
-    bashlog_file.write("Main Agent planning")
+    #bashlog_file.write("Main Agent planning")
     module = __import__(adhoc_agent.type)
     method = getattr(module, adhoc_agent.type+'_planning')
     adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
@@ -190,13 +190,13 @@ while env.episode < args.num_episodes:
         log_file.write(None, stats)
     #print(stats)
     # Step on environment
-    bashlog_file.write("Simulation Step")
+    #bashlog_file.write("Simulation Step")
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
     accomplished_tasks += len(just_finished_tasks)
 
     # Writing log
-    bashlog_file.write("Log\n")
+    #bashlog_file.write("Log\n")
     stats = list_stats(env, accomplished_tasks)
     log_file.write(None, stats)
     # respawning
@@ -205,7 +205,7 @@ while env.episode < args.num_episodes:
             respawn_count += 1
             env.components['tasks'][(respawn_count) % len(env.components['tasks'])].completed = False
 
-bashlog_file.reset_stderr()
+#bashlog_file.reset_stderr()
 ###
 # EXPERIMENT END
 ###
