@@ -68,6 +68,11 @@ def get_env_parameters_minmax(env_name):
 
 
 def save_LevelForagingEnv(env, dim, num_agents, num_tasks, num_exp):
+    if( not os.path.exists('./src/envs/maps')):
+        os.mkdir('./src/envs/maps')
+    if( not os.path.exists('./src/envs/maps/LevelForagingEnv') ):
+        os.mkdir('./src/envs/maps/LevelForagingEnv')
+
     file = open(
         './src/envs/maps/LevelForagingEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(num_exp) + '.pickle',
         'wb')
@@ -172,6 +177,12 @@ def create_LevelForagingEnv(dim, num_agents, num_tasks, partial_observable=False
 
 
 def save_CaptureEnv(env, dim, num_agents, num_tasks, num_exp):
+    if( not os.path.exists('./src/envs/maps')):
+        os.mkdir('./src/envs/maps')
+    if( not os.path.exists('./src/envs/maps/CaptureEnv')):
+        os.mkdir('./src/envs/maps/CaptureEnv')
+
+
     file = open('./src/envs/maps/CaptureEnv/' + str(dim) + str(num_agents) + str(num_tasks) + str(num_exp) + '.pickle',
                 'wb')
     env = pickle.dump(env, file)

@@ -175,6 +175,7 @@ accomplished_tasks = 0
 #bashlog_file.redirect_stderr()
 
 while env.episode < args.num_episodes:
+    print("Episode Number : ",env.episode+1)
     # Rendering the environment
     if env.display:
         env.render()
