@@ -12,6 +12,8 @@
 import numpy as np
 import sys
 sys.path.append('src/reasoning')
+sys.path.append('src/reasoning/levelbased')
+sys.path.append('src/reasoning/capturetheprey')
 
 from scenario_generator import *
 from src.reasoning.estimation import aga_estimation, abu_estimation, oeate_estimation, pomcp_estimation
@@ -175,12 +177,12 @@ accomplished_tasks = 0
 #bashlog_file.redirect_stderr()
 
 while env.episode < args.num_episodes:
-    print("Episode Number : ",env.episode+1)
     # Rendering the environment
     if env.display:
         env.render()
+    print("Episode : "+str(env.episode))
     #bashlog_file.write("Episode : "+str(env.episode))
-
+    print("Main Agent Planning")
     # Main Agent taking an action
     #bashlog_file.write("Main Agent planning")
     module = __import__(adhoc_agent.type)
@@ -191,12 +193,14 @@ while env.episode < args.num_episodes:
         log_file.write(None, stats)
     #print(stats)
     # Step on environment
+    print("Simulation Step")
     #bashlog_file.write("Simulation Step")
     state, reward, done, info = env.step(adhoc_agent.next_action)
     just_finished_tasks = info['just_finished_tasks']
     accomplished_tasks += len(just_finished_tasks)
 
     # Writing log
+    print("Log\n")
     #bashlog_file.write("Log\n")
     stats = list_stats(env, accomplished_tasks)
     log_file.write(None, stats)

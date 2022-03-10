@@ -12,7 +12,8 @@
 import numpy as np
 import sys
 sys.path.append('src/reasoning')
-
+sys.path.append('src/reasoning/levelbased')
+sys.path.append('src/reasoning/capturetheprey')
 from scenario_generator import *
 from src.reasoning.estimation import aga_estimation, abu_estimation, oeate_estimation, pomcp_estimation
 from src.log import BashLogFile, LogFile
