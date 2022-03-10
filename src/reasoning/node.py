@@ -1,4 +1,4 @@
-from qlearn import create_qtable, uct_select_action
+from src.reasoning.qlearn import create_qtable, uct_select_action, ibl_select_action, entropy
 import random
 
 class Node(object):
@@ -32,17 +32,22 @@ class QNode(Node):
         super(QNode,self).__init__(state,depth,parent)
         self.value = 0
         self.action = action
-        self.actions = [i for i in range(state.action_space.n)]
+        self.actions = state.get_actions_list()
         self.qtable = create_qtable(self.actions)
 
     def update(self, action, result):
-        self.qtable[action]['trials'] += 1
-        self.qtable[action]['sumvalue'] += result
-        self.qtable[action]['qvalue'] += \
-            (float(result) - self.qtable[action]['qvalue']) / float(self.qtable[action]['trials'])
+        self.qtable[str(action)]['trials'] += 1
+        self.qtable[str(action)]['sumvalue'] += result
+        self.qtable[str(action)]['qvalue'] += \
+            (float(result) - self.qtable[str(action)]['qvalue']) / float(self.qtable[str(action)]['trials'])
 
-    def select_action(self):
-        return uct_select_action(self)
+        self.value += (result-self.value)/self.visits
+
+    def select_action(self,gamma=0.5,mode='uct'):
+        if mode == 'ibl':
+            return ibl_select_action(self,gamma)
+        else:
+            return uct_select_action(self,gamma)
 
     def get_best_action(self):
         # 1. Intialising the support variables
@@ -51,34 +56,41 @@ class QNode(Node):
 
         # 2. Looking for the best action (max qvalue action)
         for a in self.actions:
-            if self.qtable[a]['qvalue'] > maxQ\
-             and self.qtable[a]['trials'] > 0:
-                maxQ = self.qtable[a]['qvalue']
+            if self.qtable[str(a)]['qvalue'] > maxQ\
+             and self.qtable[str(a)]['trials'] > 0:
+                maxQ = self.qtable[str(a)]['qvalue']
                 best_action = a
 
         # 3. Checking if a tie case exists
         for a in self.actions:
-            if self.qtable[a]['qvalue'] == maxQ:
+            if self.qtable[str(a)]['qvalue'] == maxQ:
                 tieCases.append(a)
 
         if len(tieCases) > 0:
             best_action = random.sample(tieCases,1)[0]
+
         # 4. Returning the best action
         if(best_action==None):
             best_action = random.sample(self.actions,1)[0]
+            
         return best_action
 
     def show_qtable(self):
         print('%8s %8s %8s %8s' % ('Action','Q-Value','SumValue','Trials'))
+        action_dict = {}
         for a in self.actions:
-            print('%8s %4.4f %4.4f %8f' % (self.state.action_dict[a],self.qtable[a]['qvalue'],self.qtable[a]['sumvalue'],self.qtable[a]['trials']))
+            action_dict[a] = self.qtable[str(a)]['qvalue']
+        action_dict = sorted(action_dict,key=lambda x:action_dict[x], reverse=True)
+        
+        for a in action_dict:
+            print('%8s %4.4f %4.4f %8f' % (self.state.action_dict[a],self.qtable[str(a)]['qvalue'],\
+                                        self.qtable[str(a)]['sumvalue'],self.qtable[str(a)]['trials']))
         print('-----------------')
 
 class ANode(QNode):
 
     def __init__(self,action, state, depth, parent=None):
         super(ANode,self).__init__(action,state,depth,parent)
-        self.particle_filter = []
         self.action = action
         self.observation = None
 
@@ -87,15 +99,110 @@ class ANode(QNode):
         self.children.append(child)
         return child
 
+class IANode(ANode):
+
+    def __init__(self,action, state, depth, parent=None):
+        super(IANode,self).__init__(action,state,depth,parent)
+        self.action = action
+        self.observation = None
+
+    def add_child(self,state,observation):
+        child = IONode(observation,state,self.depth+1,self)
+        self.children.append(child)
+        return child
+
+class RhoANode(ANode):
+
+    def __init__(self,action, state, depth, parent=None):
+        super(RhoANode,self).__init__(action,state,depth,parent)
+        self.action = action
+        self.observation = None
+
+    def add_child(self,state,observation):
+        child = RhoONode(observation,state,self.depth+1,self)
+        self.children.append(child)
+        return child
+
 class ONode(QNode):
 
     def __init__(self,observation, state, depth, parent=None):
         super(ONode,self).__init__(None,state,depth,parent)
-        self.particle_filter = []
         self.action = None
         self.observation = observation
-
+        
+        self.particle_filter = []
+        self.particles_set = {}
+        
     def add_child(self,state,action):
         child = ANode(action,state,self.depth+1,self)
         self.children.append(child)
         return child
+
+class IONode(ONode):
+
+    def __init__(self,observation, state, depth, parent=None):
+        super(IONode,self).__init__(None,state,depth,parent)
+        self.action = None
+        self.observation = observation
+        
+        self.particle_filter = []
+        self.particles_set = {}
+        self.entropy = 0
+        self.max_entropy = 1
+        
+    def add_child(self,state,action):
+        child = IANode(action,state,self.depth+1,self)
+        self.children.append(child)
+        return child
+
+    def update_filterset(self,action_state):
+        added = False
+        for state in self.particles_set:
+            if action_state.state_is_equal(state.state): 
+                self.particle_filter.append(state)
+                self.particles_set[state] += 1
+                self.state = state
+                added = True
+                break
+
+        if not added:
+            self.particle_filter.append(action_state)
+            self.particles_set[action_state] = 1
+
+    def update_entropy(self):
+        new_entropy = entropy(self.particles_set)
+        if new_entropy > self.max_entropy:
+            self.max_entropy = new_entropy
+        self.entropy = abs(new_entropy/self.max_entropy)
+        return self.entropy
+
+class RhoONode(ONode):
+
+    def __init__(self,observation, state, depth, parent=None):
+        super(RhoONode,self).__init__(None,state,depth,parent)
+        self.action = None
+        self.observation = observation
+        
+        self.particle_filter = []
+        self.particles_set = {}
+        self.entropy = 0
+        self.max_entropy = 1
+        
+    def add_child(self,state,action):
+        child = RhoANode(action,state,self.depth+1,self)
+        self.children.append(child)
+        return child
+
+    def update_filterset(self,action_state):
+        added = False
+        for state in self.particles_set:
+            if action_state.state_is_equal(state.state): 
+                self.particle_filter.append(state)
+                self.particles_set[state] += 1
+                self.state = state
+                added = True
+                break
+
+        if not added:
+            self.particle_filter.append(action_state)
+            self.particles_set[action_state] = 1

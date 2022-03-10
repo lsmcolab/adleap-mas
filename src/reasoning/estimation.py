@@ -1,6 +1,7 @@
 import random as rd
 import numpy as np
 from copy import *
+from src.envs.SmartFireBrigadeEnv import SmartFireBrigadeEnv
 from src.envs.CaptureEnv import CaptureEnv
 from src.envs.LevelForagingEnv import LevelForagingEnv
 from src.reasoning.pomcp_estimation import *
@@ -120,16 +121,15 @@ def pomcp_estimation(env, adhoc_agent, \
   
     return env, adhoc_agent.smart_parameters['estimation']
 
-def uniform_estimation(env, template_types=['l1','l2']):
-    adhoc_agent = env.get_adhoc_agent()
-    for teammate in env.components['agents']:
-        if teammate.index != adhoc_agent.index:
-            teammate.type = rd.sample(template_types,1)[0]
-            if isinstance(env,CaptureEnv):
-                teammate.set_parameters(np.random.uniform(0,1,2))
-            else:
-                teammate.set_parameters(np.random.uniform(0,1,3))
-    return env
+def uniform_estimation(env):
+    if isinstance(env,LevelForagingEnv):
+        return level_foraging_uniform_estimation(env)
+    elif isinstance(env,CaptureEnv):
+        return capture_uniform_estimation(env)
+    elif isinstance(env,SmartFireBrigadeEnv):
+        return smartfirebrigade_uniform_estimation(env)
+    else:
+        raise NotImplemented
 
 def level_foraging_uniform_estimation(env, template_types=['l1','l2','l3']):
     adhoc_agent = env.get_adhoc_agent()
@@ -146,6 +146,10 @@ def capture_uniform_estimation(env, template_types=['c1','c2','c3']):
             teammate.type = rd.sample(template_types,1)[0]
             teammate.set_parameters(np.random.uniform(0.5,1,2))
     return env
+
+def smartfirebrigade_uniform_estimation(env):
+    # TODO: Implement an uniform estimation for the SFB environment
+    return env    
 
 def truco_uniform_estimation(env):
     if env.visibility == 'partial':

@@ -1,4 +1,4 @@
-from node import QNode
+from src.reasoning.node import QNode
 
 def rollout_policy(state):
     return state.action_space.sample()
@@ -96,11 +96,14 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
     # ESTIMATION METHOD UPDATE: START
     #####
     # - performing estimation
-    if 'estimation_args' in agent.smart_parameters:
+    if estimation_algorithm is not None and 'estimation_args' in agent.smart_parameters:
         root_node.state, agent.smart_parameters['estimation'] = \
             estimation_algorithm(root_node.state,agent,*agent.smart_parameters['estimation_args'])
-    else:
+    elif estimation_algorithm is not None and 'estimation_args' not in agent.smart_parameters:
         root_node.state, agent.smart_parameters['estimation'] = estimation_algorithm(root_node.state,agent)
+    else:
+        from src.reasoning.estimation import uniform_estimation
+        root_node.state = uniform_estimation(root_node.state)
     #####
     # ESTIMATION METHOD UPDATE: END
     #####
@@ -117,9 +120,6 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
             root_adhoc_agent = root_node.state.get_adhoc_agent()
             root_adhoc_agent.smart_parameters['estimation'] = agent.smart_parameters['estimation']
             root_node.state = root_adhoc_agent.smart_parameters['estimation'].sample_state(state)
-        else:
-            from estimation import uniform_estimation
-            root_node.state = uniform_estimation(root_node.state)
 
         # - simulating
         simulate(root_node, max_depth)
@@ -128,7 +128,7 @@ def monte_carlo_tree_search(state, agent, max_it, max_depth,estimation_algorithm
     # 4. Retuning the best action and the search tree root node
     return root_node.get_best_action(), root_node
 
-def mcts_planning(env,agent,max_depth=10, max_it=100,estimation_algorithm=None):
+def mcts_planning(env,agent,max_depth=20, max_it=100,estimation_algorithm=None):
     # 1. Setting the environment for simulation
     copy_env = env.copy()
     copy_env.viewer = None
