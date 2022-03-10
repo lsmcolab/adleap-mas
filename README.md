@@ -6,19 +6,27 @@
 <i>AdLeap-MAS</i> represents a novel framework focused on the implementation and simulation of Ad-hoc reasoning domains, which considers the approach of collaborative and adversarial contexts focused on ad-hoc environment learning and planning. The framework aims to facilitate the running of experiments in the domain and also re-use existing codes across different environments. In other words, this proposal aims to minimise the implementation cost related to the process that precedes the domain evaluation, which could include the environment design, components settings and, benchmark set definition, while simultaneously improving the robustness of the environment and minimising the errors carried out due to mistakes made in the code adaptation or implementation. Through the definition of a component-based architecture, <i>AdLeap-MAS</i> implements <i>Open-AI Gym package</i> for <i>Python 3</i> as the primary tool to define its base components. Designed to be an open-source framework and a specialised version of the Open-AI Gym simulator, we offer the base classes for implementing new contexts and scenarios of the community's interest.
 </p>
 
+<div style="text-align:center"><a href="https://youtu.be/xCXFAyvofHo" target="_blank"><img src="imgs/AdLeapMASVideo.PNG" alt="drawing" width="300px"
+alt="AdLeap-MAS Video" border="10" /></a></div>
+        
 ## Summary
 
 In this README you can find:
 
-* [GET STARTED](#sec-getstarted)
-    * [1. Dependencies](#sec-dependencies)
-    * [2. Usage](#sec-usage)
-    * [3. How to change the components within the framework?](#sec-components)
-* [EXAMPLES](#sec-examples)
-    * [1. Level-Foraging Environment](#sec-levelforaging)
-    * [2. Truco Environment](#sec-truco)
-* [DEVELOPMENT INFORMATION](#sec-development)
-* [REFERENCES](#sec-references)
+- [AdLeap-MAS: An Open-source Multi-Agent Simulator for Ad-hoc Learning and Planning](#adleap-mas-an-open-source-multi-agent-simulator-for-ad-hoc-learning-and-planning)
+  - [Introduction](#introduction)
+  - [Summary](#summary)
+  - [GET STARTED](#get-started)
+    - [1. Dependencies :pencil:](#1-dependencies-pencil)
+    - [Windows](#windows)
+    - [2. Usage :muscle:](#2-usage-muscle)
+    - [Understanding (High level view)](#understanding-high-level-view)
+    - [3. How to change the components within the framework? :fearful:](#3-how-to-change-the-components-within-the-framework-fearful)
+  - [EXAMPLES](#examples)
+    - [1. Level-Foraging Environment](#1-level-foraging-environment)
+    - [2. Truco Environment](#2-truco-environment)
+  - [DEVELOPMENT INFORMATION](#development-information)
+  - [REFERENCES](#references)
 
 <a name="sec-getstarted"></a>
 ## GET STARTED
