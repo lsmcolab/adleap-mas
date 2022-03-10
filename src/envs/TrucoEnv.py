@@ -1,7 +1,5 @@
 from copy import deepcopy
-from datetime import datetime
-import gym
-from gym import error, spaces
+from gym import spaces
 import numpy as np
 import random as rd
 import time
@@ -12,40 +10,6 @@ from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
     Rendering 
 """
 turn_on_display = False
-if turn_on_display:
-    try:
-        from gym.envs.classic_control import rendering
-    except ImportError as e:
-        raise ImportError('''
-        Cannot import rendering
-        ''')
-        
-    try:
-        import pyglet
-    except ImportError as e:
-        raise ImportError('''
-        Cannot import pyglet.
-        HINT: you can install pyglet directly via 'pip install pyglet'.
-        But if you really just want to install all Gym dependencies and not have to think about it,
-        'pip install -e .[all]' or 'pip install gym[all]' will do it.
-        ''')
-
-    try:
-        from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
-    except ImportError as e:
-        raise ImportError('''
-        Error occurred while running `from pyglet.gl import *`
-        HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
-        If you're running on a server, you may need a virtual frame buffer; something like this should work:
-        'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
-        ''')
-
-    class DrawText(rendering.Geom):
-        def __init__(self, label:pyglet.text.Label):
-            rendering.Geom.__init__(self)
-            self.label=label
-        def render1(self):
-            self.label.draw()
 
 """
     Ad-hoc 
@@ -190,8 +154,9 @@ class TrucoEnv(AdhocReasoningEnv):
 
     total_cards = len(cards)*len(suits)
 
-    def __init__(self,players,reasoning,visibility='full'): 
+    def __init__(self,players,reasoning,visibility='full',display=False): 
         self.viewer = None
+        self.display = display
         self.round_cards = []
         self.visibility = visibility
 
@@ -244,6 +209,16 @@ class TrucoEnv(AdhocReasoningEnv):
             return self.observation_space(self.copy())
         else:
             raise ValueError("the initial state from the state set is None.")
+
+    def import_method(self, agent_type):
+        from importlib import import_module
+        try:
+            module = import_module('src.reasoning.truco.'+agent_type)
+        except:
+            module = import_module('src.reasoning.'+agent_type)
+
+        method = getattr(module, agent_type+'_planning')
+        return method
 
     def copy(self):
         copied_env = TrucoEnv(players = [player.index for player in self.components['player']],
@@ -340,6 +315,47 @@ class TrucoEnv(AdhocReasoningEnv):
         return u_env
 
     def render(self, mode='human', info={}, agents_color={}):
+    
+        if not self.display:
+            return
+
+        try:
+            global rendering
+            from gym.envs.classic_control import rendering
+        except ImportError as e:
+            raise ImportError('''
+            Cannot import rendering
+            ''')
+            
+        try:
+            global pyglet
+            import pyglet
+        except ImportError as e:
+            raise ImportError('''
+            Cannot import pyglet.
+            HINT: you can install pyglet directly via 'pip install pyglet'.
+            But if you really just want to install all Gym dependencies and not have to think about it,
+            'pip install -e .[all]' or 'pip install gym[all]' will do it.
+            ''')
+
+        try:
+            global glBegin,glEnd,GL_QUADS,GL_POLYGON,GL_TRIANGLES,glVertex3f
+            from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
+        except ImportError as e:
+            raise ImportError('''
+            Error occurred while running `from pyglet.gl import *`
+            HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
+            If you're running on a server, you may need a virtual frame buffer; something like this should work:
+            'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
+            ''')
+        global DrawText
+        class DrawText(rendering.Geom):
+            def __init__(self, label:pyglet.text.Label):
+                rendering.Geom.__init__(self)
+                self.label=label
+            def render1(self):
+                self.label.draw()
+        
         # Render the environment to the screen
         self.agents_color = agents_color
         if self.state is not None:

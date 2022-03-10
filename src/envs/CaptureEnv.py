@@ -2,8 +2,8 @@ import random
 from gym import spaces
 import numpy as np
 import random as rd
-from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
-
+from src.envs.AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
+from importlib import import_module
 
 """
     Ad-hoc 
@@ -418,7 +418,10 @@ def capture_transition(action, real_env):
 
             # planning the action from agent i perspective
             if real_env.components['agents'][i].type is not None:
-                module = __import__(real_env.components['agents'][i].type)
+                try:
+                    module = import_module('src.reasoning.capturetheprey.'+real_env.components['agents'][i].type)
+                except:
+                    module = import_module('src.reasoning.'+real_env.components['agents'][i].type)
                 planning_method = getattr(module, real_env.components['agents'][i].type + '_planning')
 
                 real_env.components['agents'][i].next_action, real_env.components['agents'][i].target = \
@@ -447,7 +450,10 @@ def get_target_non_adhoc_agent(agent, real_env):
 
     # planning the action from agent i perspective
     if agent.type is not None:
-        module = __import__(agent.type)
+        try:
+            module = import_module('src.reasoning.capturetheprey.'+agent.type)
+        except:
+            module = import_module('src.reasoning.'+agent.type)
         planning_method = getattr(module, agent.type + '_planning')
 
         agent.next_action, agent.target = \
@@ -561,6 +567,14 @@ class CaptureEnv(AdhocReasoningEnv):
         'black': (0.0, 0.0, 0.0)
     }
 
+    agents_color = {
+        'mcts':'red',
+        'pomcp':'yellow',
+        'c1':'green',
+        'c2':'blue',
+        'c3':'cyan',
+    }
+
     action_dict = {
         0: 'East',
         1: 'West',
@@ -589,7 +603,6 @@ class CaptureEnv(AdhocReasoningEnv):
         super(CaptureEnv, self).__init__(state_set, \
                                                transition_function, action_space, reward_function, \
                                                observation_space, components)
-        self.agents_color = {'c1':'green','c2':'blue'}
 
         # Setting the inital state
         self.state_set.initial_state = np.zeros(shape)
@@ -609,6 +622,16 @@ class CaptureEnv(AdhocReasoningEnv):
         # Setting the inital components
         self.state_set.initial_components = self.copy_components(components)
 
+    def import_method(self, agent_type):
+        from importlib import import_module
+        try:
+            module = import_module('src.reasoning.capturetheprey.'+agent_type)
+        except:
+            module = import_module('src.reasoning.'+agent_type)
+
+        method = getattr(module, agent_type+'_planning')
+        return method
+
     def copy(self):
         components = self.copy_components(self.components)
         copied_env = CaptureEnv(self.state.shape, components, self.visibility)
@@ -625,6 +648,9 @@ class CaptureEnv(AdhocReasoningEnv):
                 copied_env.state_set.initial_state[x, y] = self.state_set.initial_state[x, y]
         return copied_env
 
+    def get_actions_list(self):
+        return [0,1,2,3,4]
+        
     def get_adhoc_agent(self):
         for agent in self.components['agents']:
             if agent.index == self.components['adhoc_agent_index']:
@@ -703,7 +729,10 @@ class CaptureEnv(AdhocReasoningEnv):
         adhoc_agent.set_parameters(new_parameter)
 
         # planning the action from agent i perspective
-        module = __import__(new_type)
+        try:
+            module = import_module('src.reasoning.capturetheprey.'+new_type)
+        except:
+            module = import_module('src.reasoning.'+new_type)
         planning_method = getattr(module,  new_type + '_planning')
 
         _, target = \
@@ -797,7 +826,7 @@ class CaptureEnv(AdhocReasoningEnv):
 
                 # Drawing the environment
                 self.drawn_agents = self.draw_agents()
-                self.drawn_tasks, self.drawn_tasks_shift = self.draw_tasks(type_='figure', fname='imgs/prey.png')
+                self.drawn_tasks, self.drawn_tasks_shift = self.draw_tasks(type_='figure', fname='imgs/capturetheprey/prey.png')
 
                 for i in range(len(self.components['agents'])):
                     if self.components['agents'][adhoc_agent_index].index == self.components['agents'][i].index:

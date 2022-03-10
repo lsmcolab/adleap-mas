@@ -1,10 +1,7 @@
 from copy import deepcopy
 import gym
-from gym import error, spaces
-from gym.utils import seeding
+from gym import spaces
 from inspect import isfunction
-import numpy as np
-from typing import Callable
 from warnings import warn
 
 class AdhocAgent:
@@ -63,10 +60,10 @@ class StateSet:
                             return True
                         return False
         """
-        if issubclass(type(state_representation),spaces.Space):
+        if issubclass(type(state_representation),spaces.Space) or issubclass(state_representation,spaces.Space):
             self.state_representation = state_representation
         else:
-            raise ValueError("argument \"form\" must be a "+str(spaces.Space)+\
+            raise ValueError("argument \"state_representation\" must be a "+str(spaces.Space)+\
                                                 " instance or inherit it.")
         
         # Defining the initial state
@@ -190,6 +187,9 @@ class AdhocReasoningEnv(gym.Env):
 
         elif (isinstance(data, int) or isinstance(data, float) or isinstance(data, complex) or isinstance(data, str) or isinstance(data, tuple)):
             return data
+        
+        elif data is None:
+            return None
 
         else:
             try:
@@ -225,7 +225,10 @@ class AdhocReasoningEnv(gym.Env):
 
         # 1. Simulating the action and getting the observation
         next_state, info = self.transition_function(action,self)
-        observation = self.get_observation()
+        if self.simulation:
+            observation = self.copy()
+        else:
+            observation = self.get_observation()
         self.episode += 1
         
         # 2. Calculating the reward
@@ -233,7 +236,8 @@ class AdhocReasoningEnv(gym.Env):
         reward = self.reward_function(current_state, next_state)
 
         # b. action based reward
-        reward += sum([info[key] if 'reward' in key else 0 for key in info])
+        if info is not None:
+            reward += sum([info[key] if 'reward' in key else 0 for key in info])
         
         # 3. Verifying end condition
         done = self.state_set.is_final_state(next_state)
@@ -244,10 +248,12 @@ class AdhocReasoningEnv(gym.Env):
         # Reset the state of the environment to an initial state
         self.episode = 0
         self.close()
+
         if self.state_set.initial_state is not None and self.state_set.initial_components is not None:
             self.state = deepcopy(self.state_set.initial_state)
             self.components = self.copy_components(self.state_set.initial_components)
             return self.observation_space(self.copy())
+
         else:
             raise ValueError("the initial state from the state set is None.")
 

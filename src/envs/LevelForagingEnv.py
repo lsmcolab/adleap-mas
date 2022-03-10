@@ -1,10 +1,9 @@
-from datetime import datetime
-import gym
-from gym import error, spaces
+from importlib import import_module
+from gym import spaces
 import numpy as np
 import random as rd
 
-from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
+from src.envs.AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
 """
     Ad-hoc 
@@ -314,7 +313,12 @@ def get_target_non_adhoc_agent(agent, real_env):
 
     # planning the action from agent i perspective
     if agent.type is not None:
-        module = __import__(agent.type)
+        
+        try:
+            module = import_module('src.reasoning.levelbased.'+agent.type)
+        except:
+            module = import_module('src.reasoning.'+agent.type)
+        
         planning_method = getattr(module, agent.type + '_planning')
 
         agent.next_action, agent.target = \
@@ -342,7 +346,10 @@ def levelforaging_transition(action, real_env):
 
             # planning the action from agent i perspective
             if real_env.components['agents'][i].type is not None:
-                module = __import__(real_env.components['agents'][i].type)
+                try:
+                    module = import_module('src.reasoning.levelbased.'+real_env.components['agents'][i].type)
+                except:
+                    module = import_module('src.reasoning.'+real_env.components['agents'][i].type)
                 planning_method = getattr(module, real_env.components['agents'][i].type + '_planning')
 
                 real_env.components['agents'][i].next_action, real_env.components['agents'][i].target = \
@@ -473,8 +480,10 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
     agents_color = {
         'mcts': 'red',
+        'pomcp': 'yellow',
         'l1': 'darkred',
-        'l2': 'darkgreen'
+        'l2': 'darkgreen',
+        'l3': 'darkcyan',
     }
 
     def __init__(self, shape, components, visibility='full',display=False):
@@ -512,6 +521,16 @@ class LevelForagingEnv(AdhocReasoningEnv):
         # Setting the initial components
         self.state_set.initial_components = self.copy_components(components)
 
+    def import_method(self, agent_type):
+        from importlib import import_module
+        try:
+            module = import_module('src.reasoning.levelbased.'+agent_type)
+        except:
+            module = import_module('src.reasoning.'+agent_type)
+
+        method = getattr(module, agent_type+'_planning')
+        return method
+
     def copy(self):
         components = self.copy_components(self.components)
         copied_env = LevelForagingEnv(self.state.shape, components, self.visibility)
@@ -528,12 +547,15 @@ class LevelForagingEnv(AdhocReasoningEnv):
                 copied_env.state_set.initial_state[x, y] = self.state_set.initial_state[x, y]
         return copied_env
 
+    def get_actions_list(self):
+        return [0,1,2,3,4]
+
     def get_adhoc_agent(self):
         for agent in self.components['agents']:
             if agent.index == self.components['adhoc_agent_index']:
                 return agent
-        return None
-
+        raise IndexError("Ad-hoc Index is not in Agents Index Set.")
+        
     def state_is_equal(self, state):
         for x in range(self.state.shape[0]):
             for y in range(self.state.shape[1]):
@@ -563,7 +585,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
                     empty_spaces.append((x, y))
         return empty_spaces
 
-    def sample_state(self, agent, sample_p=0.1, n_sample=10):
+    def sample_state(self, agent, sample_a=0.1, sample_t=0.1, n_sample=10):
         # 1. Defining the base simulation
         u_env = self.copy()
 
@@ -574,20 +596,26 @@ class LevelForagingEnv(AdhocReasoningEnv):
         count = 0
         while len(empty_position) > 0 and count < n_sample:
             # - setting teammates
-            if rd.uniform(0, 1) < sample_p:
+            if rd.uniform(0, 1) < sample_a and len(empty_position)>0:
                 pos = rd.sample(empty_position, 1)[0]
                 u_env.state[pos[0], pos[1]] = 1
                 empty_position.remove(pos)
-            count += 1
 
             # - setting tasks
-            if rd.uniform(0, 1) < sample_p and len(empty_position)>0:
+            if rd.uniform(0, 1) < sample_t and len(empty_position)>0:
                 pos = rd.sample(empty_position, 1)[0]
                 u_env.state[pos[0], pos[1]] = np.inf
+                u_env.components['tasks'].append(Task('S',pos,rd.uniform(0,1)))
                 empty_position.remove(pos)
             count += 1
 
         return u_env
+
+    def sample_nstate(self, agent, n, sample_a=0.1, sample_t=0.1, n_sample=10):
+        sampled_states = []
+        while len(sampled_states) < n:
+            sampled_states.append(self.sample_state(agent,sample_a,sample_t,n_sample))
+        return sampled_states
 
     def get_target(self, agent_index, new_type=None, new_parameter=None):
         # changing the perspective
@@ -609,9 +637,12 @@ class LevelForagingEnv(AdhocReasoningEnv):
         adhoc_agent.target = None
 
         # planning the action from agent i perspective
-        module = __import__(new_type)
-        planning_method = getattr(module,  new_type + '_planning')
+        try:
+            module = import_module('src.reasoning.levelbased.'+new_type)
+        except:
+            module = import_module('src.reasoning.'+new_type)
 
+        planning_method = getattr(module,  new_type + '_planning')
         _, target = \
             planning_method(obsavable_env, adhoc_agent)
 
@@ -621,7 +652,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
                 return task
         return None
 
-    def render(self, mode='human'):
+    def render(self, mode='human', sleep_=0.5):
         if not self.display:
             return
 
@@ -701,7 +732,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
                 # Drawing the environment
                 self.drawn_agents = self.draw_agents()
-                self.drawn_tasks, self.drawn_tasks_shift = self.draw_tasks(type_='figure', fname='imgs/task_box.png')
+                self.drawn_tasks, self.drawn_tasks_shift = self.draw_tasks(type_='figure', fname='imgs/levelbased/task_box.png')
 
                 for i in range(len(self.components['agents'])):
                     if self.components['agents'][adhoc_agent_index].index == self.components['agents'][i].index:
@@ -736,7 +767,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
             self.viewer.render(return_rgb_array=mode == 'rgb_array')
             import time
-            time.sleep(0.1)
+            time.sleep(sleep_)
 
         return
 
