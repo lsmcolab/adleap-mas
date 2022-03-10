@@ -1,16 +1,55 @@
-from gym.envs.registration import registry, register, make, spec
+from gym.envs.registration import register
 
+#####
+# Major Environment
+#####
 register(
-    id='AdhocReasoningEnv-v0',
+    id='AdhocReasoningEnv-v1',
     entry_point='src.envs:AdhocReasoningEnv',
 )
 
+#####
+# Toy Problems Environments
+#####
 register(
-    id='LevelForagingEnv-v0',
-    entry_point='src.envs:LevelForagingEnv',
+    id='MazeEnv-v1',
+    entry_point='src.envs:MazeEnv',
 )
 
 register(
-    id='TrucoEnv-v0',
+    id='RockSampleEnv-v1',
+    entry_point='src.envs:RockSampleEnv',
+)
+register(
+    id='TigerEnv-v1',
+    entry_point='src.envs:TigerEnv',
+    )
+
+#####
+# Ad-hoc Teamwork Environment
+#####
+register(
+    id='CaptureEnv-v1',
+    entry_point='src.envs:CaptureEnv',
+)
+
+register(
+    id='LevelForagingEnv-v1',
+    entry_point='src.envs:LevelForagingEnv',
+)
+
+#####
+# Realistic Scenarios
+#####
+register(
+    id='SmartFireBrigadeEnv-v1',
+    entry_point='src.envs:SmartFireBrigadeEnv',
+)
+
+#####
+# Card Games
+#####
+register(
+    id='TrucoEnv-v1',
     entry_point='src.envs:TrucoEnv',
 )
