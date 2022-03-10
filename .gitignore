@@ -8,4 +8,8 @@
 *.log
 *.pickle
 */*.pickle
+test*
 qsub*
+Videos/*
+*.mkv
+*.mp4
