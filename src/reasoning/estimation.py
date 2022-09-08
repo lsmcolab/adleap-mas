@@ -4,7 +4,21 @@ from copy import *
 from src.envs.SmartFireBrigadeEnv import SmartFireBrigadeEnv
 from src.envs.CaptureEnv import CaptureEnv
 from src.envs.LevelForagingEnv import LevelForagingEnv
-from src.reasoning.pomcp_estimation import *
+
+def parameter_estimation(env,adhoc_agent,type='uniform',*args):
+    if type.upper() == 'UNIFORM':
+        return uniform_estimation(env)
+    elif type.upper() == 'AGA':
+        return aga_estimation(env,adhoc_agent,*args)
+    elif type.upper() == 'ABU':
+        return abu_estimation(env,adhoc_agent,*args)
+    elif type.upper() == 'OEATE':
+        return oeate_estimation(env,adhoc_agent,*args)
+    elif type.upper() == 'POMCE':
+        return pomcp_estimation(env,adhoc_agent,*args)
+    else:
+        raise NotImplementedError
+
 
 def aga_estimation(env, adhoc_agent,\
  template_types, parameters_minmax, grid_size=100, reward_factor=0.04, step_size=0.01, decay_step=0.999, degree=2, univariate=True):
@@ -13,7 +27,7 @@ def aga_estimation(env, adhoc_agent,\
     #####
     # Initialising the aga method inside the adhoc agent
     if 'estimation' not in adhoc_agent.smart_parameters:
-        from aga import AGA
+        from src.reasoning.aga import AGA
         adhoc_agent.smart_parameters['estimation'] = AGA(env,template_types,parameters_minmax,grid_size,\
                                                         reward_factor,step_size,decay_step,degree,univariate)
         
@@ -42,7 +56,7 @@ def abu_estimation(env, adhoc_agent, \
     #####
     # Initialising the aga method inside the adhoc agent
     if 'estimation' not in adhoc_agent.smart_parameters:
-        from abu import ABU
+        from src.reasoning.abu import ABU
         adhoc_agent.smart_parameters['estimation'] = ABU(env,template_types,parameters_minmax,grid_size,\
                                                         reward_factor,degree)
         
@@ -71,7 +85,7 @@ def oeate_estimation(env, adhoc_agent,\
     #####
     # Initialising the oeata method inside the adhoc agent
     if 'estimation' not in adhoc_agent.smart_parameters:
-        from oeate import OEATE
+        from src.reasoning.oeate import OEATE
         adhoc_agent.smart_parameters['estimation'] = OEATE(env,template_types,parameters_minmax,\
                                                                                 N,xi,mr,d,normalise)
         
@@ -100,7 +114,7 @@ def pomcp_estimation(env, adhoc_agent, \
     ##### discount_factor=0.9,max_iter=10,max_depth=10,min_particles=100
     # Initialising the aga method inside the adhoc agent
     if 'estimation' not in adhoc_agent.smart_parameters:
-        from pomce import POMCE
+        from src.reasoning.pomce import POMCE
         adhoc_agent.smart_parameters['estimation'] = POMCE(env,template_types,parameters_minmax,discount_factor,max_iter,max_depth,min_particles)
         
     #####    

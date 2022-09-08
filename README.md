@@ -1,4 +1,26 @@
-# AdLeap-MAS: An Open-source Multi-Agent Simulator for Ad-hoc Learning and Planning
+# AdLeap-MAS: An Open-source Multi-Agent Simulator for Ad-hoc Reasoning
+
+<i>In Proceedings of the 21st International Conference on Autonomous Agents and Multiagent Systems. 2022.</i> <a href="#alves2022adleapmas">[1]</a>
+
+If you use this simulator, baselines or environments, please cite it!
+
+```
+@inproceedings{10.5555/3535850.3536143,
+  author = {do Carmo Alves, Matheus Aparecido and Varma, Amokh and Elkhatib, Yehia and Soriano Marcolino, Leandro},
+  title = {AdLeap-MAS: An Open-Source Multi-Agent Simulator for Ad-Hoc Reasoning},
+  year = {2022},
+  isbn = {9781450392136},
+  publisher = {International Foundation for Autonomous Agents and Multiagent Systems},<br>
+  address = {Richland, SC},
+  abstract = {Ad-hoc reasoning models are recurrently used to solve some of our daily tasks. Intending to avoid worthless investments or spend valuable resources, these smart systems requires a proper evaluation before acting in the real-world. In this paper, we demonstrate AdLeap-MAS, a novel framework focused on enabling quick and easy testing of smart algorithms in ad-hoc reasoning domains.},
+  booktitle = {Proceedings of the 21st International Conference on Autonomous Agents and Multiagent Systems},
+  pages = {1893–1895},
+  numpages = {3},
+  keywords = {autonomous systems, ad-hoc reasoning, open-source, online planning, simulation framework},
+  location = {Virtual Event, New Zealand},
+  series = {AAMAS '22}
+}
+```
 
 ## Introduction
 
@@ -13,7 +35,7 @@ alt="AdLeap-MAS Video" border="10" /></a></div>
 
 In this README you can find:
 
-- [AdLeap-MAS: An Open-source Multi-Agent Simulator for Ad-hoc Learning and Planning](#adleap-mas-an-open-source-multi-agent-simulator-for-ad-hoc-learning-and-planning)
+- [AdLeap-MAS: An Open-source Multi-Agent Simulator for Ad-hoc Reasoning](#adleap-mas-an-open-source-multi-agent-simulator-for-ad-hoc-reasoning)
   - [Introduction](#introduction)
   - [Summary](#summary)
   - [GET STARTED](#get-started)
@@ -26,6 +48,7 @@ In this README you can find:
     - [1. Level-Foraging Environment](#1-level-foraging-environment)
     - [2. Truco Environment](#2-truco-environment)
   - [DEVELOPMENT INFORMATION](#development-information)
+  - [- Let us know by contacting the authors or opening an issue (we try to respond as soon as possible). :smiley:](#--let-us-know-by-contacting-the-authors-or-opening-an-issue-we-try-to-respond-as-soon-as-possible-smiley)
   - [REFERENCES](#references)
 
 <a name="sec-getstarted"></a>
@@ -88,11 +111,11 @@ Once you started your VcXserver (before running the framework), select the follo
 
 <p style="text-align: justify; text-indent: 20px;" >  
 With all dependencies installed, you have to download this GitHub project and set it on your local workspace.
-To start the framework, you only need to choose an experiment configuration and run the file <i><b>experiment_[configuration].py</b></i>.
+To start the framework, you only need to choose an experiment configuration and run the file <i><b>main.py</b></i>.
 For example, via the command line you can use (within the main project directory):
 <p>
 
-> `python3 experiment_respawn.py`
+> `python3 main.py`
 
 <p style="text-align: justify; text-indent: 20px;" >  
 That's all folks. At this point, you will have the display popping up and the simulation starting with the default components.
@@ -199,7 +222,7 @@ Again: that is all folks! At this point, your reasoning method already can be us
 </p>
 
 <p style="text-align: justify; text-indent: 20px;" >
-For further explanation, we suggest the reading of our paper available at: <i><b>to appear</b></i>
+For further explanation, we suggest the reading of our paper available at <i><b><a href='https://www.ifaamas.org/Proceedings/aamas2022/pdfs/p1893.pdf'>AAMAS'2022 Proceedings</a>.</b></i>
 </p>
 
 ------------------------
@@ -210,7 +233,7 @@ For further explanation, we suggest the reading of our paper available at: <i><b
 ### [1. Level-Foraging Environment](https://github.com/lsmcolab/adleap-mas/tree/master/src/envs)
 
 <p style="text-align: justify; text-indent: 20px;" >
-Initially introduced to evaluate ad hoc teamwork, the Level-based Foraging domain <a href="#albrecht2015game">[1,</a> <a href="#stone2010adhoc">2]</a> represents a problem in which a team of agents must collaborate to accomplish a certain number of tasks in an environment, optimising the time spent in the activity via active collaboration-coordination.
+Initially introduced to evaluate ad hoc teamwork, the Level-based Foraging domain <a href="#albrecht2015game">[2,</a> <a href="#stone2010adhoc">3]</a> represents a problem in which a team of agents must collaborate to accomplish a certain number of tasks in an environment, optimising the time spent in the activity via active collaboration-coordination.
 The agents have a certain level (strength) that defines if it is able to collect an item (e.g., a box) of a specific weight.
 The boxes are distributed in the environment, and the agents cannot communicate with their teammates.
 The following figure illustrates the idea of the problem.
@@ -253,12 +276,24 @@ Note that even though all the hands are visible in the interface, it is not rela
 ## DEVELOPMENT INFORMATION
 **Status:** In development. :computer:
 
-*More information will be documented and presented soon.*
+- **New Environments**:
+  - <b>*SmartFireBrigadeEnv*:</b> A complete environment that simulates a 2D world where agents must collaborate, communicate and plan under partial observability in order to extinguish all fire spots in a forest. The objective of this new domain is to enable the evaluation of planning algorithms while handling complex problems and under stronger constraints (less information and higher uncertainty). More information will be available soon.
+  - <b>*CaptureTheFlagEnv*:</b> This environment development intends to present, besides a new domain for testing and analysis inside AdLeap-MAS, the opportunity to study and run experiments into a Multi-Agent <b>*swarm*</b> domain. Designed as an infiltration game, the *CaptureTheFlagEnv* presents the challenge of reason under time constraints and for a huge set of opponents. All the agents in the environment are <b>*boids*</b> which follow their own policy to accomplish the task to defend or attack the flag site. More information will be available soon.
 
+- **AdLeap-MAS Usage and Experience**:
+  - We are implementing a standardised plot package for AdLeap-MAS, which will work for every domain inside the framework. We intend to facilitate the evaluation process while developing research or performing quick tests in our simulator. Besides that, we are parallelly improving the log file automatic generated by the domains.
+  - We are focused on improving the user experience by enhancing the environment's display, which has already been updated to the newest version of OpenAI-Gym, implemented with the PyGame package).
+
+- **What are you missing?**
+  - Let us know by contacting the authors or opening an issue (we try to respond as soon as possible). :smiley:
 ------------------------
 <a name="sec-references"></a>
 ## REFERENCES
 
-<a name="albrecht2015game">[1]</a> Stefano V Albrecht and Subramanian Ramamoorthy. 2015.  A game-theoretic model and best-response learning method for ad hoc coordination in multi agent systems. *arXiv preprint arXiv:1506.01170* (2015).
+<a name="alves2022adleapmas">[1]</a> Matheus Aparecido do Carmo Alves, Amokh Varma, Yehia Elkhatib, and Leandro Soriano Marcolino. 2022. AdLeap-MAS: An Open-source Multi-Agent Simulator for Ad-hoc Reasoning. In Proceedings of the 21st International Conference on Autonomous Agents and Multiagent Systems (AAMAS '22). International Foundation for Autonomous Agents and Multiagent Systems, Richland, SC, 1893–1895.
 
-<a name="stone2010adhoc">[2]</a> Peter Stone, Gal A. Kaminka, Sarit Kraus, and Jeffrey S. Rosenschein. 2010. AdHoc Autonomous Agent Teams: Collaboration without Pre-Coordination. *In Proceedings of the Twenty-Fourth Conference on Artificial Intelligence (AAAI)*.
+
+<a name="albrecht2015game">[2]</a> Stefano V. Albrecht and Subramanian Ramamoorthy. 2013. A game-theoretic model and best-response learning method for ad hoc coordination in multiagent systems. In Proceedings of the 2013 international conference on Autonomous agents and multi-agent systems (AAMAS '13). International Foundation for Autonomous Agents and Multiagent Systems, Richland, SC, 1155–1156.
+
+
+<a name="stone2010adhoc">[3]</a> Peter Stone, Gal A. Kaminka, Sarit Kraus, and Jeffrey S. Rosenschein. 2010. AdHoc Autonomous Agent Teams: Collaboration without Pre-Coordination. *In Proceedings of the Twenty-Fourth Conference on Artificial Intelligence (AAAI)*.

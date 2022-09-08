@@ -3,7 +3,7 @@ from setuptools import setup
 #####
 # Major Environment
 #####
-setup(name='AdhocReasoningEnv-v1',
+setup(name='AdhocReasoningEnv',
       version='1.0.0',
       install_requires=['gym']
 )
@@ -11,46 +11,50 @@ setup(name='AdhocReasoningEnv-v1',
 #####
 # Toy Problems Environments
 #####
-setup(name='MazeEnv-v1',
-      version='1.0.0',
-      install_requires=['gym','numpy']
-)
-
-setup(name='RockSampleEnv-v1',
-      version='1.0.0',
-      install_requires=['gym','numpy']
-)
-
-setup(name='TigerEnv-v1',
-      version='1.0.0',
+setup(name='TigerEnv',
+      version='2.0.0',
       install_requires=['gym','numpy'],
+)
+
+setup(name='MazeEnv',
+      version='2.0.0',
+      install_requires=['gym','numpy']
+)
+
+setup(name='RockSampleEnv',
+      version='2.0.0',
+      install_requires=['gym','numpy']
 )
 
 #####
 # Ad-hoc Teamwork Environment
 #####
-setup(name='CaptureEnv-v1',
-      version='1.0.0',
+setup(name='LevelForagingEnv',
+      version='2.0.0',
       install_requires=['gym','numpy']
 )
 
-setup(name='LevelForagingEnv-v1',
-      version='1.0.0',
+setup(name='CaptureEnv',
+      version='2.0.0',
       install_requires=['gym','numpy']
 )
 
 #####
 # Realistic Scenarios
 #####
-setup(name='SmartFireBrigadeEnv-v1',
+setup(name='SmartFireBrigadeEnv',
       version='1.0.0',
       install_requires=['gym','numpy']
+)
+setup(name='TradeStockEnv',
+      version='1.0.0',
+      install_requires=['gym','numpy','pandas','sklearn','statsmodels','scipy']
 )
 
 #####
 # Card Games
 #####
-setup(name='TrucoEnv-v1',
-      version='1.0.0',
-      install_requires=['gym']  # And any other dependencies needs
+setup(name='TrucoEnv',
+      version='2.0.0',
+      install_requires=['gym','numpy']  # And any other dependencies needs
 )

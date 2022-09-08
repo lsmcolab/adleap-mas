@@ -12,31 +12,31 @@ register(
 # Toy Problems Environments
 #####
 register(
-    id='MazeEnv-v1',
+    id='TigerEnv-v2',
+    entry_point='src.envs:TigerEnv',
+    )
+register(
+    id='MazeEnv-v2',
     entry_point='src.envs:MazeEnv',
 )
 
 register(
-    id='RockSampleEnv-v1',
+    id='RockSampleEnv-v2',
     entry_point='src.envs:RockSampleEnv',
 )
-register(
-    id='TigerEnv-v1',
-    entry_point='src.envs:TigerEnv',
-    )
 
 #####
 # Ad-hoc Teamwork Environment
 #####
 register(
-    id='CaptureEnv-v1',
+    id='LevelForagingEnv-v2',
+    entry_point='src.envs:LevelForagingEnv',
+)
+register(
+    id='CaptureEnv-v2',
     entry_point='src.envs:CaptureEnv',
 )
 
-register(
-    id='LevelForagingEnv-v1',
-    entry_point='src.envs:LevelForagingEnv',
-)
 
 #####
 # Realistic Scenarios
@@ -45,11 +45,15 @@ register(
     id='SmartFireBrigadeEnv-v1',
     entry_point='src.envs:SmartFireBrigadeEnv',
 )
+register(
+    id='TradeStockEnv-v1',
+    entry_point='src.envs:TradeStockEnv',
+)
 
 #####
 # Card Games
 #####
 register(
-    id='TrucoEnv-v1',
+    id='TrucoEnv-v2',
     entry_point='src.envs:TrucoEnv',
 )

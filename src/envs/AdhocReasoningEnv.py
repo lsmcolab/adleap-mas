@@ -95,8 +95,50 @@ class AdhocReasoningEnv(gym.Env):
     * Copy : It is not mandatory but is highly suggested to ensure complete functionality of the base class. The default
             copy function will return an instance of the AdhocReasoningEnv Class.
     """
+    colors = { \
+        'red':          (255*1.0, 255*0.0, 255*0.0), \
+        'darkred':      (255*0.5, 255*0.0, 255*0.0), \
+        'green':        (255*0.0, 255*1.0, 255*0.0), \
+        'darkgreen':    (255*0.0, 255*0.5, 255*0.0), \
+        'blue':         (255*0.0, 255*0.0, 255*1.0), \
+        'darkblue':     (255*0.0, 255*0.0, 255*0.5), \
+        'cyan':         (255*0.0, 255*1.0, 255*1.0), \
+        'darkcyan':     (255*0.0, 255*0.5, 255*0.5), \
+        'magenta':      (255*1.0, 255*0.0, 255*1.0), \
+        'darkmagenta':  (255*0.5, 255*0.0, 255*0.5), \
+        'yellow':       (255*1.0, 255*1.0, 255*0.0), \
+        'darkyellow':   (255*0.5, 255*0.5, 255*0.0), \
+        'brown':        (255*0.0, 255*0.2, 255*0.2), \
+        'white':        (255*1.0, 255*1.0, 255*1.0), \
+        'lightgrey':    (255*0.8, 255*0.8, 255*0.8), \
+        'darkgrey':     (255*0.15, 255*0.15, 255*0.15), \
+        'black':        (255*0.0, 255*0.0, 255*0.0)
+    }
 
-    metadata = {'render.modes': ['human']}
+    colors_percent = { \
+        'red':          (1.0, 0.0, 0.0), \
+        'darkred':      (0.5, 0.0, 0.0), \
+        'green':        (0.0, 1.0, 0.0), \
+        'darkgreen':    (0.0, 0.5, 0.0), \
+        'blue':         (0.0, 0.0, 1.0), \
+        'darkblue':     (0.0, 0.0, 0.5), \
+        'cyan':         (0.0, 1.0, 1.0), \
+        'darkcyan':     (0.0, 0.5, 0.5), \
+        'magenta':      (1.0, 0.0, 1.0), \
+        'darkmagenta':  (0.5, 0.0, 0.5), \
+        'yellow':       (1.0, 1.0, 0.0), \
+        'darkyellow':   (0.5, 0.5, 0.0), \
+        'brown':        (0, 0.2, 0.2), \
+        'white':        (1.0, 1.0, 1.0), \
+        'lightgrey':    (0.8, 0.8, 0.8), \
+        'darkgrey':     (0.4, 0.4, 0.4), \
+        'black':        (0.0, 0.0, 0.0)
+    }
+    
+    metadata = {
+        "render_modes": ["human", "rgb_array", "single_rgb_array"],
+        "render_fps": 50,
+    }
 
     def __init__(self,state_set,transition_function,action_space,\
                     reward_function,observation_space,components):
@@ -111,7 +153,10 @@ class AdhocReasoningEnv(gym.Env):
         """
 
         super(AdhocReasoningEnv, self).__init__()
-        self.viewer = None  # Viewer is the variable used to manage the graphical inteface.
+        # Graphical inteface.
+        self.screen = None  
+        self.render_mode = None
+        self.renderer = None
         self.state = None   # The state can be any chosen form of representation. For ex : np array.
         self.episode = 0    # Number of episodes after env.reset()
         self.simulation = False
@@ -242,12 +287,16 @@ class AdhocReasoningEnv(gym.Env):
         # 3. Verifying end condition
         done = self.state_set.is_final_state(next_state)
         
+        if self.renderer is not None and not self.simulation:
+            self.renderer.render_step()
         return observation, reward, done, info
 
     def reset(self):
         # Reset the state of the environment to an initial state
         self.episode = 0
-        self.close()
+        if self.renderer is not None:
+            self.renderer.reset()
+            self.renderer.render_step()
 
         if self.state_set.initial_state is not None and self.state_set.initial_components is not None:
             self.state = deepcopy(self.state_set.initial_state)
@@ -265,7 +314,7 @@ class AdhocReasoningEnv(gym.Env):
         copied_env = AdhocReasoningEnv(self.state_set,self.transition_function,\
             self.action_space,self.reward_function,self.observation_space,\
                                                         self.components)
-        copied_env.viewer = self.viewer
+        copied_env.screen = self.screen
         copied_env.state = deepcopy(self.state)
         copied_env.episode = self.episode
         copied_env.state_set.initial_state = \
@@ -277,6 +326,9 @@ class AdhocReasoningEnv(gym.Env):
         raise NotImplementedError
 
     def close(self):
-        if self.viewer:
-            self.viewer.close()
-            self.viewer = None
+        if self.screen is not None:
+            import pygame
+
+            pygame.display.quit()
+            pygame.quit()
+            self.isopen = False

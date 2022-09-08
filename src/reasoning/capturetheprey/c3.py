@@ -1,7 +1,5 @@
 from src.reasoning.a_star import a_star_planning
-import numpy as np
 import math
-import random
 
 # Pursues prime index preys
 def c3_planning(env,agent):
@@ -9,10 +7,10 @@ def c3_planning(env,agent):
     
     # checking if the agent already chosen a prey
     if(agent.target):
-        for t in env.components['tasks']:
+        for t in env.components['preys']:
             if(t.index == agent.target ):
                 # if it is completed, pursue a new one
-                if(t.completed):
+                if(t.captured):
                     agent.target = choose_target(env,agent)
                     target_pos = agent.target_position
                 # else, keep going
@@ -51,7 +49,7 @@ def is_prime(n):
     return all(n % i for i in range(3, int(math.sqrt(n)) + 1, 2))
 
 def choose_target(env, agent):
-    for task in env.components['tasks']:
+    for task in env.components['preys']:
         if is_prime(int(task.index)):
             agent.target_position = task.position
             return task.index

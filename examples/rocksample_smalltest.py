@@ -1,5 +1,5 @@
 ###
-# IMPORTS
+# Imports
 ###
 import sys
 import os
@@ -8,10 +8,13 @@ import time
 sys.path.append(os.getcwd())
 
 from src.log import LogFile
-from src.envs.RockSampleEnv import RockSampleEnv, Rock, Agent
+from src.envs.RockSampleEnv import load_default_scenario
 
 from argparse import ArgumentParser, ArgumentTypeError
 
+###
+# Support method
+###
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -22,58 +25,52 @@ def str2bool(v):
     else:
         raise ArgumentTypeError('Boolean value expected.')
 
+###
+# Setting the environment
+###
+# 1. Reading the environment settings
 parser = ArgumentParser()
 # default args
 parser.add_argument('--exp_num', dest='exp_num', default=0, type=int)
 parser.add_argument('--atype', dest='atype', default='pomcp', type=str)
+# additional args
+parser.add_argument('--id', dest='id', default=0, type=int) # scenario id
 args = parser.parse_args()
 print('|||||||||||',args)
 
-###
-# ROCK SAMPLE ENVIRONMENT SETTINGS
-###
-rock_1 = Rock(0,(2,2),"good")
-rock_2 = Rock(1,(5,2),"good")
-rock_3 = Rock(2,(3,7),"bad")
-rock_4 = Rock(3,(6,8),"bad")
-agent = Agent(0,(3,3),args.atype)
-components = {"rocks":[rock_1,rock_2,rock_3,rock_4],"agents":[agent]}
-display = False
-MAX_EPISODES = 200
+# 2. Creating the environment
+env, scenario_id = load_default_scenario(args.atype,scenario_id=args.id,display=False)
 
 ###
 # ADLEAP-MAS MAIN ROUTINE
 ###
-env = RockSampleEnv(components=components,dim=10,display=display)
 state = env.reset()
+agent = env.get_adhoc_agent()
 
-header = ['Iteration','Reward','Time to reason']
-log = LogFile('RockSampleEnv','rocksample_'+args.atype+'_test_'+str(args.exp_num)+'.csv',header)
+header = ['Iteration','Reward','Time to reason','N Rollouts', 'N Simulations']
+log = LogFile('RockSample',scenario_id,args.atype,args.exp_num,header)
 
+MAX_EPISODES = 200
 done = False
-while env.episode < MAX_EPISODES and not done:
-    #env.render()
-        
+while not done and env.episode < MAX_EPISODES:
     # 1. Importing agent method
     agent = env.get_adhoc_agent()
     method = env.import_method(agent.type)
 
     # 2. Reasoning about next action and target
     start = time.time()
-    if agent.type == 'pomcp' or agent.type=='mcts':
-        agent.next_action, _ = method(state, agent, 
-            black_box_simulation=True,particle_revigoration=True)
-    else:
-        agent.next_action, _ = method(state, agent)
+    agent.next_action, _ = method(state, agent)
     end = time.time()
-
+    
     # 3. Taking a step in the environment
     state,reward,done,info = env.step(agent.next_action)
     data = {'it':env.episode,
             'reward':reward,
-            'time':end-start}
-    log.write(None,data)
-    
+            'time':end-start,
+            'nrollout':agent.smart_parameters['count']['nrollouts'],
+            'nsimulation':agent.smart_parameters['count']['nsimulations']}
+    log.write(data)
+
 env.close()
 ###
 # THE END - That's all folks :)

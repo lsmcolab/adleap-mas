@@ -376,3 +376,12 @@ class ABU(object):
 
         parameter_est = self.teammate[teammate.index][selected_type]['parameter_estimation_history'][-1]
         return parameter_est
+
+    def show_estimation(self, env):
+        type_probabilities, estimated_parameters = self.get_estimation(env)
+        print('|%10s| ==========' %('Type'))
+        for i in range(len(type_probabilities)):
+            print('|xxxxxxxxxx| Agent %2d:' %(i), type_probabilities[i])
+        print('|%10s| ==========' %('Parameters'))
+        for i in range(len(estimated_parameters)):
+            print('|xxxxxxxxxx| Agent %2d:' %(i), estimated_parameters[i])

@@ -22,6 +22,7 @@ from src.envs.LevelForagingEnv import LevelForagingEnv
 # Realistic Scenarios
 #####
 from src.envs.SmartFireBrigadeEnv import SmartFireBrigadeEnv
+from src.envs.TradeStockEnv import TradeStockEnv
 
 #####
 # Card Games

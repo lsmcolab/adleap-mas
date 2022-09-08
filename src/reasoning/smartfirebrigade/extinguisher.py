@@ -10,71 +10,38 @@ def angle_of_gradient(obj, viewer, direction):
         return 0
     return np.arctan2(y, x)
 
+def get_closest(fires,pos):
+    min_dist, min_dist_index = np.inf, 0
+    for i in range(len(fires)):
+        fire_dist = np.linalg.norm(np.array(pos) - np.array(fires[i]))
+        if fire_dist < min_dist:
+            min_dist = fire_dist
+            min_dist_index = i
+    return fires[min_dist_index],min_dist
+
 def extinguisher_planning(env, agent):
     next_action = None
-
     pos, dir = agent.position, agent.direction
     state = env.state
     if len(state['fire']) >= 1:
-        if agent.velocity > 1:
-            next_action = env.get_action('DOWN')
-            return next_action, None
+        fire_pos, fire_dist = get_closest(state['fire'], pos)
+        if env.action_mode == 'policy':
+            return 1, fire_pos
+        #checking the distance
+        if 10 > fire_dist:
+            next_action = env.get_action('EXTINGUISH')
+            return next_action, fire_pos
+        # go towards the fire
         else:
-            fire_pos = state['fire'][0]
-            fire_dist = np.linalg.norm(np.array(pos) - np.array(fire_pos))
-            #checking the distance
-            if agent.extinguish_range > fire_dist:
-                next_action = env.get_action('EXTINGUISH')
-                return next_action, None
-            # checking the direction
-            elif -np.pi/6 < angle_of_gradient(fire_pos, pos, dir) < np.pi/6:
-                next_action = env.get_action('UP')
-                return next_action, None
+            if pos[0] > fire_pos[0]:
+                return env.get_action('WEST'), fire_pos
+            elif pos[0] < fire_pos[0]:
+                return env.get_action('EAST') , fire_pos 
+            elif pos[1] > fire_pos[1]:
+                return env.get_action('SOUTH'), fire_pos
+            elif pos[1] < fire_pos[1]:
+                return env.get_action('NORTH'), fire_pos
             else:
-                if -agent.angle/6 < angle_of_gradient(fire_pos, pos, dir) < 0:
-                    next_action = env.get_action('RIGHT')
-                    return next_action, None
-                else:
-                    next_action = env.get_action('LEFT')
-                    return next_action, None
+                agent.target = None, None
 
-    else:
-        exploration_velocity = 4
-        if pos[0] < (env.dim[0]/2) and pos[1] < (env.dim[1]/2):
-            if agent.velocity > exploration_velocity:
-                next_action = env.get_action('DOWN')
-                return next_action, None
-            if not agent.direction < 0.1*np.pi and not agent.direction > 3.9*np.pi/2:
-                next_action = env.get_action('LEFT')
-                return next_action, None
-
-        elif pos[0] > (env.dim[0]/2) and pos[1] < (env.dim[1]/2):
-            if agent.velocity > exploration_velocity:
-                next_action = env.get_action('DOWN')
-                return next_action, None
-            if not 0.9*np.pi/2 < agent.direction < 1.1*np.pi/2:
-                next_action = env.get_action('LEFT')
-                return next_action, None
-
-        elif pos[0] > (env.dim[0]/2) and pos[1] > (env.dim[1]/2):
-            if agent.velocity > exploration_velocity:
-                next_action = env.get_action('DOWN')
-                return next_action, None
-            if not 0.9*np.pi < agent.direction < 1.1*np.pi:
-                next_action = env.get_action('LEFT')
-                return next_action, None
-                
-        elif not 2.9*np.pi/2 < agent.direction < 3.1*np.pi/2:
-            if agent.velocity > exploration_velocity:
-                next_action = env.get_action('DOWN')
-                return next_action, None
-            else:
-                next_action = env.get_action('LEFT')
-                return next_action, None
-
-        if agent.velocity < exploration_velocity:
-            next_action = env.get_action('UP')
-            return next_action, None
-        else:
-            next_action = env.get_action('DOWN')
-            return next_action, None
+    return env.get_action('NOOP'), None

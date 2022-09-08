@@ -7,10 +7,10 @@ def c1_planning(env,agent,mode='spatial'):
     
     # checking if the agent already chosen a prey
     if(agent.target):
-        for t in env.components['tasks']:
+        for t in env.components['preys']:
             if(t.index == agent.target ):
                 # if it is completed, pursue a new one
-                if(t.completed):
+                if(t.captured):
                     agent.target = choose_target(env,agent,mode)
                     target_pos = agent.target_position
                 # else, keep going
@@ -47,17 +47,17 @@ def choose_target(env, agent, mode):
     if mode == 'spatial':
         # furthest task
         distance = [np.sqrt((task.position[0] - agent.position[0])**2) +\
-         np.sqrt((task.position[1] - agent.position[1])**2) for task in env.components['tasks']]
+         np.sqrt((task.position[1] - agent.position[1])**2) for task in env.components['preys']]
 
         if len(distance) == 0:
             return None
             
         task_id = distance.index(max(distance))
-        agent.target_position = env.components['tasks'][task_id].position
-        return env.components['tasks'][task_id].index
+        agent.target_position = env.components['preys'][task_id].position
+        return env.components['preys'][task_id].index
     elif mode == 'index':
         # odd index
-        for task in env.components['tasks']:
+        for task in env.components['preys']:
             if int(task.index) % 2 == 1:
                 agent.target_position = task.position
                 return task.index

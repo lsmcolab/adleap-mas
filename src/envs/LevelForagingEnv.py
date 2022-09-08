@@ -1,18 +1,76 @@
+from copy import deepcopy
 from importlib import import_module
 from gym import spaces
 import numpy as np
 import random as rd
+import os
 
 from src.envs.AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
 """
-    Ad-hoc 
+    Load Scenario method
+"""
+def load_default_scenario(method,scenario_id=0,display=False):
+    scenario, scenario_id = load_default_scenario_components(method,scenario_id)
+
+    dim = scenario['dim']
+    visibility = scenario['visibility']
+    components = {'agents':scenario['agents'],'adhoc_agent_index':scenario['adhoc_agent_index'],'tasks':scenario['tasks']}
+    env = LevelForagingEnv(shape=dim,components=components,visibility=visibility,display=display)
+    return env, scenario_id
+
+def load_default_scenario_components(method,scenario_id):
+    if scenario_id >= 2:
+        print('There is no default scenario with id '+str(scenario_id)+' for the LevelForaging problem. Setting scenario_id to 0.')
+        scenario_id = 0
+
+    default_scenarios_components = [
+        {
+        # Scenario 0: Simple Foraging Scenario
+        'dim': (10,10),
+        'visibility': 'partial',
+        'agents' : [
+            Agent(index='A',atype=method,position=(1,1),direction=1*np.pi/2,radius=0.25,angle=1,level=1.0), 
+                ],
+        'adhoc_agent_index' : 'A',
+        'tasks' : [
+            Task(index='0',position=(8,8),level=1.0),
+            Task(index='1',position=(5,5),level=1.0),
+            Task(index='2',position=(0,0),level=1.0),
+            Task(index='3',position=(9,1),level=1.0),
+            Task(index='4',position=(0,9),level=1.0)
+                ]
+        },
+        {
+        # Scenario 1: Level Foraging Scenario with Multiple Agents
+        'dim': (10,10),
+        'visibility': 'partial',
+        'agents' : [
+            Agent(index='A',atype=method,position=(1,1),direction=1*np.pi/2,radius=1,angle=1,level=1.0),
+            Agent(index='B',atype='l1',position=(3,3),direction=np.pi,radius=0.25,angle=1,level=1), 
+            Agent(index='C',atype='l2',position=(3,4),direction=np.pi,radius=0.5,angle=1,level=1) 
+                ],
+        'adhoc_agent_index' : 'A',
+        'tasks' : [
+            Task(index='0',position=(8,8),level=1.0),
+            Task(index='1',position=(5,5),level=1.0),
+            Task(index='2',position=(0,0),level=1.0),
+            Task(index='3',position=(9,1),level=1.0),
+            Task(index='4',position=(0,9),level=1.0)
+                ]
+        }]
+
+
+    return default_scenarios_components[scenario_id], scenario_id
+
+"""
+    Support classes
 """
 class Agent(AdhocAgent):
     """Agent : Main reasoning Component of the Environment. Derives from AdhocAgent Class
     """
 
-    def __init__(self, index, atype, position, direction, radius, angle, level):
+    def __init__(self, index, atype, position, direction, radius, angle, level, estimation_method=None):
         super(Agent, self).__init__(index, atype)
 
         # agent parameters
@@ -24,10 +82,12 @@ class Agent(AdhocAgent):
 
         self.smart_parameters['last_completed_task'] = None
         self.smart_parameters['choose_task_state'] = None
+        self.smart_parameters['ntasks'] = None
+        self.smart_parameters['estimation_method'] = estimation_method
 
     def copy(self):
         # 1. Initialising the agent
-        copy_agent = Agent(self.index, self.type, self.position, \
+        copy_agent = Agent(self.index, self.type, deepcopy(self.position), \
                            self.direction, self.radius, self.angle, self.level)
 
         # 2. Copying the parameters
@@ -80,7 +140,7 @@ class Task():
 
 
 def end_condition(state):
-    return (sum(sum(state == np.inf)) == 0)
+    return sum(sum(state.state == np.inf)) == 0
 
 
 def who_see(env, position):
@@ -153,7 +213,7 @@ def new_position_given_action(state, pos, action):
 
 
 # This method returns the visible tasks positions
-def get_visible_agents_and_tasks(state, agent, components):
+def get_visible_components(state, agent):
     # 1. Defining the agent vision parameters
     direction = agent.direction
     radius = np.sqrt(state.shape[0] ** 2 + state.shape[1] ** 2) * agent.radius
@@ -166,13 +226,13 @@ def get_visible_agents_and_tasks(state, agent, components):
         for y in range(state.shape[1]):
             if (x, y) != agent.position:
                 if is_visible([x, y], agent.position, direction, radius, angle):
-                    if (x, y) == 1:
+                    if state[(x, y)] == 1:
                         agents.append([x, y])
-                    elif (x, y) == np.inf:
+                    elif state[(x, y)] == np.inf:
                         tasks.append([x, y])
 
     # 3. Returning the result
-    return agents, tasks
+    return {'agents':agents, 'tasks':tasks}
 
 
 # This method returns the distance between an object and a viewer
@@ -204,10 +264,7 @@ def is_visible(obj, viewer, direction, radius, angle):
 
 def update(env):
     # 1. Cleaning the map components (agents and tasks)
-    for x in range(env.state.shape[0]):
-        for y in range(env.state.shape[1]):
-            if env.state[x, y] > 0:
-                env.state[x, y] = 0
+    env.state = np.zeros_like(env.state)
 
     # 2. Updating its components
     for agent in env.components['agents']:
@@ -220,13 +277,12 @@ def update(env):
         if not task.completed:
             env.state[x, y] = np.inf
 
-    return env.state
+    return env
 
 
 def do_action(env):
     # 1. Position and direction
     # a. defining the agents new position and direction
-    just_finished_tasks = []
     state, components = env.state, env.components
     positions, directions = {}, {}
     action2direction = {
@@ -237,7 +293,7 @@ def do_action(env):
     info = {'action reward': 0, 'just_finished_tasks': []}
 
     for agent in components['agents']:
-        if agent.next_action != 4:
+        if agent.next_action != 4 and agent.next_action is not None:
             positions[agent.index] = new_position_given_action(state, agent.position, agent.next_action)
             directions[agent.index] = action2direction[agent.next_action]
 
@@ -258,9 +314,9 @@ def do_action(env):
                         components['agents'][j].position
 
     # c. updating the simulation agents position
-    for agent in components['agents']:
-        agent.position = positions[agent.index]
-        agent.direction = directions[agent.index]
+    for i in range(len(components['agents'])):
+        components['agents'][i].position = positions[components['agents'][i].index]
+        components['agents'][i].direction = directions[components['agents'][i].index]
 
     # 2. Tasks 
     # a. verifying the tasks to be completed
@@ -280,7 +336,7 @@ def do_action(env):
         #print(task.completed)
         if not task.completed:
             if sum([level for level in task.trying]) >= task.level:
-                # info['action reward'] += 1
+                #info['action reward'] += 1
                 task.completed = True
                 if task not in info['just_finished_tasks']:
                     info['just_finished_tasks'].append(task)
@@ -296,15 +352,15 @@ def do_action(env):
     for task in components['tasks']:
         task.trying = []
 
+    if not env.simulation:
+        for ag in env.components['agents']:
+            ag.smart_parameters['ntasks'] -= len(info['just_finished_tasks'])
     next_state = update(env)
 
     return next_state, info
 
 
 def get_target_non_adhoc_agent(agent, real_env):
-    # agent planning
-    adhoc_agent_index = real_env.components['agents'].index(real_env.get_adhoc_agent())
-
     # changing the perspective
     copied_env = real_env.copy()
 
@@ -371,12 +427,15 @@ def levelforaging_transition(action, real_env):
 
 # The reward must keep be calculated keeping the partial observability in mind
 def reward(state, next_state):
-    return sum(sum(state == np.inf)) - (sum(sum(next_state == np.inf)))
+    return sum(sum(state == np.inf)) - (sum(sum(next_state.state == np.inf)))
     #return 0
 
 
 # Changes the actual environment to partial observed environment
 def environment_transformation(copied_env):
+    if copied_env.simulation:
+        return copied_env
+        
     agent = copied_env.get_adhoc_agent()
     if agent.radius is not None:
         radius = np.sqrt(copied_env.state.shape[0] ** 2 + copied_env.state.shape[1] ** 2) * agent.radius
@@ -392,10 +451,11 @@ def environment_transformation(copied_env):
         # 1. Removing the invisible agents and tasks from environment
         invisible_agents = []
         for i in range(len(copied_env.components['agents'])):
-            if not is_visible(copied_env.components['agents'][i].position,
-                              agent.position, agent.direction, radius, angle) and \
-                    copied_env.components['agents'][i] != agent:
-                invisible_agents.append(i)
+            if copied_env.components['agents'].index != agent.index:
+                if not is_visible(copied_env.components['agents'][i].position,
+                                agent.position, agent.direction, radius, angle) and \
+                        copied_env.components['agents'][i] != agent:
+                    invisible_agents.append(i)
 
         for index in sorted(invisible_agents, reverse=True):
             copied_env.components['agents'].pop(index)
@@ -439,6 +499,7 @@ def environment_transformation(copied_env):
                     copied_env.components['agents'][i].type = None
 
         copied_env.episode += 1
+        copied_env = update(copied_env)
         return copied_env
     else:
         raise IOError(agent, 'is an invalid agent.')
@@ -450,25 +511,6 @@ def environment_transformation(copied_env):
 
 
 class LevelForagingEnv(AdhocReasoningEnv):
-    colors = { \
-        'red': (1.0, 0.0, 0.0), \
-        'darkred': (0.5, 0.0, 0.0), \
-        'green': (0.0, 1.0, 0.0), \
-        'darkgreen': (0.0, 0.5, 0.0), \
-        'blue': (0.0, 0.0, 1.0), \
-        'darkblue': (0.0, 0.0, 0.5), \
-        'cyan': (0.0, 1.0, 1.0), \
-        'darkcyan': (0.0, 0.5, 0.5), \
-        'magenta': (1.0, 0.0, 1.0), \
-        'darkmagenta': (0.5, 0.0, 0.5), \
-        'yellow': (1.0, 1.0, 0.0), \
-        'darkyellow': (0.5, 0.5, 0.0), \
-        'brown': (0, 0.2, 0.2), \
-        'white': (1.0, 1.0, 1.0), \
-        'lightgrey': (0.8, 0.8, 0.8), \
-        'darkgrey': (0.4, 0.4, 0.4), \
-        'black': (0.0, 0.0, 0.0)
-    }
 
     action_dict = {
         0: 'East',
@@ -481,16 +523,19 @@ class LevelForagingEnv(AdhocReasoningEnv):
     agents_color = {
         'mcts': 'red',
         'pomcp': 'yellow',
+        'ibpomcp':'blue',
+        'rhopomcp':'cyan',
         'l1': 'darkred',
         'l2': 'darkgreen',
         'l3': 'darkcyan',
     }
 
     def __init__(self, shape, components, visibility='full',display=False):
-        self.viewer = None
+        ###
+        # Env Settings
+        ###
         self.visibility = visibility
-        self.display = display
-        # Defining the Ad-hoc Reasoning Env parameters
+
         state_set = StateSet(spaces.Box( \
             low=-1, high=np.inf, shape=shape, dtype=np.int64), end_condition)
         transition_function = levelforaging_transition
@@ -498,7 +543,9 @@ class LevelForagingEnv(AdhocReasoningEnv):
         reward_function = reward
         observation_space = environment_transformation
 
-        # Initialising the Adhoc Reasoning Env
+        ###
+        # Initialising the env
+        ###
         super(LevelForagingEnv, self).__init__(state_set, \
                                                transition_function, action_space, reward_function, \
                                                observation_space, components)
@@ -517,9 +564,41 @@ class LevelForagingEnv(AdhocReasoningEnv):
             if element == 'obstacle':
                 for ob in components[element]:
                     self.state_set.initial_state[ob.position[0], ob.position[1]] = -1
+                
+        # Updating agent knowledge about tasks
+        for i in range(len(components['agents'])):
+            self.components['agents'][i].smart_parameters['ntasks'] = len(components['tasks'])
 
         # Setting the initial components
+        agent = self.get_adhoc_agent()
         self.state_set.initial_components = self.copy_components(components)
+        self.empty_position = self.init_out_range_position(agent)
+
+        ###
+        # Setting graphical interface
+        ###
+        self.screen = None
+        self.display = display
+        self.render_mode = "human"
+        self.render_sleep = 0.5
+        self.clock = None
+        self.renderer = None
+        if self.display:
+            if self.renderer is None:
+                try:
+                    from gym.error import DependencyNotInstalled
+                    from gym.utils.renderer import Renderer
+                except ImportError:
+                    raise DependencyNotInstalled(
+                        "pygame is not installed, run `pip install gym[classic_control]`"
+                    )
+                self.renderer = Renderer(self.render_mode, self._render)
+
+    def show_state(self):
+        for y in reversed(range(self.state.shape[1])):
+            for x in range(self.state.shape[0]):
+                print(self.state[x,y],end=' ')
+            print()
 
     def import_method(self, agent_type):
         from importlib import import_module
@@ -535,12 +614,15 @@ class LevelForagingEnv(AdhocReasoningEnv):
         components = self.copy_components(self.components)
         copied_env = LevelForagingEnv(self.state.shape, components, self.visibility)
         copied_env.simulation = self.simulation
-        copied_env.viewer = self.viewer
+        copied_env.screen = self.screen
+        copied_env.episode = self.episode
+        copied_env.renderer = self.renderer
+
+        # Setting the initial state
         copied_env.state = np.array(
             [np.array([self.state[x, y] for y in range(self.state.shape[1])]) for x in range(self.state.shape[0])])
         copied_env.episode = self.episode
-
-        # Setting the initial state
+        copied_env.empty_position = [pos for pos in self.empty_position]
         copied_env.state_set.initial_state = np.zeros(copied_env.state.shape)
         for x in range(self.state_set.initial_state.shape[0]):
             for y in range(self.state_set.initial_state.shape[1]):
@@ -555,21 +637,38 @@ class LevelForagingEnv(AdhocReasoningEnv):
             if agent.index == self.components['adhoc_agent_index']:
                 return agent
         raise IndexError("Ad-hoc Index is not in Agents Index Set.")
+
+    def get_trans_p(self,action):
+        return [self,1]
+    
+    def get_obs_p(self,action):
+        return [self,1]
         
     def state_is_equal(self, state):
         for x in range(self.state.shape[0]):
             for y in range(self.state.shape[1]):
-                if self.state[x, y] != state[x, y]:
+                if self.state[x, y] != state.state[x, y]:
                     return False
         return True
 
     def observation_is_equal(self, obs):
-        observable_env = self.observation_space(self.copy())
-        for x in range(observable_env.state.shape[0]):
-            for y in range(observable_env.state.shape[1]):
-                if observable_env.state[x, y] != obs.state[x, y]:
-                    return False
-        return True
+        cur_visibility = get_visible_components(self.state,self.get_adhoc_agent())
+        obs_visibility = get_visible_components(obs.state,obs.get_adhoc_agent())
+        return (cur_visibility['agents'] == obs_visibility['agents']) and (cur_visibility['tasks'] == obs_visibility['tasks'])
+
+    def init_out_range_position(self, agent):
+        empty_spaces = []
+
+        dim_w, dim_h = self.state_set.initial_state.shape
+        direction = agent.direction
+        radius = np.sqrt(dim_w ** 2 + dim_h ** 2) * agent.radius
+        angle = 2 * np.pi * agent.angle
+
+        for x in range(dim_w):
+            for y in range(dim_h):
+                if not is_visible((x, y), agent.position, direction, radius, angle):
+                    empty_spaces.append((x, y))
+        return empty_spaces
 
     def get_out_range_position(self, agent):
         empty_spaces = []
@@ -585,36 +684,40 @@ class LevelForagingEnv(AdhocReasoningEnv):
                     empty_spaces.append((x, y))
         return empty_spaces
 
-    def sample_state(self, agent, sample_a=0.1, sample_t=0.1, n_sample=10):
+    def sample_state(self, agent):
         # 1. Defining the base simulation
         u_env = self.copy()
 
-        # - getting empty space out of range
-        empty_position = u_env.get_out_range_position(agent)
-
         # - setting environment components
-        count = 0
-        while len(empty_position) > 0 and count < n_sample:
-            # - setting teammates
-            if rd.uniform(0, 1) < sample_a and len(empty_position)>0:
-                pos = rd.sample(empty_position, 1)[0]
-                u_env.state[pos[0], pos[1]] = 1
-                empty_position.remove(pos)
+        dim_w, dim_h = self.state_set.initial_state.shape
+        direction = agent.direction
+        radius = np.sqrt(dim_w ** 2 + dim_h ** 2) * agent.radius
+        angle = 2 * np.pi * agent.angle
 
-            # - setting tasks
-            if rd.uniform(0, 1) < sample_t and len(empty_position)>0:
-                pos = rd.sample(empty_position, 1)[0]
-                u_env.state[pos[0], pos[1]] = np.inf
-                u_env.components['tasks'].append(Task('S',pos,rd.uniform(0,1)))
-                empty_position.remove(pos)
-            count += 1
+        # - setting tasks
+        for i in range(agent.smart_parameters['ntasks']):
+            if len(u_env.empty_position) == 0:
+                u_env.empty_position = self.get_out_range_position(agent)
+                if len(u_env.empty_position) == 0:
+                    break
+
+            pos = rd.choice(u_env.empty_position)
+            while is_visible(pos, agent.position, direction, radius, angle):
+                u_env.empty_position.remove(pos)
+                pos = rd.choice(u_env.empty_position)
+                if len(u_env.empty_position) == 0:
+                    u_env.empty_position = self.get_out_range_position(agent)
+                
+            u_env.state[pos[0], pos[1]] = np.inf
+            u_env.components['tasks'].append(Task('S',pos,rd.uniform(0,1)))
+            u_env.empty_position.remove(pos)
 
         return u_env
 
-    def sample_nstate(self, agent, n, sample_a=0.1, sample_t=0.1, n_sample=10):
+    def sample_nstate(self, agent, n):
         sampled_states = []
         while len(sampled_states) < n:
-            sampled_states.append(self.sample_state(agent,sample_a,sample_t,n_sample))
+            sampled_states.append(self.sample_state(agent))
         return sampled_states
 
     def get_target(self, agent_index, new_type=None, new_parameter=None):
@@ -652,358 +755,219 @@ class LevelForagingEnv(AdhocReasoningEnv):
                 return task
         return None
 
-    def render(self, mode='human', sleep_=0.5):
-        if not self.display:
-            return
-
+    def render(self):
+        return self.renderer.get_renders()
+        
+    def _render(self, mode="human"):
+        ##
+        # Standard Imports
+        ##
+        assert mode in self.metadata["render_modes"]
         try:
-            global rendering
-            from gym.envs.classic_control import rendering
+            import pygame
+            from pygame import gfxdraw
+            from gym.error import DependencyNotInstalled
+        except ImportError:
+            raise DependencyNotInstalled(
+                "pygame is not installed, run `pip install gym[classic_control]`"
+            )
 
-        except ImportError as e:
-            raise ImportError('''
-            Cannot import rendering
-            ''')
-        try:
-            global pyglet
-            import pyglet
-        except ImportError as e:
-            raise ImportError('''
-            Cannot import pyglet.
-            HINT: you can install pyglet directly via 'pip install pyglet'.
-            But if you really just want to install all Gym dependencies and not have to think about it,
-            'pip install -e .[all]' or 'pip install gym[all]' will do it.
-            ''')
-
-        try:
-            global glBegin,glEnd,GL_QUADS,GL_POLYGON,GL_TRIANGLES,glVertex3f
-            from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
-        except ImportError as e:
-            raise ImportError('''
-            Error occurred while running `from pyglet.gl import *`
-            HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
-            If you're running on a server, you may need a virtual frame buffer; something like this should work:
-            'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
-            ''')
-        global FilledPolygonCv4
-        class FilledPolygonCv4(rendering.Geom):
-            def __init__(self, v):
-                rendering.Geom.__init__(self)
-                self.v = v
-
-            def render1(self):
-                if len(self.v) == 4:
-                    glBegin(GL_QUADS)
-                elif len(self.v) > 4:
-                    glBegin(GL_POLYGON)
-                else:
-                    glBegin(GL_TRIANGLES)
-                for p in self.v:
-                    glVertex3f(p[0], p[1], 0)  # draw each vertex
-                glEnd()
-
-            def set_color(self, r, g, b, a):
-                self._color.vec4 = (r, g, b, a)
-
-
-        global DrawText
-        class DrawText(rendering.Geom):
-            def __init__(self, label: pyglet.text.Label):
-                rendering.Geom.__init__(self)
-                self.label = label
-
-            def render1(self):
-                self.label.draw()
-
-
-
-        # Render the environment to the screen
-        adhoc_agent_index = self.components['agents'].index(self.get_adhoc_agent())
-        if self.state is not None:
-            if self.viewer is None:
-
-                self.screen_width, self.screen_height, self.pad = 800, 800, 0.1
-                self.viewer = rendering.Viewer(self.screen_width, self.screen_height)
-                self.draw_scale = (self.screen_width - (self.pad * self.screen_width)) / self.state.shape[0] \
-                    if self.state.shape[0] > self.state.shape[1] else (self.screen_height - (
-                        self.pad * self.screen_height)) / self.state.shape[1]
-                self.draw_start_x = self.screen_width / 2 - (self.draw_scale * self.state.shape[0]) / 2
-                self.draw_start_y = self.screen_height / 2 - (self.draw_scale * self.state.shape[1]) / 2
-
-                # Drawing the environment
-                self.drawn_agents = self.draw_agents()
-                self.drawn_tasks, self.drawn_tasks_shift = self.draw_tasks(type_='figure', fname='imgs/levelbased/task_box.png')
-
-                for i in range(len(self.components['agents'])):
-                    if self.components['agents'][adhoc_agent_index].index == self.components['agents'][i].index:
-                        self.draw_fog()
-                        self.draw_vision(self.components['agents'][i], self.drawn_agents[i])
-
-                self.draw_grid()
-                if 'obstacles' in self.components:
-                    self.draw_obstacles()
-
-            for i in range(len(self.components['agents'])):
-                x, y = self.components['agents'][i].position[0], self.components['agents'][i].position[1]
-                rotate = self.components['agents'][i].direction - np.pi / 2
-                self.drawn_agents[i].set_rotation(rotate)
-                self.drawn_agents[i].set_translation(
-                    self.draw_start_x + (x + self.drawn_tasks_shift) * self.draw_scale,
-                    (y + self.drawn_tasks_shift) * self.draw_scale + self.draw_start_y
+        self.screen_width, self.screen_height = 800, 800
+        if self.screen is None:
+            pygame.init()
+            if mode == "human":
+                pygame.display.init()
+                self.screen = pygame.display.set_mode(
+                    (self.screen_width, self.screen_height)
                 )
+            else:  # mode in {"rgb_array", "single_rgb_array"}
+                self.screen = pygame.Surface((self.screen_width, self.screen_height))
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
 
-            for i in range(len(self.components['tasks'])):
-                x, y = self.components['tasks'][i].position[0], self.components['tasks'][i].position[1]
-                self.drawn_tasks[i].set_translation(
-                    self.draw_start_x + (x + self.drawn_tasks_shift) * self.draw_scale,
-                    (y + self.drawn_tasks_shift) * self.draw_scale + self.draw_start_y
-                )
-                if not self.components['tasks'][i].completed:
-                    self.drawn_tasks[i].set_scale(1.0, 1.0)
-                else:
-                    self.drawn_tasks[i].set_scale(0.0, 0.0)
+        ##
+        # Drawing
+        ##
+        if self.state is None:
+            return None
 
-            self.draw_progress()
+        dim = self.state.shape
+        # background
+        self.surf = pygame.Surface((self.screen_width, self.screen_height))
+        self.surf.fill(self.colors['white'])
+        self.surf = pygame.transform.flip(self.surf, False, True)
+        self.screen.blit(self.surf, (0, 0))
 
-            self.viewer.render(return_rgb_array=mode == 'rgb_array')
-            import time
-            time.sleep(sleep_)
+        # grid
+        grid_width, grid_height = 700, 700
+        self.grid_surf = pygame.Surface((grid_width, grid_height))
+        self.grid_surf.fill(self.colors['white'])
 
-        return
+        for column in range(-1,dim[1]):
+            pygame.draw.line(self.grid_surf,self.colors['black'],
+                                (0*grid_width,(column+1)*(grid_height/dim[1])),
+                                (1*grid_width,(column+1)*(grid_height/dim[1])),
+                                int(0.1*np.sqrt((grid_width/dim[0])*(grid_height/dim[1]))))
+        for row in range(-1,dim[0]):
+            pygame.draw.line(self.grid_surf,self.colors['black'],
+                                ((row+1)*(grid_width/dim[0]),0*grid_height),
+                                ((row+1)*(grid_width/dim[0]),1*grid_height),
+                                int(0.1*np.sqrt((grid_width/dim[0])*(grid_height/dim[1]))))
 
-    def draw_grid(self):
-        grid = []
-        linewidth = 2
-        for x in range(self.state.shape[0] + 1):
-            grid.append(
-                rendering.make_polyline([
-                    (x * self.draw_scale + self.draw_start_x, self.draw_start_y),
-                    (x * self.draw_scale + self.draw_start_x,
-                     self.draw_start_y + self.state.shape[1] * self.draw_scale)])
-            )
-            grid[-1].set_linewidth(linewidth)
-            self.viewer.add_geom(grid[-1])
+        # agents
+        self.components_surf = pygame.Surface((grid_width, grid_width))
+        self.components_surf = self.components_surf.convert_alpha()
+        self.components_surf.fill((self.colors['white'][0],self.colors['white'][1],self.colors['white'][2],0))
+        def my_rotation(ox,oy,px,py,angle):
+            angle = angle
+            qx = ox + np.cos(angle) * (px - ox) - np.sin(angle) * (py - oy)
+            qy = oy + np.sin(angle) * (px - ox) + np.cos(angle) * (py - oy)
+            return int(qx),int(qy)
 
-        for y in range(self.state.shape[1] + 1):
-            grid.append(
-                rendering.make_polyline([
-                    (self.draw_start_x, y * self.draw_scale + self.draw_start_y),
-                    (self.draw_start_x + self.state.shape[0] * self.draw_scale,
-                     y * self.draw_scale + self.draw_start_y)])
-            )
-            grid[-1].set_linewidth(linewidth)
-            self.viewer.add_geom(grid[-1])
-
-        return grid
-
-    def draw_obstacles(self):
-        drawn_obstacles = []
-        for obstacle in self.components['obstacles']:
-            drawn_obstacles.append(rendering.FilledPolygon(
-                [(0, 0), (0, self.draw_scale), (self.draw_scale, self.draw_scale), (self.draw_scale, 0)]))
-            x, y = obstacle[0], obstacle[1]
-            drawn_obstacles[-1].add_attr(
-                rendering.Transform(
-                    translation=(self.draw_start_x + x * self.draw_scale, y * self.draw_scale + self.draw_start_y))
-            )
-            self.viewer.add_geom(drawn_obstacles[-1])
-        return drawn_obstacles
-
-    def draw_agents(self, type_='draw', fname=None):
-        drawn_agent = []
         for agent in self.components['agents']:
-            drawn_agent.append(rendering.Transform())
+            direction = agent.direction - np.pi/2
+            ox = int(agent.position[0]*(grid_width/dim[0]) + 0.5*(grid_width/dim[0]))
+            oy = int(agent.position[1]*(grid_height/dim[1]) + 0.5*(grid_height/dim[1]))
+            #arms
+            w = int(0.85*(grid_width/dim[0]))
+            h = int(0.25*(grid_height/dim[1]))
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.5*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.5*(grid_height/dim[1]))
 
-            if type_ == 'draw':
-                # arms
-                arms = rendering.FilledPolygon(
-                    [(-0.45 * self.draw_scale, -0.1 * self.draw_scale),
-                     (0.45 * self.draw_scale, -0.1 * self.draw_scale), \
-                     (0.45 * self.draw_scale, 0.1 * self.draw_scale), (-0.45 * self.draw_scale, 0.1 * self.draw_scale)])
-                arms.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(arms)
+            arms = pygame.Surface((w , h))  
+            arms.set_colorkey(self.colors['white'])  
+            arms.fill(self.colors['black'])  
+            arms = pygame.transform.rotate(arms, np.rad2deg(direction))
+            arms_rec = arms.get_rect(center=(ox,oy))
+            self.components_surf.blit(arms,arms_rec)
+            
+            #body
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.5*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.5*(grid_height/dim[1]))
+            r = int(0.35*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['black'])
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.5*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.5*(grid_height/dim[1]))
+            r = int(0.3*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors[self.agents_color[agent.type]])
+            #eyes
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.4*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.8*(grid_height/dim[1]))
+            r = int(0.15*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['black'])
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.6*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.8*(grid_height/dim[1]))
+            r = int(0.15*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['black'])
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.4*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.8*(grid_height/dim[1]))
+            r = int(0.1*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['white'])
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.6*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.8*(grid_height/dim[1]))
+            r = int(0.1*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['white'])
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.4*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.85*(grid_height/dim[1]))
+            r = int(0.07*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['black'])
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.6*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.85*(grid_height/dim[1]))
+            r = int(0.07*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
+            x, y = my_rotation(ox,oy,x,y,direction)
+            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['black'])
+            # index
+            agent_idx = str(agent.index)
+            myfont = pygame.font.SysFont("Ariel", int(0.6*np.sqrt((grid_width/dim[0])*(grid_height/dim[1]))))
+            label = myfont.render(agent_idx, True, self.colors['black'])
+            x = int(agent.position[0]*(grid_width/dim[0]) + 0.35*(grid_width/dim[0]))
+            y = int(agent.position[1]*(grid_height/dim[1]) + 0.3*(grid_height/dim[1]))
+            label =  pygame.transform.flip(label, False, True)
+            self.components_surf.blit(label, (x,y))
 
-                # body border
-                body_border = rendering.make_circle(0.35 * self.draw_scale)
-                body_border.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(body_border)
-
-                # colored body
-                body = rendering.make_circle(0.3 * self.draw_scale)
-                if agent.type in self.agents_color.keys():
-                    color_name = self.agents_color[agent.type]
-                    body.set_color(self.colors[color_name][0], self.colors[color_name][1], self.colors[color_name][2])
-                else:
-                    body.set_color(self.colors['lightgrey'][0], self.colors['lightgrey'][1],
-                                   self.colors['lightgrey'][2])
-                body.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(body)
-
-                # eyes border
-                left_eye_border = rendering.make_circle(0.15 * self.draw_scale)
-                left_eye_border.add_attr(
-                    rendering.Transform(translation=(-0.125 * self.draw_scale, 0.25 * self.draw_scale))
-                )
-                left_eye_border.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(left_eye_border)
-
-                right_eye_border = rendering.make_circle(0.15 * self.draw_scale)
-                right_eye_border.add_attr(
-                    rendering.Transform(translation=(0.125 * self.draw_scale, 0.25 * self.draw_scale))
-                )
-                right_eye_border.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(right_eye_border)
-
-                # eyes
-                left_eye = rendering.make_circle(0.1 * self.draw_scale)
-                left_eye.add_attr(
-                    rendering.Transform(translation=(-0.125 * self.draw_scale, 0.25 * self.draw_scale))
-                )
-                left_eye.set_color(self.colors['white'][0], self.colors['white'][1], self.colors['white'][2])
-                left_eye.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(left_eye)
-
-                right_eye = rendering.make_circle(0.1 * self.draw_scale)
-                right_eye.add_attr(
-                    rendering.Transform(translation=(0.125 * self.draw_scale, 0.25 * self.draw_scale))
-                )
-                right_eye.set_color(self.colors['white'][0], self.colors['white'][1], self.colors['white'][2])
-                right_eye.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(right_eye)
-
-                # retina
-                left_retina = rendering.make_circle(0.05 * self.draw_scale)
-                left_retina.add_attr(
-                    rendering.Transform(translation=(-0.125 * self.draw_scale, 0.3 * self.draw_scale))
-                )
-                left_retina.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(left_retina)
-
-                right_retina = rendering.make_circle(0.05 * self.draw_scale)
-                right_retina.add_attr(
-                    rendering.Transform(translation=(0.125 * self.draw_scale, 0.3 * self.draw_scale))
-                )
-                right_retina.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(right_retina)
-
-                # name
-                x_shift = -0.1 if agent.direction == 'E' else 0
-                x_shift += 0.1 if agent.direction == 'W' else 0
-                y_shift = -0.1 if agent.direction == 'N' else 0
-                y_shift += 0.1 if agent.direction == 'S' else 0
-
-                label = DrawText(pyglet.text.Label(str(agent.index), font_size=int(0.25 * self.draw_scale),
-                                                   x=x_shift * self.draw_scale, y=y_shift * self.draw_scale,
-                                                   anchor_x='center', anchor_y='center', color=(0, 0, 0, 255)))
-                label.add_attr(drawn_agent[-1])
-                self.viewer.add_geom(label)
-
-            elif type_ == 'figure':
-                try:
-                    with open(fname):
-                        figure = rendering.Image(fname, \
-                                                 width=0.9 * self.draw_scale, height=0.9 * self.draw_scale)
-                        if agent.type in self.agents_color.keys():
-                            color_name = self.agents_color[agent.type]
-                            figure.set_color(self.colors[color_name][0], self.colors[color_name][1],
-                                             self.colors[color_name][2])
-                        else:
-                            figure.set_color(self.colors['lightgrey'][0], self.colors['lightgrey'][1],
-                                             self.colors['lightgrey'][2])
-                        figure.add_attr(drawn_agent[-1])
-                        self.viewer.add_geom(figure)
-
-                        # name
-                        x_shift = 0.4 if agent.direction == 'E' else 0.5
-                        x_shift += 0.1 if agent.direction == 'W' else 0
-                        y_shift = 0.4 if agent.direction == 'N' else 0.5
-                        y_shift += 0.1 if agent.direction == 'S' else 0
-
-                        label = DrawText(pyglet.text.Label(str(agent.index), font_size=int(0.25 * self.draw_scale),
-                                                           x=x_shift * self.draw_scale, y=y_shift * self.draw_scale,
-                                                           anchor_x='center', anchor_y='center', color=(0, 0, 0, 255)))
-                        label.add_attr(drawn_agent[-1])
-                        self.viewer.add_geom(label)
-
-                except FileNotFoundError as e:
-                    raise e
-            else:
-                raise NotImplementedError
-
-        return drawn_agent
-
-    def draw_tasks(self, type_='box', fname=None):
-        drawn_tasks, shift = [], 0
+        # box
+        adhoc_agent = self.get_adhoc_agent()
         for task in self.components['tasks']:
-            #if not task.completed:
-            drawn_tasks.append(rendering.Transform())
-            if type_ == 'box':
-                shift = 0.1
-                box = rendering.PolyLine([
-                    (0.1 * self.draw_scale, 0.4 * self.draw_scale),
-                    (0.5 * self.draw_scale, 0.4 * self.draw_scale),
-                    (0.5 * self.draw_scale, 0.1 * self.draw_scale),
-                    (0.1 * self.draw_scale, 0.1 * self.draw_scale),
-                    (0.1 * self.draw_scale, 0.4 * self.draw_scale),
-                    (0.35 * self.draw_scale, 0.65 * self.draw_scale),
-                    (0.75 * self.draw_scale, 0.65 * self.draw_scale),
-                    (0.75 * self.draw_scale, 0.35 * self.draw_scale),
-                    (0.5 * self.draw_scale, 0.1 * self.draw_scale),
-                    (0.5 * self.draw_scale, 0.4 * self.draw_scale),
-                    (0.75 * self.draw_scale, 0.65 * self.draw_scale)
-                ], close=False)
-                box.set_linewidth(2)
-                box.add_attr(drawn_tasks[-1])
-                self.viewer.add_geom(box)
-            elif type_ == 'figure':
-                shift = 0.5
-                try:
-                    with open(fname):
-                        figure = rendering.Image(fname, \
-                                                    width=0.9 * self.draw_scale, height=0.9 * self.draw_scale)
-                        figure.add_attr(drawn_tasks[-1])
-                        self.viewer.add_geom(figure)
-                except FileNotFoundError as e:
-                    raise e
-            else:
-                raise NotImplementedError
-            #else:
-            #    drawn_tasks.append(None)
+            if not task.completed:
+                rx, ry = task.position[0]*(grid_width/dim[0]),task.position[1]*(grid_height/dim[1])
 
-        return drawn_tasks, shift
+                task_ret = pygame.Rect((rx+int(0.0*grid_width/dim[0]),ry+int(0.0*grid_height/dim[1])),\
+                    (int(1*grid_width/dim[0]),int(1*grid_height/dim[1])))
+                task_img = pygame.image.load(os.path.abspath("./imgs/levelbased/task_box.png"))
+                task_img = pygame.transform.flip(task_img,False,True)
+                task_img = pygame.transform.scale(task_img, task_ret.size)
+                task_img = task_img.convert()
 
-    def draw_fog(self):
-        fog = FilledPolygonCv4([(0, 0), (0, self.state.shape[1] * self.draw_scale),
-                                (self.state.shape[0] * self.draw_scale, self.state.shape[1] * self.draw_scale),
-                                (self.state.shape[0] * self.draw_scale, 0)])
-        fog.set_color(self.colors['lightgrey'][0], self.colors['lightgrey'][1], self.colors['lightgrey'][2], 0.6)
-        fog.add_attr(rendering.Transform(translation=(self.draw_start_x, self.draw_start_y)))
-        self.viewer.geoms.insert(0, fog)
+                
+                dim_w, dim_h = self.state_set.initial_state.shape
+                direction = adhoc_agent.direction
+                radius = np.sqrt(dim_w ** 2 + dim_h ** 2) * adhoc_agent.radius
+                angle = 2 * np.pi * adhoc_agent.angle
+                if is_visible(task.position,adhoc_agent.position,direction,radius,angle):
+                    self.components_surf.blit(task_img,task_ret)
+                else:
+                    self.grid_surf.blit(task_img,task_ret)
 
-    def draw_vision(self, agent, transagent):
-        vision = make_circleCv4(radius=self.draw_scale *
-                                       np.sqrt(self.state.shape[0] ** 2 + self.state.shape[1] ** 2) * agent.radius,
-                                angle=(2 * np.pi) * agent.angle)
-        vision.set_color(self.colors['white'][0], self.colors['white'][1], self.colors['white'][2], 0.7)
-        vision.add_attr(transagent)
-        self.viewer.geoms.insert(1, vision)
+        ##
+        # Text
+        ##
+        act = self.action_dict[adhoc_agent.next_action] \
+            if adhoc_agent.next_action is not None else None
+        myfont = pygame.font.SysFont("Ariel", 35)
+        label = myfont.render("Episode "+str(self.episode) + \
+            " | Action: "+str(act), True, self.colors['black'])
+        self.screen.blit(label, (10, 10))
+        
+        # fog
+        self.fog_surf = pygame.Surface((grid_width, grid_height), pygame.SRCALPHA, 32)
+        self.fog_surf = self.fog_surf.convert_alpha()
+        self.fog_surf.fill((self.colors['darkgrey'][0],self.colors['darkgrey'][1],self.colors['darkgrey'][2],100))
+        self.fog_surf = pygame.transform.flip(self.fog_surf, False, True)
 
-    def draw_progress(self):
-        if self.episode != 0:
-            self.viewer.geoms.pop()
+        # vision
+        x = int(adhoc_agent.position[0]*(grid_width/dim[0]) + 0.5*(grid_width/dim[0]))
+        y = int(adhoc_agent.position[1]*(grid_height/dim[1]) + 0.5*(grid_height/dim[1]))
+        r = int(adhoc_agent.radius*np.sqrt((grid_width)**2+(grid_height)**2))
+        self.vision_surf = pygame.Surface((grid_width, grid_height), pygame.SRCALPHA, 32)
+        self.vision_surf = self.vision_surf.convert_alpha()
+        gfxdraw.pie(self.vision_surf,x,y,r,
+            int(np.rad2deg(adhoc_agent.direction-(np.pi*adhoc_agent.angle))),
+            int(np.rad2deg(adhoc_agent.direction+(np.pi*adhoc_agent.angle))),
+            (self.colors['black'][0],self.colors['black'][1],self.colors['black'][2],200))
+        
+        start_angle = adhoc_agent.direction-(np.pi*adhoc_agent.angle)
+        stop_angle = adhoc_agent.direction+(np.pi*adhoc_agent.angle)
+        theta = start_angle
+        while theta <= stop_angle:
+            pygame.draw.line(self.vision_surf,
+                (self.colors['white'][0],self.colors['white'][1],self.colors['white'][2],100),
+                    (x,y), (x+r*np.cos(theta),y+r*np.sin(theta)),10)
+            theta += (stop_angle-start_angle)/100
 
-        progress = 100 * ([t.completed for t in self.components['tasks']].count(True) / len(self.components['tasks']))
-        progress_label = DrawText(pyglet.text.Label(
-            'Episode: ' + str(self.episode) + ' | Progress: ' + str(progress) + '%', \
-            font_size=int(0.25 * self.draw_scale),
-            x=self.draw_start_x, y=(1 + self.state.shape[1]) * self.draw_scale,
-            anchor_x='left', anchor_y='center', color=(0, 0, 0, 255)))
-        self.viewer.add_geom(progress_label)
+        self.vision_surf = pygame.transform.flip(self.vision_surf, False, True)
 
+        ##
+        # Displaying
+        ##
+        self.grid_surf = pygame.transform.flip(self.grid_surf, False, True)
+        self.components_surf = pygame.transform.flip(self.components_surf, False, True)
+        self.screen.blit(self.grid_surf, (50, 50))
+        self.screen.blit(self.fog_surf, (50, 50))
+        self.screen.blit(self.vision_surf, (50, 50))
+        self.screen.blit(self.components_surf, (50, 50))
+        if mode == "human":
+            pygame.event.pump()
+            self.clock.tick(self.metadata["render_fps"])
+            pygame.display.flip()
 
-def make_circleCv4(radius=10, angle=2 * np.pi, res=30):
-    points = [(0, 0)]
-    for i in range(res + 1):
-        ang = (np.pi - angle) / 2 + (angle * (i / res))
-        points.append((np.cos(ang) * radius, np.sin(ang) * radius))
-    return FilledPolygonCv4(points)
+        elif mode in {"rgb_array", "single_rgb_array"}:
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2)
+            )

@@ -1,25 +1,32 @@
+###
+# Imports
+###
 import sys
 import os
 sys.path.append(os.getcwd())
 
 from src.envs.MazeEnv import MazeEnv, Agent
 
-agent = Agent(0,(2,5),"pomcp")
-components = {"agents":[agent],"black":[(5,5),(3,3),(2,2),(7,7),(9,8),(8,9)]}
-
+###
+# Setting the environment
+###
 display = True
-env = MazeEnv(components=components,dim=10,display=display)
-state = env.reset()
+dim = (10,10)
+agent_position = (int(dim[0]/2),int(dim[1]/2))
 
-done = False
-agent = env.get_adhoc_agent()
+components = {"agents":[Agent(index= 0, type= 'pomcp')],\
+    "black":[(5,5),(3,3),(2,2),(7,7),(9,8),(8,9)]}
+
+env = MazeEnv(agent_position,dim,components,display=display)
+
 ###
 # ADLEAP-MAS MAIN ROUTINE
 ###
-while env.episode < 20 and not done:
-    if display:
-       env.render()
+state = env.reset()
+agent = env.get_adhoc_agent()
 
+done, max_episode = False, 200
+while env.episode < max_episode and not done:
     # 1. Importing agent method
     agent = env.get_adhoc_agent()
     method = env.import_method(agent.type)

@@ -16,7 +16,7 @@ def lineno():
 ######
 class LogFile:
 
-    def __init__(self,env=None,file_name="",*args):
+    def __init__(self,env,scenario_id,method,exp_num,*args):
         # creating the path
         if(not os.path.isdir("results")):
             os.mkdir("results")
@@ -27,27 +27,18 @@ class LogFile:
 
         # defining filename
         self.start_time = datetime.datetime.now()
-        # self.filename = './results/'+ str(self.n_agents) + '_' +\
-        #     str(self.n_tasks) + '_' + self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss") + '.csv'
-        if(file_name ==""):
-            self.filename = self.start_time.strftime("%d-%m-%Y_%Hh%Mm%Ss")+ ".csv"
-        else:
-            self.filename = file_name
+        self.filename = str(method)+'_'+str(env)+str(scenario_id)+'_'+str(exp_num)+'.csv'
 
         # creating the result file
         self.write_header()
 
     def write_header(self):
         with open(self.path+self.filename, 'w') as logfile:
-            #logfile.write('Iteration;')
-            #logfile.write('CPU Usage (%);')
-            #logfile.write('Memory Usage (RAM) (%);')
-            #logfile.write('Additional Info;')
             for header in self.header[0]:
                 logfile.write(str(header)+";")
             logfile.write('\n')
 
-    def write(self,env=None,*args):
+    def write(self,*args):
         with open(self.path+self.filename, 'a') as logfile:
             if(not len(args) ==len(self.header)):
                 warnings.warn("Initialisation and writing have different sizes .")

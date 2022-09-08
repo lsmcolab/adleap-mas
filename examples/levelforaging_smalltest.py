@@ -1,18 +1,20 @@
 ###
-# IMPORTS
+# Imports
 ###
 import sys
 import os
-import numpy as np
 import time
 
 sys.path.append(os.getcwd())
 
 from src.log import LogFile
-from src.envs.LevelForagingEnv import LevelForagingEnv,Agent,Task
+from src.envs.LevelForagingEnv import load_default_scenario
 
 from argparse import ArgumentParser, ArgumentTypeError
 
+###
+# Support method
+###
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -23,73 +25,50 @@ def str2bool(v):
     else:
         raise ArgumentTypeError('Boolean value expected.')
 
+###
+# Setting the environment
+###
+# 1. Reading the environment settings
 parser = ArgumentParser()
 # default args
 parser.add_argument('--exp_num', dest='exp_num', default=0, type=int)
 parser.add_argument('--atype', dest='atype', default='pomcp', type=str)
 # additional args
-parser.add_argument('--bb',dest='bb',default='True',type=str2bool)
-parser.add_argument('--pr',dest='pr',default='True',type=str2bool)
+parser.add_argument('--id', dest='id', default=0, type=int) # scenario id
 args = parser.parse_args()
 print('|||||||||||',args)
 
-###
-# LEVEL-BASED FORAGING ENVIRONMENT SETTINGS
-###
-components = {
-    'agents' : [
-            Agent(index='A',atype=args.atype,position=(1,1),direction=1*np.pi/2,radius=0.5,angle=1,level=1.0), 
-                ],
-    'adhoc_agent_index' : 'A',
-    'tasks' : [
-            Task(index='0',position=(8,8),level=1.0),
-            Task(index='1',position=(5,5),level=1.0),
-            Task(index='2',position=(0,0),level=1.0),
-            Task(index='3',position=(9,1),level=1.0),
-            Task(index='3',position=(0,9),level=1.0)
-                ]
-}
-
-dim = (10,10)
-display = False
-visibility = 'partial'
-estimation_method = None
-
-MAX_EPISODES = 500
+# 2. Creating the environment
+env, scenario_id = load_default_scenario(args.atype,scenario_id=args.id,display=False)
 
 ###
 # ADLEAP-MAS MAIN ROUTINE
 ###
-env = LevelForagingEnv(shape=dim,components=components,visibility=visibility,display=display)
 state = env.reset()
-adhoc_agent = env.get_adhoc_agent()
+agent = env.get_adhoc_agent()
 
-header = ['Iteration','N Completed Tasks','Time to reason']
-log = LogFile('LevelForagingEnv','levelforaging_'+args.atype+'_test_'+str(args.exp_num)+'.csv',header)
+header = ['Iteration','Reward','Time to reason','N Rollouts', 'N Simulations']
+log = LogFile('LevelForagingEnv',scenario_id,args.atype,args.exp_num,header)
 
-done = False    
+MAX_EPISODES = 200
+done = False
 while not done and env.episode < MAX_EPISODES:
-    #env.render(sleep_=0.0)
-
     # 1. Importing agent method
-    method = env.import_method(adhoc_agent.type)
+    method = env.import_method(agent.type)
 
     # 2. Reasoning about next action and target
     start = time.time()
-    if args.atype == 'pomcp':
-        adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent,
-            black_box_simulation=args.bb,particle_revigoration=args.pr)
-    else:
-        adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
+    agent.next_action, _ = method(state, agent)
     end = time.time()
-
+    
     # 3. Taking a step in the environment
-    state,reward,done,info = env.step(adhoc_agent.next_action)
-
+    state,reward,done,info = env.step(agent.next_action)
     data = {'it':env.episode,
-            'ntasks':sum([task.completed for task in env.components['tasks']]),
-            'time':end-start}
-    log.write(None,data)
+            'reward':reward,
+            'time':end-start,
+            'nrollout':agent.smart_parameters['count']['nrollouts'],
+            'nsimulation':agent.smart_parameters['count']['nsimulations']}
+    log.write(data)
 
 env.close()
 ###

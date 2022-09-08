@@ -1,25 +1,18 @@
 from copy import deepcopy
 from gym import spaces
 import numpy as np
+import os
 import random as rd
-import time
 
 from .AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
 """
-    Rendering 
-"""
-turn_on_display = False
-
-"""
-    Ad-hoc 
+    Support classes
 """
 class Player(AdhocAgent):
 
     def __init__(self,index,atype):
-        
         super(Player, self).__init__(index,atype)
-
         # agent parameters
         self.hand = []
 
@@ -33,182 +26,169 @@ class Player(AdhocAgent):
     Truco Environments 
 """
 def end_condition(state):
-    if state['round'] == [3,0]:
-        if state['wins'].count(0) > state['wins'].count(1):
-            state['points'][0] += 1
-        else:
-            state['points'][1] += 1
-        return True 
+    return False
 
-    elif state['round'][0] == 2:
-        if sum(state['wins'][0:2]) == 0:
-            state['points'][0] += 1
-            return True
-
-        elif sum(state['wins'][0:2]) == 2:
-            state['points'][1] += 1
-            return True
-        return False
-        
-    else:
-        return False
-
-def who_win(card1,card2,current_player,faceup_card):
+def who_win(card1,card2,faceup_card):
     if  None in card1:
-        return [card2[0],card2[1],current_player]
+        return [card2[0],card2[1]]
     if None in card2:
-        return [card1[0],card1[1],current_player]
+        return [card1[0],card1[1]]
 
     if (card1[0] - 1) % 10 == faceup_card[0] and\
        (card2[0] - 1) % 10 != faceup_card[0]:
         return card1
     elif (card2[0] - 1) % 10 == faceup_card[0] and\
          (card1[0] - 1) % 10 != faceup_card[0]:
-         return [card2[0],card2[1],current_player]
+         return [card2[0],card2[1]]
     elif (card1[0] - 1) % 10 == faceup_card[0] and\
          (card2[0] - 1) % 10 == faceup_card[0]:
-        return card1 if card1[1] > card2[1] else [card2[0],card2[1],current_player]
+        return card1 if card1[1] > card2[1] else [card2[0],card2[1]]
     else:
-        return card1 if card1[0] > card2[0] else [card2[0],card2[1],current_player]
+        return card1 if card1[0] > card2[0] else [card2[0],card2[1]]
 
-def random_pick(action,hand):
-    tmp_hand = deepcopy(hand)
-    while None in tmp_hand[action]:
-        rd.shuffle(tmp_hand)
-    return hand.index(tmp_hand[action])
+def finish_round(env):
+    # defining the winning card
+    winning_card = [None,None]
+    for i in range(len(env.state['played cards'])):
+        winning_card = who_win(env.state['played cards'][i],winning_card,env.state['face up card'])
+            
+    # defining the next player
+    next_player = None
+    for i in range(len(env.state['played cards'])):
+        if winning_card[0] == env.state['played cards'][i][0] and\
+         winning_card[1] == env.state['played cards'][i][1]:
+            next_player = i
+    env.current_player = next_player
+
+    # reseting played cards
+    env.state['played cards'] = []
+
+    # checking the best of three and counting the round
+    env.round_points[env.round] = (env.current_player % 2)
+    env.round += 1
+    
+    teamA_rp = env.round_points.count(0)
+    teamB_rp = env.round_points.count(1)
+    if teamA_rp == 2:
+        env.points[0] += 1
+        env.round = 0
+        env.start_player = (env.start_player + 1) % (len(env.components['players']))
+        env.current_player = env.start_player
+        env.empty_hands()
+    elif teamB_rp == 2:
+        env.points[1] += 1
+        env.round = 0
+        env.start_player = (env.start_player + 1) % (len(env.components['players']))
+        env.current_player = env.start_player
+        env.empty_hands()
+
+    return env
 
 def truco_transition(action,real_env):
-    if None in real_env.components['player'][real_env.current_player].hand[action]:
-        info = {'invalid card reward':-1}
-        action = real_env.action_space.sample()
+    info = None
 
-    # playing the action
-    real_env.state['winning card'] = \
-        who_win(
-            real_env.state['winning card'],
-            real_env.components['player'][real_env.current_player].hand[action],
-            real_env.current_player,
-            real_env.state['face up card'])
-
-    # returning the next state and information
-    info = {'player':real_env.current_player,'card':action}
-    real_env.components['player'][real_env.current_player].hand[action] = [None,None]
-    next_state = real_env.state
-
-    # updating the round
-    if real_env.state['round'][1] == 3:
-        real_env.state['wins'][real_env.state['round'][0]] = real_env.state['winning card'][2] % 2
-        real_env.state['round'][0] = (real_env.state['round'][0] + 1)
-        real_env.state['round'][1]  = 0
-
-        real_env.current_player = real_env.state['winning card'][2]
-        real_env.state['winning card'] = [None,None,None]
+    if real_env.round == 0 and real_env.hands_are_empty():
+        print('Dealing')
+        real_env.deal()
     else:
-        real_env.state['round'][1] += 1
-        real_env.current_player = (real_env.current_player + 1) % 4
+        print('Playing')
+        agent = real_env.get_adhoc_agent()
+        print(agent.hand)
+        card = agent.hand[action]
+        agent.hand[action] = None
+        real_env.state['played cards'].append(card)
 
-    return next_state, info
+    if len(real_env.state['played cards']) == 4:
+        real_env = finish_round(real_env)
+    else:
+        real_env.current_player = (real_env.current_player + 1) % (len(real_env.components['players']))
+    return real_env, info
 
 def reward(state,next_state):
-    if (next_state['winning card'][2] == state['winning card'][2]) or\
-        (None in state['winning card']) or (None in next_state['winning card']):
-        return 0
-    elif next_state['winning card'][0] == next_state['face up card'][0] + 1:
-        if ((next_state['winning card'][0] - state['winning card'][0]) +\
-        (next_state['winning card'][1] - state['winning card'][1])) > 0:
-            return 1
-        else:
-            return 0
-    else:
-        if (next_state['winning card'][0] - state['winning card'][0]) > 0:
-            return 1
-        else:
-            return 0 
+    return 0 
 
-def truco_observation(copied_env):
-    # reseting the cards in game
-    copied_env.components['cards in game'] = [[x,y] \
-        for x in range(len(copied_env.cards)) for y in range(len(copied_env.suits))]
-    rd.shuffle(copied_env.components['cards in game'])
-    
-    # removing visible cards (own and faced up cards)
-    for card in copied_env.components['player'][copied_env.current_player].hand:
-        if card in copied_env.components['cards in game']:
-            copied_env.components['cards in game'].remove(card)
-    copied_env.components['cards in game'].remove(copied_env.state['face up card'])
-
-    # blinding the others players' hand if the game is partial observable
-    if copied_env.visibility == 'partial':
-        for player in copied_env.components['player']:
-            if player != copied_env.components['player'][copied_env.current_player]:
-                player.hand = [[None,None],[None,None],[None,None]]
-
+def environment_transformation(copied_env):
     return copied_env
+
+class TrucoState(spaces.Space):    
+    def __init__(self):
+        super(TrucoState,self).__init__(dtype=list)
+    
+    def sample(sef,seed=None):
+        raise NotImplemented 
 
 class TrucoEnv(AdhocReasoningEnv):
 
-    action_dict = {0:'Card1',1:'Card2',2:'Card3'}
+    action_dict = {
+        0:'PlayCard1',
+        1:'PlayCard2',
+        2:'PlayCard3'
+    }
 
     cards = {0:'4',1:'5',2:'6',3:'7',4:'Q',5:'J',6:'K',7:'A',8:'2',9:'3'}
     suits = {0:'D',1:'S',2:'H',3:'C'}
 
     total_cards = len(cards)*len(suits)
 
-    def __init__(self,players,reasoning,visibility='full',display=False): 
-        self.viewer = None
-        self.display = display
-        self.round_cards = []
-        self.visibility = visibility
+    def __init__(self,components,display=False):
+        ###
+        # Env Settings
+        ###
+        self.n_players = len(components['players'])
 
-        # Defining the Ad-hoc Teamwork Env parameters
-        state_set = StateSet(
-            spaces.Dict({
-                'face up card':spaces.MultiDiscrete([len(self.cards),len(self.suits)]),
-                'winning card':spaces.MultiDiscrete([len(self.cards),len(self.suits),len(players)]),
-                'round':spaces.MultiDiscrete([3,4]),
-                'wins':spaces.MultiBinary(3),
-                'points':spaces.MultiDiscrete([12,12])
-            }),
-            end_condition)
-        transition_function = truco_transition
-        action_space = spaces.Discrete(3)
-        action_space.sample = self.random_pick
-
-        reward_function = reward
-        observation_space = truco_observation
-        components = {'player':[
-                        Player(players[0],reasoning[0]),
-                        Player(players[1],reasoning[1]),
-                        Player(players[2],reasoning[2]),
-                        Player(players[3],reasoning[3])],
-                     'cards in game':[(x,y) for x in range(len(self.cards)) for y in range(len(self.suits))],
-                    }
-        
-        super(TrucoEnv, self).__init__(state_set,\
-         transition_function, action_space, reward_function,\
-                                observation_space, components)
-
-        # Setting the inital state
-        self.n_players = len(players)
+        self.round = 0
+        self.points = [0,0]
+        self.round_points = [None,None,None]
         self.start_player = 0
         self.current_player = 0
-        self.state_set.initial_state = {
-            'face up card':[None,None],
-            'winning card':[None,None,None],
-            'round':[0,0],
-            'wins':[0,0,0],
-            'points':[0,0]
-        }
 
-    def reset(self):
-        # Reset the state of the environment to an initial state
-        self.episode = 0
-        if self.state_set.initial_state is not None:
-            self.state = deepcopy(self.state_set.initial_state)
-            self.deal()
-            return self.observation_space(self.copy())
-        else:
-            raise ValueError("the initial state from the state set is None.")
+        self.deck = [[x,y] for x in range(len(self.cards)) for y in range(len(self.suits))]
+        rd.shuffle(self.deck)
+        self.played_cards = []
+
+        state_set = StateSet(TrucoState(),end_condition)
+        transition_function = truco_transition
+        action_space = spaces.Discrete(3)
+        reward_function = reward
+        observation_space = environment_transformation
+
+        ###
+        # Initialising the env
+        ###
+        super(TrucoEnv,self).__init__(state_set,\
+                                transition_function,action_space,reward_function,\
+                                    observation_space,components)
+        self.state_set.initial_components = self.copy_components(components)
+        self.state_set.initial_state = {
+                'face up card':[None,None],
+                'played cards':[]
+            }
+            
+        ###
+        # Setting graphical interface
+        ###
+        self.screen = None
+        self.display = display
+        self.render_mode = "human"
+        self.render_sleep = 0.5
+        self.clock = None
+        self.renderer = None
+        if self.display:
+            if self.renderer is None:
+                try:
+                    from gym.error import DependencyNotInstalled
+                    from gym.utils.renderer import Renderer
+                except ImportError:
+                    raise DependencyNotInstalled(
+                        "pygame is not installed, run `pip install gym[classic_control]`"
+                    )
+                self.renderer = Renderer(self.render_mode, self._render)
+
+    def get_trans_p(self,action):
+        return [self,1]
+
+    def get_obs_p(self,action):
+        return [self,1]
 
     def import_method(self, agent_type):
         from importlib import import_module
@@ -221,340 +201,231 @@ class TrucoEnv(AdhocReasoningEnv):
         return method
 
     def copy(self):
-        copied_env = TrucoEnv(players = [player.index for player in self.components['player']],
-                reasoning = [player.type for player in self.components['player']], visibility=self.visibility)
-        copied_env.start_player = self.start_player
-        copied_env.current_player = self.current_player
-        copied_env.state = deepcopy(self.state_set.initial_state)
-        
-        copied_env.state['face up card'] = [None,None] if None in self.state['face up card'] \
-                                            else [info for info in self.state['face up card']]
-        copied_env.state['winning card'] = [None,None,None] if None in self.state['winning card'] \
-                                            else [info for info in self.state['winning card']]
-        copied_env.state['round'] = [info for info in self.state['round']]
-        copied_env.state['wins'] = [info for info in self.state['wins']]
-        copied_env.state['points'] = [info for info in self.state['points']]
-
-        for i in range(len(copied_env.components['player'])):
-            player = (copied_env.components['player'][i])
-            player.hand = [card for card in self.components['player'][i].hand]
-            for card in player.hand:
-                if card in copied_env.components['cards in game']:
-                    copied_env.components['cards in game'].remove(tuple(card))
-        
-        copied_env.components['cards in game'].remove(tuple(copied_env.state['face up card']))
-
+        components = self.copy_components(self.components)
+        copied_env = TrucoEnv(components,self.display)
+        copied_env.screen = self.screen
+        copied_env.episode = self.episode
+        copied_env.renderer = self.renderer
+        # Setting the initial state
+        copied_env.state_set.initial_state = self.copy_components(self.state_set.initial_state)
+        copied_env.state = deepcopy(self.state)
+        copied_env.simulation = self.simulation
         return copied_env
 
-    def random_pick(self):
-        action, hand = \
-            0, self.components['player'][self.current_player].hand
+    def hands_are_empty(self):
+        for i in range(len(self.components['players'])):
+            for card in self.components['players'][i].hand:
+                if card is not None:
+                    return False
+        return True
 
-        tmp_hand = deepcopy(hand)
-
-        if all([list(card) == [None,None] for card in tmp_hand]):
-            hand[0] = self.components['cards in game'].pop()
-            tmp_hand[0] = hand[0]
-
-        while None in tmp_hand[action]:
-            rd.shuffle(tmp_hand)
-
-        return hand.index(tmp_hand[action])
-
-    def state_is_equal(self,state):
-        if self.state['face up card'][0] == state['face up card'][0] and \
-           self.state['face up card'][1] == state['face up card'][1] and \
-           self.state['winning card'][0] == state['winning card'][0] and \
-           self.state['winning card'][1] == state['winning card'][1] and \
-           self.state['winning card'][2] == state['winning card'][2] and \
-           self.state['round'][0] == state['round'][0] and\
-           self.state['round'][1] == state['round'][1] and\
-           self.state['wins'][0] == state['wins'][0] and \
-           self.state['wins'][1] == state['wins'][1] and \
-           self.state['wins'][2] == state['wins'][2] and \
-           self.state['points'][0] == state['points'][0] and \
-           self.state['points'][1] == state['points'][1]:
-            return True
-
-    def get_adhoc_agent(self):
-        return self.components['player'][self.current_player]
+    def empty_hands(self):
+        for i in range(len(self.components['players'])):
+            self.components['players'][i].hand = [None,None,None]
 
     def deal(self):
+        # reseting the table
         self.state['face up card'] = [None,None]
-        self.state['winning card'] = [None,None,None]
-        self.state['round'] = [0,0]
-        self.state['wins'] = [0,0,0]
+        self.state['played cards'] = []
+                
+        self.round = 0
+        self.round_points = [None,None,None]
         
-        self.components['cards in game'] = [[x,y] for x in range(len(self.cards)) for y in range(len(self.suits))]
-        rd.shuffle(self.components['cards in game'])
+        # shuffling the deck
+        self.deck = [[x,y] for x in range(len(self.cards)) for y in range(len(self.suits))]
+        rd.shuffle(self.deck)
+        self.played_cards = []
 
-        self.state['face up card'] = self.components['cards in game'].pop(0)
+        # playing the manilha
+        self.state['face up card'] = self.deck.pop(0)
 
+        # dealing players cards
         for i in range(self.n_players):
-            self.components['player'][i].hand = []
-            while len(self.components['player'][i].hand) < 3:
-                self.components['player'][i].hand.append(self.components['cards in game'].pop(0))
+            self.components['players'][i].hand = []
+            while len(self.components['players'][i].hand) < 3:
+                self.components['players'][i].hand.append(self.deck.pop(0))
+    
+    # The environment is partially observable by definition
+    def state_is_equal(self,state):    
+        if self.state['face up card'][0] != state['face up card'][0] or \
+           self.state['face up card'][1] == state['face up card'][1]:
+            return False   
+
+        for card in self.state['played cards']:
+            if card not in state['played cards']:
+                return False
+
+        return True
 
     def observation_is_equal(self,obs):
-        observable_env = self.observation_space(self.copy())
-        if observable_env.state['winning card'][0] == obs.state['winning card'][0] and\
-            observable_env.state['winning card'][1] == obs.state['winning card'][1] and\
-            observable_env.state['winning card'][1] == obs.state['winning card'][1]:
-                return True
-        return False
+        return self.state_is_equal(obs)
 
-    def sample_state(self,player):
+    def sample_state(self,agent):
         # 1. Defining the base simulation
         u_env = self.copy()
+        u_env.deck = [[x,y] for x in range(len(self.cards)) for y in range(len(self.suits))]
+        rd.shuffle(u_env.deck)
 
         # 2. Sampling random cards for the players
         for player in u_env.components['player']:
-            for i in range(len(player.hand)):
-                player.hand[i] = u_env.components['cards in game'].pop(0)
+            if player.index != agent.index:
+                for i in range(len(player.hand)):
+                    player.hand[i] = u_env.deck.pop(0)
 
         return u_env
-
-    def render(self, mode='human', info={}, agents_color={}):
     
-        if not self.display:
-            return
+    def sample_nstate(self, agent, n):
+        sampled_states = []
+        while len(sampled_states) < n:
+            sampled_states.append(self.sample_state(agent))
+        return sampled_states
 
-        try:
-            global rendering
-            from gym.envs.classic_control import rendering
-        except ImportError as e:
-            raise ImportError('''
-            Cannot import rendering
-            ''')
-            
-        try:
-            global pyglet
-            import pyglet
-        except ImportError as e:
-            raise ImportError('''
-            Cannot import pyglet.
-            HINT: you can install pyglet directly via 'pip install pyglet'.
-            But if you really just want to install all Gym dependencies and not have to think about it,
-            'pip install -e .[all]' or 'pip install gym[all]' will do it.
-            ''')
+    def get_actions_list(self):
+        return [i for i in range(len(self.action_dict))]
 
-        try:
-            global glBegin,glEnd,GL_QUADS,GL_POLYGON,GL_TRIANGLES,glVertex3f
-            from pyglet.gl import glBegin, glEnd, GL_QUADS, GL_POLYGON, GL_TRIANGLES, glVertex3f
-        except ImportError as e:
-            raise ImportError('''
-            Error occurred while running `from pyglet.gl import *`
-            HINT: make sure you have OpenGL install. On Ubuntu, you can run 'apt-get install python-opengl'.
-            If you're running on a server, you may need a virtual frame buffer; something like this should work:
-            'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
-            ''')
-        global DrawText
-        class DrawText(rendering.Geom):
-            def __init__(self, label:pyglet.text.Label):
-                rendering.Geom.__init__(self)
-                self.label=label
-            def render1(self):
-                self.label.draw()
+    def get_adhoc_agent(self):
+        return self.components['players'][self.current_player]
+
+    def render(self):
+        return self.renderer.get_renders()
         
-        # Render the environment to the screen
-        self.agents_color = agents_color
-        if self.state is not None:
-            if self.viewer is None:
-                self.screen_width, self.screen_height = 1000, 1000
-                self.viewer = rendering.Viewer(self.screen_width, self.screen_height)
-
-                # table background
-                self.table_background = rendering.FilledPolygon([(0,0),(0,self.screen_height),
-                                (self.screen_width,self.screen_height),(self.screen_width,0)])
-                self.table_background.set_color(r=0.12, g=0.6, b=0.1) # green
-                self.viewer.add_geom(self.table_background)
-
-                # table circle
-                self.table_circle = rendering.make_circle(self.screen_width/4,res=50,filled=False)
-                self.table_circle.set_color(r=0.6, g=0.0, b=0.0) # red
-                self.table_circle.add_attr(rendering.Transform(translation=(self.screen_width/2,self.screen_height/2)))
-                self.table_circle.set_linewidth(5)
-                self.viewer.add_geom(self.table_circle)
-
-        if self.state['round'] == [0,0]:
-            self.round_cards = []
-            self.viewer.geoms = self.viewer.geoms[0:2]
-
-            # points 
-            self.points_bg = rendering.FilledPolygon(
-                [(0,0),(0,0.1*self.screen_height),(0.2*self.screen_width,0.1*self.screen_height),(0.2*self.screen_width,0)])
-            self.points_bg.add_attr( rendering.Transform(translation=(0.11*self.screen_width, 0.825*self.screen_height)))
-            self.points_bg.set_color(r=1, g=1, b=1) # white
-            self.viewer.add_geom( self.points_bg)
-
-            for i in range(3):
-                round_points = rendering.make_circle(0.1*self.screen_width/6)
-                round_points.set_color(r=0.5, g=0.5, b=0.5) # grey
-                round_points.add_attr( rendering.Transform(translation=(0.15*self.screen_width + i*(0.3*self.screen_width/6) , 0.85*self.screen_height)))
-                self.viewer.add_geom(round_points)
-
-            self.points_label = DrawText(pyglet.text.Label('Scoreboard: '+str(self.state['points'][0])+'x'+str(self.state['points'][1]),
-                font_size=int(0.1*self.screen_height/6),x=0.2*self.screen_width, y=0.9*self.screen_height,\
-                     anchor_x='center', anchor_y='center', color=(0, 0, 0, 255)))
-            self.viewer.add_geom( self.points_label)
-
-            self.points_label_redid = rendering.PolyLine([(0.25*self.screen_width, 0.89*self.screen_height),(0.27*self.screen_width, 0.89*self.screen_height)],False)
-            self.points_label_redid.set_linewidth(5)
-            self.points_label_redid.set_color(r=0.6, g=0.0, b=0.0) # red
-            self.viewer.add_geom( self.points_label_redid)
-
-            self.points_label_blueid = rendering.PolyLine([(0.27*self.screen_width, 0.89*self.screen_height),(0.29*self.screen_width, 0.89*self.screen_height)],False)
-            self.points_label_blueid.set_linewidth(5)
-            self.points_label_blueid.set_color(r=0.0, g=0.0, b=0.6) # blue
-            self.viewer.add_geom( self.points_label_blueid)
-
-            
-            # deal - players and cards
-            self.drawn_players, self.drawn_cards = self.draw_players()
-            self.viewer.render(return_rgb_array=mode == 'rgb_array')
-            
-            for i in range(len(self.components['player'])):
-                screen_position = { 0:(self.screen_width/2, 0.1*self.screen_height),
-                                1:(0.9*self.screen_width, self.screen_height/2),
-                                2:(self.screen_width/2, 0.9*self.screen_height),
-                                3:(0.1*self.screen_width, self.screen_height/2)}
-                rotate = {  0:0,
-                            1:np.pi/2,
-                            2:np.pi,
-                            3:3*np.pi/2}
-                x, y = screen_position[i]
-
-                for j in range(3):
-                    index = (3*i) + j + 1
-                    self.drawn_cards[index].add_attr( rendering.Transform( rotation=(rotate[i]) ) )
-                    self.drawn_cards[index].add_attr( rendering.Transform( translation=(x,y) ) )
-                    self.viewer.render(return_rgb_array=mode == 'rgb_array')
-            
-        else:
-            i = info['player']
-            j = info['card']
-            index = (3*i) + j + 1
-
-            if self.state['round'][0] > 0 and self.state['round'][1] == 1:
-                for card_index in self.round_cards:
-                    try:
-                        fname = 'imgs/cards/red_back.png'
-                        with open(fname):
-                            figure = rendering.Image(fname,\
-                                width=0.9*self.screen_width/11,height=0.9*self.screen_height/8)
-
-                            for attr in self.drawn_cards[card_index].__getattribute__('attrs'):
-                                figure.add_attr(attr)
-
-                            self.drawn_cards[card_index] = figure
-                            self.viewer.geoms[card_index-13] = figure
-
-                    except FileNotFoundError as e:
-                        raise e
-
-                if self.state['wins'][self.state['round'][0]-1] == 0:
-                    self.viewer.geoms[2+self.state['round'][0]].set_color(r=0.6, g=0.0, b=0.0) # red
-                else:
-                    self.viewer.geoms[2+self.state['round'][0]].set_color(r=0.0, g=0.0, b=0.6) # blue
-
-                self.round_cards = []
-                self.viewer.render(return_rgb_array=mode == 'rgb_array')
-                time.sleep(1)
-            
-            self.round_cards.append(index)
-            move_x = 200 if i == 3 else 0
-            move_x -= 200 if i == 1 else 0
-            move_y = 200 if i == 0 else 0
-            move_y -= 200 if i == 2 else 0
-
-            self.drawn_cards[index].add_attr( rendering.Transform( translation=(move_x,move_y) ) )
-            self.viewer.render(return_rgb_array=mode == 'rgb_array')
-
-        time.sleep(2)
-        return 
-
-    def draw_players(self):
-        drawn_player = []
-        drawn_cards = []
-
-        # players name
-        for i in range(len(self.components['player'])):
-            drawn_player.append(rendering.Transform())
-
-            player_colors = rendering.make_circle(0.1*self.screen_width/6)
-            if i % 2 == 0:
-                player_colors.set_color(r=0.6, g=0.0, b=0.0) # red
-            else:
-                player_colors.set_color(r=0.0, g=0.0, b=0.6) # blue
-            player_colors.add_attr( rendering.Transform(translation=(0,100)) )
-            player_colors.add_attr(drawn_player[i])
-            self.viewer.add_geom(player_colors)
-
-            label = DrawText(pyglet.text.Label(str(self.components['player'][i].index),
-                font_size=int(0.1*self.screen_height/6),x=0, y=100, anchor_x='center', anchor_y='center', color=(255, 255, 255, 255)))
-            label.add_attr(drawn_player[i])
-            self.viewer.add_geom(label)
-
-            screen_position = { 0:(self.screen_width/2, 0.1*self.screen_height),
-                                1:(0.9*self.screen_width, self.screen_height/2),
-                                2:(self.screen_width/2, 0.9*self.screen_height),
-                                3:(0.1*self.screen_width, self.screen_height/2)}
-            rotate = {  0:0,
-                        1:np.pi/2,
-                        2:np.pi,
-                        3:3*np.pi/2}
-            x, y = screen_position[i]
-            drawn_player[i].set_rotation(rotate[i])
-            drawn_player[i].set_translation(x,y)
-
-        # cards
+    def _render(self, mode="human"):
+        ##
+        # Standard Imports
+        ##
+        assert mode in self.metadata["render_modes"]
         try:
-            fname = 'imgs/cards/'+str(self.cards[self.state['face up card'][0]])+str(self.suits[self.state['face up card'][1]])+'.png'
-            with open(fname):
-                figure = rendering.Image(fname,\
-                    width=0.9*self.screen_width/11,height=0.9*self.screen_height/8)
-                figure.add_attr(
-                    rendering.Transform(translation=((self.screen_width/2,self.screen_height/2)))
+            import pygame
+            from pygame import gfxdraw
+            from gym.error import DependencyNotInstalled
+        except ImportError:
+            raise DependencyNotInstalled(
+                "pygame is not installed, run `pip install gym[classic_control]`"
+            )
+
+        self.screen_width, self.screen_height = 800, 800
+        if self.screen is None:
+            pygame.init()
+            if mode == "human":
+                pygame.display.init()
+                self.screen = pygame.display.set_mode(
+                    (self.screen_width, self.screen_height)
                 )
-                drawn_cards.append(figure)
-                self.viewer.add_geom(figure)
+            else:  # mode in {"rgb_array", "single_rgb_array"}
+                self.screen = pygame.Surface((self.screen_width, self.screen_height))
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
 
-        except FileNotFoundError as e:
-            raise e
+        ##
+        # Drawing
+        ##
+        if self.state is None:
+            return None
 
-        for i in range(len(self.components['player'])):
-            for j in range(len(self.components['player'][i].hand)):
-                try:
-                    fname = 'imgs/cards/'+str(self.cards[self.components['player'][i].hand[j][0]])+str(self.suits[self.components['player'][i].hand[j][1]])+'.png'
-                    with open(fname):
-                        figure = rendering.Image(fname,\
-                            width=0.9*self.screen_width/11,height=0.9*self.screen_height/8)
-                        figure.add_attr(
-                            rendering.Transform(translation=((j*0.9*self.screen_width/11) - (len(self.components['player'][i].hand)*0.9*self.screen_width/22),0))
-                        )
-                        drawn_cards.append(figure)
-                        self.viewer.add_geom(figure)
+        # background
+        self.surf = pygame.Surface((self.screen_width, self.screen_height))
+        self.surf.fill(self.colors['white'])
+        self.surf = pygame.transform.flip(self.surf, False, True)
+        self.screen.blit(self.surf, (0, 0))
+
+        # table
+        game_width, game_height = 700, 700
+        self.game_surf = pygame.Surface((game_width, game_height))
+        self.game_surf.fill(self.colors['darkgreen'])
+       
+        inner_circle_r = 0.2
+        while inner_circle_r < 0.21:
+            gfxdraw.aacircle(self.game_surf,int(0.5*game_width),int(0.5*game_height),
+                int((inner_circle_r)*np.sqrt(game_width**2 + game_height**2)),self.colors['red'])
+            inner_circle_r += 0.001
+
+        # face up card
+        if self.state['face up card'][0] is not None and\
+         self.state['face up card'][1] is not None:
+            card = self.cards[self.state['face up card'][0]]
+            suit = self.suits[self.state['face up card'][1]]
+            card_ret = pygame.Rect((0.45*game_width, 0.6*game_height),\
+                            (int(0.1*game_width),int(0.15*game_height)))
+            card_img = pygame.image.load(os.path.abspath("./imgs/cards/"+card+suit+".png"))
+            card_img = pygame.transform.flip(card_img,False,True)
+            card_img = pygame.transform.scale(card_img, card_ret.size)
+            card_img = card_img.convert_alpha()
+            card_img.fill((255, 255, 255, 255), special_flags=pygame.BLEND_RGBA_MULT)
+            self.game_surf.blit(card_img,card_ret)
+
+        # players
+        players_screen_pos = [\
+            [0.5*game_width,0.1*game_height],
+            [0.9*game_width,0.5*game_height],
+            [0.5*game_width,0.9*game_height],
+            [0.1*game_width,0.5*game_height]
+            ]
+        players_rotate = [180,0,0,0]
+        myfont = pygame.font.SysFont("Ariel", 35)
+        for i in range(len(self.components['players'])): 
+            # name
+            color = 'red' if (i % 2) == 0 else 'blue'
+            label = myfont.render(self.components['players'][i].index, True, self.colors[color])
+            label = pygame.transform.rotate(label,players_rotate[i])
+            self.game_surf.blit(label, 
+                (players_screen_pos[i][0]-myfont.size(self.components['players'][i].index)[0]/2,
+                 players_screen_pos[i][1]-myfont.size(self.components['players'][i].index)[1]/2))
+            
+            # hand
+            for j in range(len(self.components['players'][i].hand)):
+                if self.components['players'][i].hand[j] is not None:
+                    card = self.cards[self.components['players'][i].hand[j][0]]
+                    suit = self.suits[self.components['players'][i].hand[j][1]]
+                    card_ret = pygame.Rect((
+                        players_screen_pos[i][0]-(0.1*game_width)+(0.05*j*game_width),
+                        players_screen_pos[i][1]-(0.05*game_height)),\
+                                                        (int(0.1*game_width),int(0.15*game_height)))
+                    card_img = pygame.image.load(os.path.abspath("./imgs/cards/"+card+suit+".png"))
+                    card_img = pygame.transform.flip(card_img,False,True)
+                    card_img = pygame.transform.scale(card_img, card_ret.size)
+                    card_img = card_img.convert_alpha()
+                    card_img.fill((255, 255, 255, 150), special_flags=pygame.BLEND_RGBA_MULT)
+                    self.game_surf.blit(card_img,card_ret)
         
-                except FileNotFoundError as e:
-                    raise e
+        # played cards
+        for i in range(len(self.state['played cards'])):
+            card = self.cards[self.state['played cards'][i][0]]
+            suit = self.suits[self.state['played cards'][i][1]]
+            card_ret = pygame.Rect((0.4*game_width+(0.05*i*game_width), 0.4*game_height),\
+                            (int(0.1*game_width),int(0.15*game_height)))
+            card_img = pygame.image.load(os.path.abspath("./imgs/cards/"+card+suit+".png"))
+            card_img = pygame.transform.flip(card_img,False,True)
+            card_img = pygame.transform.scale(card_img, card_ret.size)
+            card_img = card_img.convert_alpha()
+            card_img.fill((255, 255, 255, 255), special_flags=pygame.BLEND_RGBA_MULT)
+            self.game_surf.blit(card_img,card_ret)
+        
+        # points
+        myfont = pygame.font.SysFont("Ariel", 35)
+        labelA = myfont.render("[Team A] %02d x" % (self.points[0]), True, self.colors['red'])
+        labelB = myfont.render("x %02d [Team B]" % (self.points[1]), True, self.colors['blue'])
+        self.screen.blit(labelA, (10, 10))
+        self.screen.blit(labelB, (150, 10))
 
-        return drawn_player, drawn_cards
-
-    def feature(self):
-        actual_state = self.state
-        a = []
-        for key in actual_state.keys():
-            for val in actual_state[key]:
-                if (val is None):
-                    a.append(-1)
-                else:
-                    a.append(val)
-        for val in self.components['player'][self.current_player].hand:
-            if None in val:
-                a.append(-1)
-                a.append(-1)
+        for i in range(len(self.round_points)):
+            if self.round_points[i] is None:
+                gfxdraw.filled_circle(self.screen,400+40*i,20,10,self.colors['darkgrey'])
+            elif self.round_points[i] == 0:
+                gfxdraw.filled_circle(self.screen,400+40*i,20,10,self.colors['red'])
             else:
-                a.append(val[0])
-                a.append(val[1])
+                gfxdraw.filled_circle(self.screen,400+40*i,20,10,self.colors['blue'])
 
-        return np.array(a)
+        ##
+        # Displaying
+        ##
+        self.game_surf = pygame.transform.flip(self.game_surf, False, True)
+        self.screen.blit(self.game_surf, (50, 50))
+        if mode == "human":
+            pygame.event.pump()
+            self.clock.tick(self.metadata["render_fps"])
+            pygame.display.flip()
+
+        elif mode in {"rgb_array", "single_rgb_array"}:
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2)
+            )

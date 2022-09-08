@@ -1,60 +1,56 @@
 ###
 # IMPORTS
 ###
+import numpy as np
 import sys
 import os
-import numpy as np
-
 sys.path.append(os.getcwd())
 
-from src.envs.CaptureEnv import CaptureEnv,Agent,Task
-from gym.wrappers import Monitor,RecordVideo
+from src.envs.CaptureEnv import CaptureEnv,Hunter,Prey
+
 ###
-# CAPTURE THE PREY ENVIRONMENT SETTINGS
+# Setting the environment
 ###
+display = True
+dim = (10,10)
+estimation_method = None
+
 components = {
-    'agents' : [
-            Agent(index='A',atype='c1',position=(1,1),direction=1*np.pi/2,radius=0.5,angle=0.5), 
-            Agent(index='1',atype='c1',position=(3,8),direction=0*np.pi/2,radius=0.6,angle=1.0), 
-            Agent(index='2',atype='c2',position=(8,3),direction=3*np.pi/2,radius=0.7,angle=0.5), 
-            Agent(index='3',atype='c3',position=(5,6),direction=2*np.pi/2,radius=0.5,angle=0.7)
+    'hunters' : [
+            Hunter(index='A',atype='pomcp',position=(1,1),direction=1*np.pi/2,radius=1,angle=1),
+            Hunter(index='1',atype='c1',position=(3,3),direction=1*np.pi/2,radius=1,angle=1),
+            Hunter(index='2',atype='c2',position=(4,5),direction=1*np.pi/2,radius=1,angle=1),
+            Hunter(index='3',atype='c3',position=(7,7),direction=1*np.pi/2,radius=1,angle=1)
                 ],
     'adhoc_agent_index' : 'A',
-    'tasks' : [
-            Task(index='0',position=(8,8)),
-            Task(index='1',position=(5,5)),
-            Task(index='2',position=(0,0)),
-            Task(index='3',position=(9,1))
+    'preys' : [
+            Prey(index='0',position=(8,8)),
+            Prey(index='1',position=(5,5)),
+            Prey(index='2',position=(0,0)),
+            Prey(index='3',position=(9,1))
                 ]
 }
 
+env = CaptureEnv(shape=dim,components=components,display=display)
 
-dim = (10,10)
-display = True
-visibility = 'full'
-estimation_method = None
-
-env = CaptureEnv(shape=dim,components=components,visibility=visibility,display=display)
-state = env.reset()
-adhoc_agent = env.get_adhoc_agent()
-done = False
 ###
 # ADLEAP-MAS MAIN ROUTINE
 ###
-while not done and env.episode < 30:
-    env.render()
+adhoc_agent = env.get_adhoc_agent()
+state = env.reset()
 
+# TODO: Fix the black screen at the first rendering
+
+done, max_episode = False, 200
+while env.episode < max_episode and not done:
     # 1. Importing agent method
     method = env.import_method(adhoc_agent.type)
 
     # 2. Reasoning about next action and target
-    if adhoc_agent.type == 'pomcp' or adhoc_agent.type=='mcts':
-        adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent, estimation_algorithm=estimation_method)
-    else:
-        adhoc_agent.next_action, adhoc_agent.target = method(state, adhoc_agent)
+    adhoc_agent.next_action, _ = method(state, adhoc_agent)
 
     # 3. Taking a step in the environment
-    state,reward,done,info = env.step(adhoc_agent.next_action)
+    state,_,done,_ = env.step(action=adhoc_agent.next_action)
 
 env.close()
 ###

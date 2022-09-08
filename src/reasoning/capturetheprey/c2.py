@@ -7,10 +7,10 @@ def c2_planning(env,agent,mode='index'):
     
     # checking if the agent already chosen a prey
     if(agent.target):
-        for t in env.components['tasks']:
+        for t in env.components['preys']:
             if(t.index == agent.target ):
                 # if it is completed, pursue a new one
-                if(t.completed):
+                if(t.captured):
                     agent.target = choose_target(env,agent,mode)
                     target_pos = agent.target_position
                 # else, keep going
@@ -46,17 +46,17 @@ def c2_planning(env,agent,mode='index'):
 def choose_target(env, agent, mode):
     if mode == 'spatial':
         # highest coordinates sum task
-        coordinates_sum = [np.sum(task.position) for task in env.components['tasks']]
+        coordinates_sum = [np.sum(task.position) for task in env.components['preys']]
 
         if len(coordinates_sum) == 0:
             return None
             
         task_id = coordinates_sum.index(max(coordinates_sum))
-        agent.target_position = env.components['tasks'][task_id].position
-        return env.components['tasks'][task_id].index
+        agent.target_position = env.components['preys'][task_id].position
+        return env.components['preys'][task_id].index
     elif mode == 'index':
         # even index
-        for task in env.components['tasks']:
+        for task in env.components['preys']:
             if int(task.index) % 2 == 0:
                 agent.target_position = task.position
                 return task.index

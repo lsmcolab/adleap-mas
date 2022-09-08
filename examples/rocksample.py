@@ -1,32 +1,36 @@
-import gym
-import random
+###
+# Imports
+###
 import sys
 import os
 sys.path.append(os.getcwd())
 
 from src.envs.RockSampleEnv import RockSampleEnv, Rock, Agent
 
-rock_1 = Rock(0,(2,2),"good")
-rock_2 = Rock(1,(5,2),"good")
-rock_3 = Rock(2,(3,7),"bad")
-rock_4 = Rock(3,(6,8),"bad")
+###
+# Setting the environment
+###
+display = True
+dim = 10
 
-agent = Agent(0,(3,3),"pomcp")
-components = {"rocks":[rock_1,rock_2,rock_3,rock_4],"agents":[agent]}
+agent = Agent(0, (3,3), "pomcp")
+components = {"agents":[agent],
+    "rocks": [  Rock(0, (2,2),"Good"),
+                Rock(1, (5,2),"Good"),
+                Rock(2, (3,7), "Bad"),
+                Rock(3, (6,8), "Bad")]}
 
 display = True
-env = RockSampleEnv(components=components,dim=10,display=display)
-state = env.reset()
+env = RockSampleEnv(components=components,dim=dim,display=display)
 
-done = False
-agent = env.get_adhoc_agent()
 ###
 # ADLEAP-MAS MAIN ROUTINE
 ###
-while env.episode < 20 and not done:
-    if display:
-       env.render()
+state = env.reset()
+agent = env.get_adhoc_agent()
 
+done = False
+while env.episode < 20 and not done:
     # 1. Importing agent method
     agent = env.get_adhoc_agent()
     method = env.import_method(agent.type)

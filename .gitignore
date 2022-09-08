@@ -13,3 +13,6 @@ qsub*
 Videos/*
 *.mkv
 *.mp4
+*tmp*
+./tmp
+./tmp/*

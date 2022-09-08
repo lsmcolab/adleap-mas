@@ -8,7 +8,7 @@ def create_qtable(actions):
 		qtable[str(a)] = {'qvalue':0.0,'sumvalue':0.0,'trials':0}
 	return qtable
 
-def uct_select_action(node,gamma=0.5):
+def uct_select_action(node,c=0.5):
 	# 1. Initialising the support values
 	maxUCB, maxA = -1, None
 
@@ -17,7 +17,7 @@ def uct_select_action(node,gamma=0.5):
 		qvalue = node.qtable[str(a)]['qvalue']
 		trials = node.qtable[str(a)]['trials']
 		if trials > 0:
-			current_ucb = qvalue + gamma *\
+			current_ucb = qvalue + c *\
 			  np.sqrt(np.log(float(node.visits)) / float(trials))
 
 			if current_ucb > maxUCB:
@@ -33,32 +33,33 @@ def uct_select_action(node,gamma=0.5):
 	# 4. Returning the best action
 	return maxA
 
-def ibl_select_action(node,gamma):
+def ibl_select_action(node,alpha):
 	# 1. Initialising the support values
-	max_quality, maxA = -1, None
-	node_entropy = node.entropy
+	maxUCB, maxA = -1, None
 	max_entropy = node.max_entropy
 
 	# 2. Checking the best action via UCT algorithm
 	for child in node.children:
 		a = child.action
-
-		qvalue = node.qtable[str(a)]['qvalue']
 		trials = node.qtable[str(a)]['trials']
 		if trials > 0:
-			current_ucb = qvalue + gamma *\
+			# current value
+			qvalue = node.qtable[str(a)]['qvalue']
+
+			# exploration value
+			exploration_value = (1-alpha) *\
 			  np.sqrt(np.log(float(node.visits)) / float(trials))
 
+			# information value
 			infoset = {}
 			for obs in child.children:
-				infoset[obs.state] = obs.visits+1
+				infoset[obs.state] = obs.visits
 			action_entropy = entropy(infoset)
-			if action_entropy > max_entropy:
-				max_entropy = action_entropy
-			current_entropy = (1 - gamma) * (action_entropy - node_entropy)/max_entropy
-
-			if (current_ucb + current_entropy) > max_quality:
-				max_quality = current_ucb + current_entropy
+			information_value = (alpha)*(1-(action_entropy)/max_entropy)
+			
+			# evaluation
+			if (qvalue + exploration_value + information_value) > maxUCB:
+				maxUCB = qvalue + exploration_value + information_value
 				maxA = a
 		else:
 			return a

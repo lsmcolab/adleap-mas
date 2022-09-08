@@ -1,4 +1,8 @@
-numpy
-sklearn
+baselines
 gym
+numpy
+pandas
 psutil
+scipy
+sklearn
+statsmodels

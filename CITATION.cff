@@ -1,0 +1,35 @@
+authors:
+  - family-names: do Carmo Alves
+    given-names: Matheus
+    orcid: https://orcid.org/0000-0003-4530-3331
+  - family-names: Varma
+    given-names: Amokh
+    orcid: https://orcid.org/0000-0003-3785-0749
+cff-version: 1.2.0
+message: "If you use this software, please cite both the article from preferred-citation and the software itself."
+preferred-citation:
+  type: conference-paper
+  title: "AdLeap-MAS: An Open-Source Multi-Agent Simulator for Ad-Hoc Reasoning"
+  authors:
+  - family-names: do Carmo Alves
+    given-names: Matheus
+    orcid: https://orcid.org/0000-0003-4530-3331
+  - family-names: Varma
+    given-names: Amokh
+    orcid: https://orcid.org/0000-0003-3785-0749
+  - family-names: Elkhatib
+    given-names: Yehia
+    orcid: https://orcid.org/0000-0003-4639-436X
+  - family-names: Soriano Marcolino
+    given-names: Leandro
+    orcid: https://orcid.org/0000-0002-3337-8611
+  year: '2022'
+  month: '5'
+  collection-title: Proceedings of the 21st International Conference on Autonomous Agents and Multiagent Systems
+  location:
+    name: Virtual Event, New Zealand
+  start: '1893'
+  end: '1895'
+  conference:
+    name: 21st International Conference on Autonomous Agents and Multiagent Systems
+  doi: 10.5555/3535850.3536143
