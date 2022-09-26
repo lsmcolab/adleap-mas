@@ -39,8 +39,6 @@ env = CaptureEnv(shape=dim,components=components,display=display)
 adhoc_agent = env.get_adhoc_agent()
 state = env.reset()
 
-# TODO: Fix the black screen at the first rendering
-
 done, max_episode = False, 200
 while env.episode < max_episode and not done:
     # 1. Importing agent method
