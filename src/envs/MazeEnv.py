@@ -271,6 +271,9 @@ class MazeEnv(AdhocReasoningEnv):
     def observation_is_equal(self,obs):
         return (obs.state['obs']==self.state['obs'])
 
+    def get_feature(self):
+        return self.state['belief']
+        
     def sample_state(self,agent):
         u_env = self.copy()
         obs = u_env.get_observation()

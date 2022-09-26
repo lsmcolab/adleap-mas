@@ -5,6 +5,7 @@ import numpy as np
 import random as rd
 import os
 
+from src.utils.math import euclidean_distance, angle_of_gradient
 from src.envs.AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
 """
@@ -83,7 +84,8 @@ class Agent(AdhocAgent):
         self.smart_parameters['last_completed_task'] = None
         self.smart_parameters['choose_task_state'] = None
         self.smart_parameters['ntasks'] = None
-        self.smart_parameters['estimation_method'] = estimation_method
+        if estimation_method is not None:
+            self.smart_parameters['estimation_method'] = estimation_method
 
     def copy(self):
         # 1. Initialising the agent
@@ -235,27 +237,10 @@ def get_visible_components(state, agent):
     return {'agents':agents, 'tasks':tasks}
 
 
-# This method returns the distance between an object and a viewer
-def distance(obj, viewer):
-    return np.sqrt((obj[0] - viewer[0]) ** 2 + (obj[1] - viewer[1]) ** 2)
-
-
-# This method returns true if an object is in the viewer vision angle
-def angle_of_gradient(obj, viewer, direction):
-    xt = (obj[0] - viewer[0])
-    yt = (obj[1] - viewer[1])
-
-    x = np.cos(direction) * xt + np.sin(direction) * yt
-    y = -np.sin(direction) * xt + np.cos(direction) * yt
-    if (y == 0 and x == 0):
-        return 0
-    return np.arctan2(y, x)
-
-
 # This method returns True if a position is visible, else False
 def is_visible(obj, viewer, direction, radius, angle):
     # 1. Checking visibility
-    if distance(obj, viewer) <= radius \
+    if euclidean_distance(obj, viewer) <= radius \
             and -angle / 2 <= angle_of_gradient(obj, viewer, direction) <= angle / 2:
         return True
     else:
@@ -525,6 +510,7 @@ class LevelForagingEnv(AdhocReasoningEnv):
         'pomcp': 'yellow',
         'ibpomcp':'blue',
         'rhopomcp':'cyan',
+        'dqn':'magenta',
         'l1': 'darkred',
         'l2': 'darkgreen',
         'l3': 'darkcyan',
@@ -631,6 +617,9 @@ class LevelForagingEnv(AdhocReasoningEnv):
 
     def get_actions_list(self):
         return [0,1,2,3,4]
+
+    def get_feature(self):
+        return self.state
 
     def get_adhoc_agent(self):
         for agent in self.components['agents']:
@@ -851,7 +840,10 @@ class LevelForagingEnv(AdhocReasoningEnv):
             y = int(agent.position[1]*(grid_height/dim[1]) + 0.5*(grid_height/dim[1]))
             r = int(0.3*np.sqrt((grid_width/dim[0])*(grid_height/dim[1])))
             x, y = my_rotation(ox,oy,x,y,direction)
-            gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors[self.agents_color[agent.type]])
+            if agent.type in self.agents_color:
+                gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors[self.agents_color[agent.type]])
+            else:
+                gfxdraw.filled_circle(self.components_surf,x,y,r,self.colors['lightgrey'])
             #eyes
             x = int(agent.position[0]*(grid_width/dim[0]) + 0.4*(grid_width/dim[0]))
             y = int(agent.position[1]*(grid_height/dim[1]) + 0.8*(grid_height/dim[1]))

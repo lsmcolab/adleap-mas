@@ -10,10 +10,10 @@ MISSHEARD_P = 0.15
 """
     Load Scenario method
 """
-def load_default_scenario(method,scenario_id=0):
+def load_default_scenario(method,scenario_id=0,display = False):
     _, scenario_id = load_default_scenario_components(scenario_id)
     components = {"agents":[Agent(index= 0, type= method)]}
-    env = TigerEnv(components=components,tiger_pos=random.choice(['left','right']),display=False)  
+    env = TigerEnv(components=components,tiger_pos=random.choice(['left','right']),display=display)  
     return env, scenario_id
 
 def load_default_scenario_components(scenario_id):
@@ -189,6 +189,10 @@ class TigerEnv(AdhocReasoningEnv):
 
     def get_actions_list(self):
         return [i for i in range(0,len(self.action_dict))]
+
+    # Replace by belief
+    def get_feature(self):
+        return np.array([0.5,0.5])
 
     def get_observations_list(self):
         return [i for i in range(0,len(self.observation_dict))]

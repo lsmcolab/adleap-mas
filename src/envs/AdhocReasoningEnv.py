@@ -294,13 +294,15 @@ class AdhocReasoningEnv(gym.Env):
     def reset(self):
         # Reset the state of the environment to an initial state
         self.episode = 0
-        if self.renderer is not None:
-            self.renderer.reset()
-            self.renderer.render_step()
 
         if self.state_set.initial_state is not None and self.state_set.initial_components is not None:
             self.state = deepcopy(self.state_set.initial_state)
             self.components = self.copy_components(self.state_set.initial_components)
+
+            if self.renderer is not None:
+                self.renderer.reset()
+                self.renderer.render_step()
+
             return self.observation_space(self.copy())
 
         else:

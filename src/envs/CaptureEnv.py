@@ -1,11 +1,11 @@
 from copy import deepcopy
 from importlib import import_module
-from re import A
 from gym import spaces
 import numpy as np
 import random as rd
 import os
 
+from src.utils.math import euclidean_distance, angle_of_gradient
 from src.envs.AdhocReasoningEnv import AdhocReasoningEnv, AdhocAgent, StateSet
 
 """
@@ -139,8 +139,8 @@ class Prey():
         dist = np.inf
         ag = None
         for hunter in env.components['hunters']:
-            if(distance(self.position,hunter.position)<dist):
-                dist = distance(self.position,hunter.position)
+            if(euclidean_distance(self.position,hunter.position)<dist):
+                dist = euclidean_distance(self.position,hunter.position)
                 ag = hunter
 
         if(ag==None):
@@ -152,8 +152,8 @@ class Prey():
         for step in steps:
             if (0 <= self.position[0] + step[0] < w and 0 <= self.position[1] + step[1] < h):
                 new_pos = ((self.position[0] + step[0]), (self.position[1] + step[1]))
-                if(dist < distance(new_pos,ag.position) and is_empty(env,new_pos)):
-                    dist = distance(new_pos,ag.position)
+                if(dist < euclidean_distance(new_pos,ag.position) and is_empty(env,new_pos)):
+                    dist = euclidean_distance(new_pos,ag.position)
                     best_pos = new_pos
 
         if(best_pos):
@@ -270,27 +270,10 @@ def get_visible_components(state, agent):
     return {'hunters':hunters, 'preys':preys}
 
 
-# This method returns the distance between an object and a viewer
-def distance(obj, viewer):
-    return np.sqrt((obj[0] - viewer[0]) ** 2 + (obj[1] - viewer[1]) ** 2)
-
-
-# This method returns true if an object is in the viewer vision angle
-def angle_of_gradient(obj, viewer, direction):
-    xt = (obj[0] - viewer[0])
-    yt = (obj[1] - viewer[1])
-
-    x = np.cos(direction) * xt + np.sin(direction) * yt
-    y = -np.sin(direction) * xt + np.cos(direction) * yt
-    if (y == 0 and x == 0):
-        return 0
-    return np.arctan2(y, x)
-
-
 # This method returns True if a position is visible, else False
 def is_visible(obj, viewer, direction, radius, angle):
     # 1. Checking visibility
-    if distance(obj, viewer) <= radius \
+    if euclidean_distance(obj, viewer) <= radius \
             and -angle / 2 <= angle_of_gradient(obj, viewer, direction) <= angle / 2:
         return True
     else:
