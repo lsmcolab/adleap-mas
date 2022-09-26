@@ -3,6 +3,7 @@ gym
 numpy
 pandas
 psutil
+torch
 scipy
 sklearn
 statsmodels

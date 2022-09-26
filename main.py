@@ -2,12 +2,12 @@
 ## Main code: template to run a single (default) experiment on AdLeap-MAS
 ##
 # 1. Setting the environment
-method = 'pomcp'        # choose your method
-kwargs = {}             # define your additional hyperparameters to it (optional)
-env_name = 'TigerEnv'   # choose your environment
-scenario_id = 0         # define your scenario configuration (check the available configuration in our GitHub)
+method = 'pomcp'                # choose your method
+kwargs = {}                     # define your additional hyperparameters to it (optional)
+env_name = 'LevelForagingEnv'   # choose your environment
+scenario_id = 0                 # define your scenario configuration (check the available configuration in our GitHub)
 
-display = False         # choosing to turn on or off the display
+display = True                  # choosing to turn on or off the display
 
 # 2. Creating the environment
 # a. importing necessary modules
@@ -42,14 +42,22 @@ while not done and env.episode < MAX_EPISODES:
     end = time.time()
 
     # 3. Taking a step in the environment
-    state,reward,done,info = env.step(adhoc_agent.next_action)
+    next_state,reward,done,info = env.step(adhoc_agent.next_action)
 
+    # 4. For learning methods
+    if 'dqn_model' in adhoc_agent.smart_parameters.keys():
+        adhoc_agent.smart_parameters['dqn_model'].add_memory(state,adhoc_agent.next_action,next_state,reward,done)
+
+    # 5. Logging the Data
     data = {'it':env.episode,
             'reward':reward,
             'time':end-start,
             'nrollout':adhoc_agent.smart_parameters['count']['nrollouts'],
             'nsimulation':adhoc_agent.smart_parameters['count']['nsimulations']}
     log.write(data)
+    
+    # 6. Updating the state
+    state = next_state
 
 env.close()
 ###
